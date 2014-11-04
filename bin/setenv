@@ -26,11 +26,8 @@ HOSTNAME=`uname -n`
 
 
 ### General settings
-BUILDER_PREFIX=/opt/sdrbuilder
+BUILDER_PREFIX=/opt/builder
 BUILD_PATH=${BUILDER_PREFIX}/log
-
-NGINX_PERLBIN=/opt/nginx/perl/bin
-NGXAL_PERLBIN=/opt/www/perl/bin
 
 ### COMPILER & USER ID
 case "$OS_NAME" in
@@ -68,31 +65,28 @@ esac
 JDK_PATH=/opt/java/current
 
 
-### SDR PREFIX
-SDR_ROOT=/opt/sdr
-SDR_BIN=${SDR_ROOT}/bin
-SDR_LIB=${SDR_ROOT}/lib
-SDR_LOG=${SDR_ROOT}/log
-SDR_CURRENT=${SDR_LOG}/current
-SDR_DAILY=${SDR_LOG}/daily
-SDR_PERLBIN=${SDR_ROOT}/perl/bin
-SDRREP_PATH=${SDR_ROOT}/report
-SDRREP_PERLBIN=${SDRREP_PATH}/perl/bin
-SDRREP_BIN=${SDRREP_PATH}/bin
+### KRMX PREFIX
+KRMX_ROOT=/opt/kronometrix
+KRMX_BIN=${KRMX_ROOT}/bin
+KRMX_LIB=${KRMX_ROOT}/lib
+KRMX_LOG=${KRMX_ROOT}/log
+KRMX_CURRENT=${KRMX_LOG}/current
+KRMX_DAILY=${KRMX_LOG}/daily
+KRMX_PERLBIN=${KRMX_ROOT}/perl/bin
 
 
 ### RAW COLLECTOR DATA DIRECTORY
-SYSREC_RAW=${SDR_RAW}/sysrec.sdrd
-CPUREC_RAW=${SDR_RAW}/cpurec.sdrd
-NICREC_RAW=${SDR_RAW}/nicrec.sdrd
-DISKREC_RAW=${SDR_RAW}/diskrec.sdrd
-NETREC_RAW=${SDR_RAW}/netrec.sdrd
-JVMREC_RAW=${SDR_RAW}/jvmrec.sdrd
-COREREC_RAW=${SDR_RAW}/corerec.sdrd
-ZONEREC_RAW=${SDR_RAW}/zonerec.sdrd
+SYSREC_RAW=${KRMX_RAW}/sysrec.sdrd
+CPUREC_RAW=${KRMX_RAW}/cpurec.sdrd
+NICREC_RAW=${KRMX_RAW}/nicrec.sdrd
+DISKREC_RAW=${KRMX_RAW}/diskrec.sdrd
+NETREC_RAW=${KRMX_RAW}/netrec.sdrd
+JVMREC_RAW=${KRMX_RAW}/jvmrec.sdrd
+COREREC_RAW=${KRMX_RAW}/corerec.sdrd
+ZONEREC_RAW=${KRMX_RAW}/zonerec.sdrd
 
 
-WEBREC_LOG=${SDR_RAW}/webrec.log
+WEBREC_LOG=${KRMX_RAW}/webrec.log
 
 
 #############################
@@ -112,4 +106,4 @@ ZONEADM_BIN=/usr/sbin/zoneadm
 #############################
 
 
-export HOSTNAME BUILDER_PREFIX SDR_PATH SDR_BIN SDR_PERLBIN DIST_ID
+export HOSTNAME BUILDER_PREFIX KRMX_PATH KRMX_BIN KRMX_PERLBIN DIST_ID
