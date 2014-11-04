@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-#  SDR Development tools, Linux recording engine 
+#  Kronometrix Development tools, Linux recording engine 
 #
 #  Copyright (c) 2014 Stefan Parvu (www.systemdatarecorder.org).
 #
@@ -20,10 +20,10 @@
 #
 #  (http://www.gnu.org/copyleft/gpl.html)
 
-# VERSION: 1.2
+# VERSION: 2
 
 # ############################################################### #
-# SDR Engine: Linux                                               # 
+# Engine: Linux                                                   # 
 # ############################################################### #
 
 
@@ -721,15 +721,6 @@ cd ..
 ### perl WWW::Curl
 build_rec_wcurl() {
 
-#  perl Makefile.PL
-#  Modify the Makefile to include -L/opt/sdr/lib -R/opt/sdr/lib
-#
-#  LDDLFLAGS = -L/lib64 -L/usr/lib64 -L/opt/sdr/lib
-#  LDFLAGS = -L/lib64 -L/usr/lib64 -L/opt/sdr/lib
-#
-#  make
-#  make install
-
 dir=WWW-Curl
 step1=0
 step2=0
@@ -748,13 +739,9 @@ echo "Info: Step 2 - Configure $dir ..." |\
 
 
 env PATH=${iprefix}/bin:$PATH ${iprefix}/perl/bin/perl Makefile.PL >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
-#sed -i.backup '/^LDFLAGS =/ {s/.*/& \-L\/lib64 \-L\/usr\/lib64 \-L\/opt\/sdr\/lib/}' Makefile
-# LDFLAGS =  -fstack-protector -L/usr/local/lib
 sed "s:^LDFLAGS =  -fstack-protector -L/usr/local/lib:LDFLAGS = -fstack-protector -L${iprefix}/lib -L/usr/local/lib -Wl,-rpath -Wl,${iprefix}/lib:" Makefile > Makefile.tmp
 
 mv Makefile.tmp Makefile
-
-#sed -i.backup '/^LDDLFLAGS =/ {s/.*/& \-L\/lib64 \-L\/usr\/lib64 \-L\/opt\/sdr\/lib/ -Wl,-rpath -Wl,${iprefix}/lib}' Makefile
 sed "s:^LDDLFLAGS = -shared -O3 -L/usr/local/lib -fstack-protector:LDDLFLAGS = -shared -O3 -fstack-protector -L${iprefix}/lib -Wl,-rpath -Wl,${iprefix}/lib:" Makefile > Makefile.tmp
 mv Makefile.tmp Makefile
 
@@ -1027,12 +1014,12 @@ echo "Info: Step 2 - Configure $dir ..." |\
 
 if [ "$PT_NAME" = "x86_64" ]; then
     env CC=cc CFLAGS="-O3" LDFLAGS="-L/lib64 -L/usr/lib64 -Wl,-rpath -Wl,${iprefix}/lib" ./configure \
-     man_group=sdr sa_dir=/opt/sdr/log conf_dir=/opt/sdr/etc  \
-     --prefix=/opt/sdr --disable-documentation --disable-nls >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+     man_group=krmx sa_dir=/opt/kronometrix/log conf_dir=/opt/kronometrix/etc  \
+     --prefix=/opt/kronometrix --disable-documentation --disable-nls >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
 else
     env CC=cc CFLAGS="-O3" LDFLAGS="-L/lib -L/usr/lib -Wl,-rpath -Wl,${iprefix}/lib" ./configure \
-     man_group=sdr sa_dir=/opt/sdr/log conf_dir=/opt/sdr/etc  \
-     --prefix=/opt/sdr --disable-documentation --disable-nls >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+     man_group=krmx sa_dir=/opt/kronometrix/log conf_dir=/opt/kronometrix/etc  \
+     --prefix=/opt/kronometrix --disable-documentation --disable-nls >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
 fi
 
 if [ $? -ne 0 ]; then
@@ -1181,10 +1168,9 @@ fi
 cd ../..
 cp etc/${OS_NAME}/* ${iprefix}/etc
 cp etc/*.start ${iprefix}/etc
-cp etc/sdr.json ${iprefix}/etc
-cp etc/sdr ${iprefix}/etc
-cp etc/sdr ${iprefix}/etc
-cp etc/sdr.transport ${iprefix}/etc
+cp etc/kronometrix.json ${iprefix}/etc
+cp etc/kronometrix ${iprefix}/etc
+cp etc/kronometrix.transport ${iprefix}/etc
 if [ $? -ne 0 ]; then
     echo "Error: cannot install etc settings !" |\
       tee -a ${BUILD_PATH}/${BUILD_LOG}
@@ -1298,7 +1284,7 @@ step2=0
 cd $dir
 echo "\n############################################################"
 echo "" >> ${BUILD_PATH}/${BUILD_LOG}
-echo "Testing SDR" | tee -a ${BUILD_PATH}/${BUILD_LOG}
+echo "Testing Kronometrix" | tee -a ${BUILD_PATH}/${BUILD_LOG}
 
 # STEP 1
 # Check all recorders if they are sane and execute properly
@@ -1312,7 +1298,7 @@ for r in sys cpu disk nic hdw
 do
     echo "" >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
     echo "Executing ${r}rec" | tee -a ${BUILD_PATH}/${BUILD_LOG}
-    ${SDR_BIN}/${r}rec >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+    ${KRMX_BIN}/${r}rec >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
     #fi
     if [ $? -ne 0 ]; then
         echo "Error: cannot run ${r}rec !" |\
