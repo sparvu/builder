@@ -531,7 +531,12 @@ if [ ! -d ${WORKSPACE} ]; then
     exit 1
 fi
 
-cd ${WORKSPACE}/${module}
+if [ -d ${WORKSPACE}/${module} ]; then
+    cd ${WORKSPACE}/${module}
+else
+    echo "Error: Invalid workspace structure: wrong module"
+    exit 1
+fi
 
 
 if [ "$OS_NAME" = "sunos" ]; then
