@@ -559,7 +559,7 @@ echo "# Version: $version"
 echo "#################################################################"
 
 case "$module" in
- rec)
+ recording)
      echo "" > ${BUILD_PATH}/${BUILD_LOG}
      build_rec_perl
      build_rec_ossl
@@ -642,7 +642,7 @@ echo "# Build Date: `date`"
 
 case "$module" in
 
- rec)
+ recording)
 
     if [ $perl_done -eq 1 ]; then
         echo "# PERL SUBSYSTEM: built and integrated"
@@ -657,22 +657,6 @@ case "$module" in
     else
         if [ $ossl_done -eq 90 ]; then
             echo "# OPENSSL SUBSYSTEM: not integrated"
-        fi
-    fi
-
-    if [ $rec_ssh2_done -eq 1 ]; then
-        echo "# LIBSSH2 SUBSYSTEM: built and integrated"
-    else
-        if [ $rec_ssh2_done -eq 90 ]; then
-            echo "# LIBSSH2 SUBSYSTEM: not integrated"
-        fi
-    fi
-
-    if [ $rec_perlssh2_done -eq 1 ]; then
-        echo "# Net::SSH2 SUBSYSTEM: built and integrated"
-    else
-        if [ $rec_perlssh2_done -eq 90 ]; then
-            echo "# Net::SSH2 SUBSYSTEM: not integrated"
         fi
     fi
 
