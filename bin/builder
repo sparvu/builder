@@ -339,7 +339,7 @@ case "$OS_NAME" in
          
 	# source here the engine for Solaris
         case "$module" in
-	 rec)
+	 recording)
 
              iprefix=${iprefix:-/opt/kronometrix}
              iuser=krmx
@@ -365,7 +365,7 @@ case "$OS_NAME" in
     linux)
 
         case "$module" in
-         rec)
+         recording)
 
              iprefix=${iprefix:-/opt/kronometrix}
              iuser=krmx
@@ -443,7 +443,7 @@ case "$OS_NAME" in
     freebsd)
 
         case "$module" in
-         rec)
+         recording)
 
              iprefix=${iprefix:-/opt/kronometrix}
              iuser=krmx
