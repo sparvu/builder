@@ -121,37 +121,6 @@ kernel_config_done=0
 ##
 
 
-## nginx
-nginxall_sem=0
-nginxfin_sem=0
-php_sem=0
-mariadb_sem=0
-pgsql_sem=0
-
-ngx_perl_done=0
-ngx_conv_done=0
-ngx_libxml2_done=0
-ngx_libpng_done=0
-ngx_libjpeg_done=0
-ngx_freetype_done=0
-ngx_fontconfig_done=0
-ngx_ossl_done=0
-ngx_gd_done=0
-ngx_perlmodules_done=0
-ngx_dbdpg_done=0
-ngx_pcre_done=0
-ngx_fcgi_done=0
-ngx_fcgiw_done=0
-ngx_ws_done=0
-ngx_mariadb_done=0
-ngx_mcd_done=0
-ngx_idn_done=0
-ngx_curl_done=0
-ngx_php_done=0
-ngx_event_done=0
-ngx_scripts_done=0
-##
-
 # Source Global SDR Settings
 PWD=`dirname $0`
 . ${PWD}/setenv
@@ -559,13 +528,6 @@ esac
 
 if [ ! -d ${WORKSPACE} ]; then
     echo "Error: Invalid workspace structure: build"
-    exit 1
-fi
-
-if [ -d ${WORKSPACE}/${module}/${version} ]; then
-    cd ${WORKSPACE}/${module}/${version}
-else
-    echo "Error: Invalid workspace structure: wrong module/version"
     exit 1
 fi
 
