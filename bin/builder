@@ -1,0 +1,999 @@
+#!/bin/sh
+#
+#  Kronometrix Development tools, builder the master script engine 
+#
+#  Copyright (c) 2014 Stefan Parvu (www.systemdatarecorder.org).
+#
+#  This program is free software; you can redistribute it and/or
+#  modify it under the terms of the GNU General Public License
+#  as published by the Free Software Foundation; either version 2
+#  of the License, or (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this program; if not, write to the Free Software Foundation,
+#  Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+#
+#  (http://www.gnu.org/copyleft/gpl.html)
+
+# VERSION: 2
+
+usage() {
+
+cat << END
+Usage: $0 [-hA] [-b buildno] [-d db] [-m module] 
+          [-p prefix] [-a appliance] pkg version
+Package:
+   rec, auth, kernel, nginx
+
+Options:
+  -a appliance type: entreprise, rbpi
+  -h help
+  -b buildno
+  -d db: mariadb | pgsql
+  -A all: php, pecl, memcached, libmcrypt
+  -p prefix
+  -t test mode
+  -m module: perl, openssl, idn, curl,  wcurl, sysstat, nrec, webrec
+             scripts, nginx, nginxfin memcached, mariadb, pgsql, php, 
+             ngxfin
+
+  eg, builder rec 0.73                  # build recording 0.73
+      builder auth 1.0.0                # build analytics auth 1.0.0
+      builder -a meteo auth 1.0.0       # build meteo analytics auth 1.0.0
+      builder kernel 1.0.0              # build analytics kernel 1.0.0
+      builder nginx 0.8.54              # build nginx 0.8.54
+      builder -p /opt/www nginx 1.2.6   # build nginx 0.8.54
+      builder -a -d mariadb nginx 1.4.5
+
+Notes:
+   Make sure you have defined WORKSPACE_PREFIX variable before running
+   builder.
+END
+exit 1
+}
+
+
+# ######### #
+# MAIN BODY #
+# ######### #
+
+## modules
+
+## recording
+perl_sem=0
+lidn_sem=0
+lcrl_sem=0
+lwcl_sem=0
+wrec_sem=0
+recs_sem=0
+test_sem=0
+nrec_sem=0
+ossl_sem=0
+syss_sem=0
+rec1_sem=0
+
+idn_done=0
+perl_done=0
+ossl_done=0
+curl_done=0
+wrec_done=0
+recs_done=0
+nrec_done=0
+tests_done=0
+wwwcurl_done=0
+sysstat_done=0
+rec_ssh2_done=0
+rec_perlssh2_done=0
+##
+
+##appliance
+entreprise_sem=0
+rbpi_sem=0
+##
+
+##auth
+auth_redis_done=0
+auth_openresty_done=0
+auth_libluatemplate_done=0
+auth_libluainspect_done=0
+auth_libluarouter_done=0
+auth_libluasmtp_done=0
+auth_fin_done=0
+auth_config_done=0
+##
+
+##kernel
+kernel_openresty_done=0
+kernel_libluafs_done=0
+kernel_libluatemplate_done=0
+kernel_libluasession_done=0
+kernel_libluarouter_done=0
+kernel_libluainspect_done=0
+kernel_libdate_done=0
+kernel_redis_done=0
+kernel_fin_done=0
+kernel_config_done=0
+##
+
+
+## nginx
+nginxall_sem=0
+nginxfin_sem=0
+php_sem=0
+mariadb_sem=0
+pgsql_sem=0
+
+ngx_perl_done=0
+ngx_conv_done=0
+ngx_libxml2_done=0
+ngx_libpng_done=0
+ngx_libjpeg_done=0
+ngx_freetype_done=0
+ngx_fontconfig_done=0
+ngx_ossl_done=0
+ngx_gd_done=0
+ngx_perlmodules_done=0
+ngx_dbdpg_done=0
+ngx_pcre_done=0
+ngx_fcgi_done=0
+ngx_fcgiw_done=0
+ngx_ws_done=0
+ngx_mariadb_done=0
+ngx_mcd_done=0
+ngx_idn_done=0
+ngx_curl_done=0
+ngx_php_done=0
+ngx_event_done=0
+ngx_scripts_done=0
+##
+
+# Source Global SDR Settings
+PWD=`dirname $0`
+. ${PWD}/setenv
+
+while getopts ":a:b:d:m:p:Aht" arg
+do
+    case "${arg}" in
+
+    a)
+        appliance=$OPTARG
+
+        case "$appliance" in
+            entreprise)
+                entreprise_sem=1
+            ;;
+
+            rbpi)
+                rbpi_sem=1
+            ;;
+
+            *)
+                echo "Not supported appliance type!"
+                usage
+            ;;
+        esac
+    ;;
+
+    A)
+        nginxall_sem=1
+    ;;
+
+    b)
+        build_num=$OPTARG
+    ;;
+
+    d)
+        dbtype=$OPTARG
+
+        case "$dbtype" in
+            mariadb)
+                mariadb_sem=1
+            ;;
+
+            pgsql)
+                pgsql_sem=1
+            ;;
+
+            *)
+                echo "Not supported db module!"
+                usage
+            ;;
+        esac
+    ;;
+
+    h)
+        usage
+    ;;
+
+    p)
+        iprefix=$OPTARG
+        if [ ! -d $iprefix ]; then
+            usage
+        fi
+    ;;
+
+    m)
+        module=$OPTARG
+        case "$module" in
+
+            
+            perl)
+                perl_sem=1
+            ;;
+
+            openssl)
+                ossl_sem=1
+            ;;
+
+            idn)
+                lidn_sem=1
+            ;;
+
+            curl)
+                lcrl_sem=1
+            ;;
+ 
+            gd)
+                lgd_sem=1
+            ;;
+
+            wcurl)
+                lwcl_sem=1
+            ;;
+
+            nrec)
+                nrec_sem=1
+            ;;
+
+            sysstat)
+              if [ "$OS_NAME" != "linux" ]; then
+                echo "Error: sysstat is a Linux specific pkg !\n"
+                exit 1
+              fi
+              syss_sem=1
+            ;;
+
+            webrec)
+                wrec_sem=1
+            ;;
+
+            scripts)
+                recs_sem=1
+            ;;
+
+            rec1)
+		rec1_sem=1
+            ;;
+
+            nginx)
+                nginx_sem=1
+            ;;
+
+            fcgiwrap)
+                fcgiwrap_sem=1
+            ;;
+
+            libjpeg)
+                jpeg_sem=1
+            ;;
+
+            rserve)
+                rserve_sem=1
+            ;;
+
+            ranalysis)
+                ranalysis_sem=1
+            ;;
+
+            pdq)
+                pdq_sem=1
+            ;;
+
+            ngxfin)
+                nginxfin_sem=1
+            ;;
+                   
+            php)
+                php_sem=1
+            ;;
+
+            mariadb)
+                mariadb_sem=1
+            ;;
+
+            pgsql)
+                pgsql_sem=1
+            ;;
+
+            memcached)
+                mcd_sem=1
+            ;;
+
+            cache_mcd_fast)
+                cache_mcd_fast_sem=1
+            ;;
+
+            *)
+                echo "Not supported module!"
+                usage
+            ;;
+        esac
+    ;;
+    
+    t)
+        test_sem=1
+    ;;
+
+    esac
+done
+
+shift `expr $OPTIND - 1`
+
+# check arguments
+if [ $# -lt 2 -o $# -gt 2 ]; then
+    usage
+fi
+
+version=$2
+module=$1
+
+
+# check workspace variable
+
+if [ ! -z "$WORKSPACE_PREFIX" ]; then
+   WORKSPACE="${WORKSPACE_PREFIX}"
+else
+   usage
+fi
+
+
+# Status File
+STATFILE="build.${module}.${PT_NAME}.${HOSTNAME}"
+BUILD_LOG="${module}.${PT_NAME}.${HOSTNAME}.${version}.log"
+
+# status file
+if [ -f /var/tmp/${STATFILE} ]; then
+    echo "Error: already running, status file: build.${module}.${PT_NAME}.${HOSTNAME}"
+    exit 1
+else
+    touch /var/tmp/${STATFILE}
+fi
+
+
+case "$OS_NAME" in
+    sunos)
+         
+	# source here the engine for Solaris
+        case "$module" in
+	 rec)
+
+             iprefix=${iprefix:-/opt/kronometrix}
+             iuser=krmx
+
+             WORKSPACE="${WORKSPACE_PREFIX}/kronometrix"
+             case "$version" in
+                 1.0*)
+                  . ${PWD}/engine.rec.solaris.10x
+                  ;;
+               
+                 *)
+                   usage
+                 ;;
+             esac
+         ;;
+
+         *)
+            usage
+         ;;
+        esac
+    ;;
+
+    linux)
+
+        case "$module" in
+         rec)
+
+             iprefix=${iprefix:-/opt/kronometrix}
+             iuser=krmx
+
+             WORKSPACE="${WORKSPACE_PREFIX}/kronometrix"
+
+             case "$version" in
+                 1.0*)
+                  . ${PWD}/engine.rec.linux.10x
+                  ;;
+
+                 *)
+                   usage
+                 ;;
+             esac
+         ;;
+
+         auth)
+
+             # default appliance
+             if [ -z "$appliance" ]; then
+                 appliance="entreprise"
+                 entreprise_sem=1
+             fi
+
+             iprefix=${iprefix:-/opt/kronometrix/auth}
+             iuser=krmx
+
+             WORKSPACE="${WORKSPACE_PREFIX}/kronometrix"
+
+             case "$version" in
+                 1.0*)
+                  . ${PWD}/engine.auth.linux.10x
+                  ;;
+
+                 *)
+                   usage
+                 ;;
+             esac
+         ;;
+
+
+         kernel)
+
+             # default appliance
+             if [ -z "$appliance" ]; then
+                 appliance="entreprise"
+                 entreprise_sem=1
+             fi
+      
+             iprefix=${iprefix:-/opt/kronometrix/kernel}
+             iuser=krmx
+             
+             WORKSPACE="${WORKSPACE_PREFIX}/kronometrix"
+
+             case "$version" in
+                 1.0*)
+                  . ${PWD}/engine.kernel.linux.10x
+                  ;;
+
+                 *)
+                   usage
+                 ;;
+             esac
+         ;;
+
+         *)
+            usage
+         ;;
+        esac
+
+    ;;
+
+
+    freebsd)
+
+        case "$module" in
+         rec)
+
+             iprefix=${iprefix:-/opt/kronometrix}
+             iuser=krmx
+
+             WORKSPACE="${WORKSPACE_PREFIX}/kronometrix"
+
+             case "$version" in
+                 1.0*)
+                  . ${PWD}/engine.rec.freebsd.10x
+                  ;;
+
+                 *)
+                   usage
+                 ;;
+             esac
+         ;;
+
+
+         auth)
+
+             # default appliance
+             if [ -z "$appliance" ]; then
+                 appliance="entreprise"
+                 entreprise_sem=1
+             fi
+      
+             iprefix=${iprefix:-/opt/kronometrix/auth}
+             iuser=krmx
+             
+             WORKSPACE="${WORKSPACE_PREFIX}/kronometrix"
+
+             case "$version" in
+                 1.0*)
+                  . ${PWD}/engine.auth.freebsd.10x
+                  ;;
+
+                 *)
+                   usage
+                 ;;
+             esac
+         ;;
+
+
+         kernel)
+
+             # default appliance
+             if [ -z "$appliance" ]; then
+                 appliance="entreprise"
+                 entreprise_sem=1
+             fi
+      
+             iprefix=${iprefix:-/opt/kronometrix/kernel}
+             iuser=sdr
+             
+             WORKSPACE="${WORKSPACE_PREFIX}/kronometrix"
+
+             case "$version" in
+                 1.0*)
+                  . ${PWD}/engine.kernel.freebsd.10x
+                  ;;
+
+                 *)
+                   usage
+                 ;;
+             esac
+         ;;
+
+         *)
+            usage
+         ;;
+        esac
+
+    ;;
+
+    *)
+        WORKSPACE=
+	echo "Not supported module!"
+        usage
+    ;;
+
+esac
+
+if [ ! -d ${WORKSPACE} ]; then
+    echo "Error: Invalid workspace structure: build"
+    exit 1
+fi
+
+if [ -d ${WORKSPACE}/${module}/${version} ]; then
+    cd ${WORKSPACE}/${module}/${version}
+else
+    echo "Error: Invalid workspace structure: wrong module/version"
+    exit 1
+fi
+
+if [ "$OS_NAME" = "sunos" ]; then
+    start=`nawk 'BEGIN{print srand()}'`
+else
+    start=`date +%s`
+fi
+
+echo ""
+echo "#################################################################"
+echo "# Build Engine                                                  #"
+echo "#################################################################"
+echo "# Start: `date`"
+if [ ! -z "$appliance" ]; then
+    echo "# Appliance: $appliance"
+fi
+echo "# Target: ${OS_NAME} ${PT_NAME}"
+echo "# Module: $module"
+echo "# Version: $version"
+echo "#################################################################"
+
+case "$module" in
+ rec)
+     echo "" > ${BUILD_PATH}/${BUILD_LOG}
+     build_rec_perl
+     build_rec_ossl
+     build_rec_idn
+     build_rec_curl
+     build_rec_wcurl
+     if [ "${OS_NAME}" = "linux" ]; then
+         build_rec_sysstat
+     fi
+  
+     if [ "$PT_NAME" != "armv6l" ]; then 
+         build_rec_webrec
+     fi
+     build_rec_scripts
+        
+     if [ "$OS_NAME" != "freebsd" ]; then 
+         test_rec_scripts
+     fi
+ ;;
+
+
+ auth)
+    echo "" > ${BUILD_PATH}/${BUILD_LOG}
+    build_auth_openresty
+    build_auth_libluatemplate
+    build_auth_libluarouter
+    build_auth_libluasmtp
+
+    if [ ! -z "$build_num" ]; then
+        build_auth_libluainspect
+    fi
+
+    build_auth_redis
+    build_auth_config
+    build_auth_fin
+ ;;
+
+
+ kernel)
+    echo "" > ${BUILD_PATH}/${BUILD_LOG}
+    build_kernel_openresty
+    build_kernel_libluafs
+    build_kernel_libluatemplate
+    build_kernel_libluasession
+    build_kernel_libluarouter
+    build_kernel_libdate
+
+    if [ ! -z "$build_num" ]; then
+        build_kernel_libluainspect
+    fi
+
+    build_kernel_redis
+    build_kernel_config
+    build_kernel_fin
+ ;;
+
+ *) 
+    usage
+ ;;
+
+esac
+
+
+# FINAL INTEGRATION MESSAGE
+
+echo "#################################################################"
+echo "# SUMMARY"
+echo "# Target:  ${OS_NAME} ${PT_NAME}"
+if [ ! -z "$appliance" ]; then
+    echo "# Appliance: $appliance"
+fi
+if [ ! -z "$COMPILER" ]; then
+    echo "# Compiler: ${COMPILER}"
+fi
+echo "# Built on: ${OS_NAME} ${KERNEL}"
+echo "#################################################################"
+echo "# Module: ${module}"
+echo "# Version: ${version}"
+echo "# Build Date: `date`"
+
+case "$module" in
+
+ rec)
+
+    if [ $perl_done -eq 1 ]; then
+        echo "# PERL SUBSYSTEM: built and integrated"
+    else
+        if [ $perl_done -eq 90 ]; then
+            echo "# PERL SUBSYSTEM: not integrated"
+        fi
+    fi
+
+    if [ $ossl_done -eq 1 ]; then
+        echo "# OPENSSL SUBSYSTEM: built and integrated"
+    else
+        if [ $ossl_done -eq 90 ]; then
+            echo "# OPENSSL SUBSYSTEM: not integrated"
+        fi
+    fi
+
+    if [ $rec_ssh2_done -eq 1 ]; then
+        echo "# LIBSSH2 SUBSYSTEM: built and integrated"
+    else
+        if [ $rec_ssh2_done -eq 90 ]; then
+            echo "# LIBSSH2 SUBSYSTEM: not integrated"
+        fi
+    fi
+
+    if [ $rec_perlssh2_done -eq 1 ]; then
+        echo "# Net::SSH2 SUBSYSTEM: built and integrated"
+    else
+        if [ $rec_perlssh2_done -eq 90 ]; then
+            echo "# Net::SSH2 SUBSYSTEM: not integrated"
+        fi
+    fi
+
+    if [ $idn_done -eq 1 ]; then
+        echo "# IDN SUBSYSTEM: built and integrated"
+    else
+        if [ $idn_done -eq 90 ]; then
+            echo "# IDN SUBSYSTEM: not integrated"
+        fi
+    fi
+
+    if [ $curl_done -eq 1 ]; then
+        echo "# CURL SUBSYSTEM: built and integrated"
+    else
+        if [ $curl_done -eq 90 ]; then
+            echo "# CURL SUBSYSTEM: not integrated"
+        fi
+    fi
+
+    if [ "$OS_NAME" = "linux" ]; then
+        if [ $sysstat_done -eq 1 ]; then
+            echo "# SYSSTAT SUBSYSTEM: built and integrated"
+        else
+            if [ $sysstat_done -eq 90 ]; then
+                echo "# SYSSTAT SUBSYSTEM: not integrated"
+            fi
+        fi
+    fi
+
+    if [ $wwwcurl_done -eq 1 ]; then
+        echo "# WCURL SUBSYSTEM: built and integrated"
+    else
+        if [ $wwwcurl_done -eq 90 ]; then
+            echo "# WCURL SUBSYSTEM: not integrated"
+        fi
+    fi
+
+
+    if [ "$OS_NAME" = "linux" ]; then
+        if [ $nrec_done -eq 1 ]; then
+            echo "# NICREC SUBSYSTEM: built and integrated"
+        else
+            if [ $nrec_done -eq 90 ]; then
+                echo "# NICREC SUBSYSTEM: not integrated"
+            fi
+        fi
+    fi
+
+
+    if [ $wrec_done -eq 1 ]; then
+        echo "# WEBREC SUBSYSTEM: built and integrated"
+    else
+        if [ $wrec_done -eq 90 ]; then
+            echo "# WEBREC SUBSYSTEM: not integrated"
+        fi
+    fi
+
+
+    if [ $recs_done -eq 1 ]; then
+        echo "# RECORDERS: built and integrated"
+    else
+        if [ $recs_done -eq 90 ]; then
+            echo "# RECORDERS: not integrated"
+        fi
+    fi
+
+    if [ $tests_done -eq 1 ]; then
+        echo "# TESTS: ok"
+    else
+        if [ $tests_done -eq 90 ]; then
+            echo "# TESTS: failed"
+        fi
+    fi
+
+ ;;
+
+
+ auth)
+
+    if [ $auth_openresty_done -ne 0 ]; then
+        if [ $auth_openresty_done -eq 1 ]; then
+            echo "# openresty: built and integrated"
+        else
+            if [ $auth_openresty_done -eq 90 ]; then
+                echo "# openresty: not integrated"
+            fi
+        fi
+    fi
+
+    if [ $auth_libluatemplate_done -ne 0 ]; then
+        if [ $auth_libluatemplate_done -eq 1 ]; then
+            echo  "# lib lua-resty-template: built and integrated"
+        else
+            if [ $auth_libluatemplate_done -eq 90 ]; then
+                echo  "# lib lua-resty-template: not integrated"
+            fi
+        fi
+    fi
+
+    if [ $auth_libluarouter_done -ne 0 ]; then
+        if [ $auth_libluarouter_done -eq 1 ]; then
+            echo  "# lib router.lua: built and integrated"
+        else
+            if [ $auth_libluarouter_done -eq 90 ]; then
+                echo  "# lib router.lua: not integrated"
+            fi
+        fi
+    fi
+
+    if [ $auth_libluasmtp_done -ne 0 ]; then
+        if [ $auth_libluasmtp_done -eq 1 ]; then
+            echo  "# lib smtp.lua: built and integrated"
+        else
+            if [ $auth_libluasmtp_done -eq 90 ]; then
+                echo  "# lib smtp.lua: not integrated"
+            fi
+        fi
+    fi
+
+    if [ ! -z "$build_num" ]; then
+        if [ $auth_libluainspect_done -ne 0 ]; then
+            if [ $auth_libluainspect_done -eq 1 ]; then
+                echo  "# lib inspect.lua: built and integrated"
+            else
+                if [ $auth_libluainspect_done -eq 90 ]; then
+                    echo  "# lib inspect.lua: not integrated"
+                fi
+            fi
+        fi
+    fi
+
+    if [ $auth_redis_done -ne 0 ]; then
+        if [ $auth_redis_done -eq 1 ]; then
+            echo  "# redis: built and integrated"
+        else
+            if [ $auth_redis_done -eq 90 ]; then
+                echo  "# redis: not integrated"
+            fi
+        fi
+    fi
+
+    if [ $auth_config_done -ne 0 ]; then
+        if [ $auth_config_done -eq 1 ]; then
+            echo  "# analytics-auth nginx.conf: done"
+        else
+            if [ $auth_config_done -eq 90 ]; then
+                echo  "# analytics-auth nginx.conf: not done"
+            fi
+        fi
+    fi
+
+    if [ $auth_fin_done -ne 0 ]; then
+        if [ $auth_fin_done -eq 1 ]; then
+            echo  "# FINALIZE: done"
+        else
+            if [ $auth_fin_done -eq 90 ]; then
+                echo  "# FINALIZE: not done"
+            fi
+        fi
+    fi
+
+ ;;
+
+
+ kernel)
+
+    if [ $kernel_openresty_done -ne 0 ]; then
+        if [ $kernel_openresty_done -eq 1 ]; then
+            echo "# openresty: built and integrated"
+        else
+            if [ $kernel_openresty_done -eq 90 ]; then
+                echo "# openresty: not integrated"
+            fi
+        fi
+    fi
+
+    if [ $kernel_libluafs_done -ne 0 ]; then
+        if [ $kernel_libluafs_done -eq 1 ]; then
+            echo  "# lib luafilesystem: built and integrated"
+        else
+            if [ $kernel_libluafs_done -eq 90 ]; then
+                echo  "# lib luafilesystem: not integrated"
+            fi
+        fi
+    fi
+
+    if [ $kernel_libluatemplate_done -ne 0 ]; then
+        if [ $kernel_libluatemplate_done -eq 1 ]; then
+            echo  "# lib lua-resty-template: built and integrated"
+        else
+            if [ $kernel_libluatemplate_done -eq 90 ]; then
+                echo  "# lib lua-resty-template: not integrated"
+            fi
+        fi
+    fi
+
+    if [ $kernel_libluasession_done -ne 0 ]; then
+        if [ $kernel_libluasession_done -eq 1 ]; then
+            echo  "# lib lua-resty-session: built and integrated"
+        else
+            if [ $kernel_libluasession_done -eq 90 ]; then
+                echo  "# lib lua-resty-session: not integrated"
+            fi
+        fi
+    fi
+
+    if [ $kernel_libluarouter_done -ne 0 ]; then
+        if [ $kernel_libluarouter_done -eq 1 ]; then
+            echo  "# lib router.lua: built and integrated"
+        else
+            if [ $kernel_libluarouter_done -eq 90 ]; then
+                echo  "# lib router.lua: not integrated"
+            fi
+        fi
+    fi
+
+    if [ $kernel_libdate_done -ne 0 ]; then
+        if [ $kernel_libdate_done -eq 1 ]; then
+            echo  "# lib date.lua: built and integrated"
+        else
+            if [ $kernel_libdone_done -eq 90 ]; then
+                echo  "# lib date.lua: not integrated"
+            fi
+        fi
+    fi
+
+    if [ ! -z "$build_num" ]; then
+        if [ $kernel_libluainspect_done -ne 0 ]; then
+            if [ $kernel_libluainspect_done -eq 1 ]; then
+                echo  "# lib inspect.lua: built and integrated"
+            else
+                if [ $kernel_libluainspect_done -eq 90 ]; then
+                    echo  "# lib inspect.lua: not integrated"
+                fi
+            fi
+        fi
+    fi
+
+    if [ $kernel_redis_done -ne 0 ]; then
+        if [ $kernel_redis_done -eq 1 ]; then
+            echo  "# redis: built and integrated"
+        else
+            if [ $kernel_redis_done -eq 90 ]; then
+                echo  "# redis: not integrated"
+            fi
+        fi
+    fi
+
+    if [ $kernel_config_done -ne 0 ]; then
+        if [ $kernel_config_done -eq 1 ]; then
+            echo  "# analytics-kernel nginx.conf: done"
+        else
+            if [ $kernel_config_done -eq 90 ]; then
+                echo  "# analytics-kernel nginx.conf: not done"
+            fi
+        fi
+    fi
+
+    if [ $kernel_fin_done -ne 0 ]; then
+        if [ $kernel_fin_done -eq 1 ]; then
+            echo  "# FINALIZE: done"
+        else
+            if [ $kernel_fin_done -eq 90 ]; then
+                echo  "# FINALIZE: not done"
+            fi
+        fi
+    fi
+
+ ;;
+
+
+esac
+
+echo "#################################################################"
+
+elapsed=0
+end=0
+if [ "$OS_NAME" = "sunos" ]; then
+    end=`nawk 'BEGIN{print srand()}'`
+else
+    end=`date +%s`
+fi
+
+elapsed=`expr $end - $start`
+
+h=`expr $elapsed / 3600`
+m=`expr  $elapsed / 60 % 60`
+s=`expr $elapsed % 60`
+echo "# Total Build time: ${h}h:${m}m:${s}s"
+echo "#################################################################"
+
+
+#cleanup
+rm /var/tmp/${STATFILE}

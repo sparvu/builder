@@ -1,0 +1,115 @@
+#!/bin/sh
+
+# COPYRIGHT: Copyright (c) 2014 SystemDataRecorder
+#
+#  This program is free software; you can redistribute it and/or
+#  modify it under the terms of the GNU General Public License
+#  as published by the Free Software Foundation; either version 2
+#  of the License, or (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this program; if not, write to the Free Software Foundation,
+#  Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+#
+#  (http://www.gnu.org/copyleft/gpl.html)
+
+
+### Platform and OS
+OS_NAME=`uname -s | tr '[A-Z]' '[a-z]'`
+PT_NAME=`uname -m | tr '[A-Z]' '[a-z]'`
+HOSTNAME=`uname -n`
+
+
+### General settings
+BUILDER_PREFIX=/opt/sdrbuilder
+BUILD_PATH=${BUILDER_PREFIX}/log
+
+NGINX_PERLBIN=/opt/nginx/perl/bin
+NGXAL_PERLBIN=/opt/www/perl/bin
+
+### COMPILER & USER ID
+case "$OS_NAME" in
+    sunos)
+        USER_ID=`/usr/xpg4/bin/id -u`
+        KERNEL=`uname -sr`
+        DIST_ID="sunos"
+    ;;
+
+    linux)
+        COMPILER=`gcc --version | head -1 | sed 's/(GCC) //'`
+        KERNEL=`uname -r`
+        USER_ID=`/usr/bin/id -u`
+        if [ -f /etc/os-release ]; then
+            DIST_ID=`grep '^ID=' /etc/os-release | sed 's/^.*=//'`
+        elif [ -f /etc/system-release ]; then
+            DIST_ID=`sed 's/ release.*$//' /etc/system-release | tr '[A-Z]' '[a-z]'`
+        elif [ -f /etc/redhat-release ]; then
+            DIST_ID=`sed 's/ release.*$//' /etc/redhat-release | tr '[A-Z]' '[a-z]'`
+        fi
+    ;;
+
+    freebsd)
+        KERNEL=`uname -r`
+        USER_ID=`/usr/bin/id -u`
+        DIST_ID="freebsd"
+    ;;
+
+    *)
+        echo "Not supported OS !"
+esac
+
+
+### JDK PATH
+JDK_PATH=/opt/java/current
+
+
+### SDR PREFIX
+SDR_ROOT=/opt/sdr
+SDR_BIN=${SDR_ROOT}/bin
+SDR_LIB=${SDR_ROOT}/lib
+SDR_LOG=${SDR_ROOT}/log
+SDR_CURRENT=${SDR_LOG}/current
+SDR_DAILY=${SDR_LOG}/daily
+SDR_PERLBIN=${SDR_ROOT}/perl/bin
+SDRREP_PATH=${SDR_ROOT}/report
+SDRREP_PERLBIN=${SDRREP_PATH}/perl/bin
+SDRREP_BIN=${SDRREP_PATH}/bin
+
+
+### RAW COLLECTOR DATA DIRECTORY
+SYSREC_RAW=${SDR_RAW}/sysrec.sdrd
+CPUREC_RAW=${SDR_RAW}/cpurec.sdrd
+NICREC_RAW=${SDR_RAW}/nicrec.sdrd
+DISKREC_RAW=${SDR_RAW}/diskrec.sdrd
+NETREC_RAW=${SDR_RAW}/netrec.sdrd
+JVMREC_RAW=${SDR_RAW}/jvmrec.sdrd
+COREREC_RAW=${SDR_RAW}/corerec.sdrd
+ZONEREC_RAW=${SDR_RAW}/zonerec.sdrd
+
+
+WEBREC_LOG=${SDR_RAW}/webrec.log
+
+
+#############################
+# OS UTILITIES
+# - used by all collectors
+#
+#############################
+WC_BIN=/usr/bin/wc
+GREP_BIN=/usr/bin/grep
+PERL_BIN=/opt/sdr/perl/bin/perl
+TAIL_BIN=/usr/bin/tail
+MPSTAT_BIN=/usr/bin/mpstat
+PRSTAT_BIN=/usr/bin/prstat
+ZLOGIN_BIN=/usr/sbin/zlogin
+NETSTAT_BIN=/usr/bin/netstat
+ZONEADM_BIN=/usr/sbin/zoneadm
+#############################
+
+
+export HOSTNAME BUILDER_PREFIX SDR_PATH SDR_BIN SDR_PERLBIN DIST_ID

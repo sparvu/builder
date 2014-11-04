@@ -1,0 +1,655 @@
+#/bin/sh
+#
+#  SDR Development tools
+#  FreeBSD SDR Analytics Authentication Engine
+#
+#  Copyright (c) 2014 Stefan Parvu (www.systemdatarecorder.org).
+#
+#  This program is free software; you can redistribute it and/or
+#  modify it under the terms of the GNU General Public License
+#  as published by the Free Software Foundation; either version 2
+#  of the License, or (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this program; if not, write to the Free Software Foundation,
+#  Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+#
+#  (http://www.gnu.org/copyleft/gpl.html)
+
+# VERSION: 1.3
+
+# ############################################################### #
+# SDR Engine: Analytics Authentication FreeBSD                    #
+# ############################################################### #
+
+
+### extract_archive
+extract_archive() {
+# $1 module name
+# $2 dir build
+
+modfile=$1
+bfile=$2
+
+# Debug
+# echo "module name: $modfile"
+# echo "archive dir: $bfile"
+
+if [ -d "$bfile" ]; then
+    echo "Info: Step 1 - Extracting $bfile ..." |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    echo "Warning: ${bfile} directory found, cleaning..." |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+    rm -rf ${bfile}
+    if [ $? -ne 0 ]; then
+        echo "Error: cannot clean. Check ${modfile} , ${bfile}" |\
+         tee -a ${BUILD_PATH}/${BUILD_LOG}
+        exit 3
+    fi 
+    gzip -dc ${bfile}.tar.gz | tar xvf - >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+else
+    echo "Info: Step 1 - Extracting $bfile ..." |\
+    tee -a ${BUILD_PATH}/${BUILD_LOG}
+    gzip -dc ${bfile}.tar.gz | tar xvf - >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+fi
+
+}
+
+
+### init_module
+init_module() {
+
+# $1 directory name
+directory=$1
+
+cd $directory
+echo "############################################################"
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Submodule: $directory" | tee -a ${BUILD_PATH}/${BUILD_LOG}
+archive_file=`ls *.tar.gz`
+# Debug
+#echo "Directory: $directory"
+#echo "Archive: $archive_file"
+
+# dirarchive=${archive_file%%.tar*}
+dirarchive=`echo $archive_file | sed 's/\.tar.*//'`
+
+# Debug
+#echo "DirArchive: $dirarchive"
+
+extract_archive "$directory" "$dirarchive"
+
+cd $dirarchive
+
+}
+
+
+### clean_module
+clean_module() {
+cd ..
+rm -rf $dirarchive >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if [ $? -ne 0 ]; then
+    echo "Error: cleaning up $dirarchive !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 5
+fi
+cd ..
+
+}
+
+
+### redis
+build_auth_redis() {
+dir=redis
+step1=0
+step2=0
+step3=0
+step4=0
+
+# STEP 1
+init_module "$dir"
+if [ $? -eq 0 ]; then
+    step1=1
+fi
+
+# STEP 2
+
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 2 - Make $dir ..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+gmake PREFIX=${iprefix} >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if [ $? -ne 0 ]; then
+    echo "Error: make $dir failed !" | tee -a ${BUILD_PATH}/${BUILD_LOG}
+    exit 3
+else
+    step2=1
+fi  
+
+
+# STEP 3
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 3 - Make install $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+gmake PREFIX=${iprefix} install >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if [ $? -ne 0 ]; then
+    echo "Error: make install perl failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    exit 3
+else
+    step3=1
+fi
+
+
+# final check; all 3 steps
+auth_redis_done=`expr $step1 + $step2 + $step3`
+if [ $auth_redis_done -eq 3 ]; then
+   auth_redis_done=1
+else
+   auth_redis_done=90
+fi
+
+clean_module
+
+}
+
+
+### openresty
+build_auth_openresty() {
+dir=openresty
+step1=0
+step2=0
+step3=0
+step4=0
+
+
+# STEP 1
+init_module "$dir"
+if [ $? -eq 0 ]; then
+    step1=1
+fi
+
+
+# STEP 2
+
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 2 - Configure $dir ..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+ env PKG_CONFIG_PATH=/usr/local/libdata/pkgconfig \
+     CC=cc ./configure --prefix=${iprefix} --with-luajit \
+     --with-cc=/usr/bin/cc >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+
+if [ $? -ne 0 ]; then
+    echo "Error: configure $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step2=1
+fi  
+
+# STEP 3
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 3 - Make $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+gmake >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if [ $? -ne 0 ]; then
+    echo "Error: make $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step3=1
+fi 
+
+# STEP 4
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 4 - Make install $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+
+gmake install >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if [ $? -ne 0 ]; then
+    echo "Error: make install gd failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step4=1
+fi
+
+# final check; all 4 steps
+auth_openresty_done=`expr $step1 + $step2 + $step3 + $step4`
+if [ $auth_openresty_done -eq 4 ]; then
+   auth_openresty_done=1
+else
+   auth_openresty_done=90
+fi
+
+clean_module
+
+}
+
+
+### lua-resty-template
+build_auth_libluatemplate() {
+dir="lua-resty-template"
+step1=0
+step2=0
+step3=0
+
+
+cd lib
+
+# STEP 1
+init_module "$dir"
+if [ $? -eq 0 ]; then
+    step1=1
+fi
+
+
+# STEP 2
+
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 2 - Install template.lua ..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+cp -R lib/resty/template* ${iprefix}/lualib/resty
+if [ $? -ne 0 ]; then
+    echo "Error: cannot install template.lua script !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+     rm /var/tmp/build.${module}
+     exit 3
+else
+    step2=1
+fi
+
+# final check; all 2 steps
+auth_libluatemplate_done=`expr $step1 + $step2`
+if [ $auth_libluatemplate_done -eq 2 ]; then
+   auth_libluatemplate_done=1
+else
+   auth_libluatemplate_done=90
+fi
+
+clean_module
+
+# back to root
+cd ..
+
+}
+
+
+### router.lua
+build_auth_libluarouter() {
+dir="router.lua"
+step1=0
+step2=0
+
+cd lib
+
+# STEP 1
+init_module "$dir"
+if [ $? -eq 0 ]; then
+    step1=1
+fi
+
+
+# STEP 2
+
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 2 - Install router.lua ..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+cp router.lua ${iprefix}/lualib/resty
+if [ $? -ne 0 ]; then
+    echo "Error: cannot install router.lua script !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+     rm /var/tmp/build.${module}
+     exit 3
+else
+    step2=1
+fi
+
+# final check; all 2 steps
+auth_libluarouter_done=`expr $step1 + $step2`
+if [ $auth_libluarouter_done -eq 2 ]; then
+   auth_libluarouter_done=1
+else
+   auth_libluarouter_done=90
+fi
+
+clean_module
+
+# back to root
+cd ..
+
+}
+
+
+### lua-resty-smtp
+build_auth_libluasmtp() {
+dir="lua-resty-smtp"
+step1=0
+step2=0
+
+
+cd lib
+
+init_module "$dir"
+if [ $? -eq 0 ]; then
+    step1=1
+fi
+
+# STEP 2
+
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 2 - Install router.lua ..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+cp -R lib/resty/smtp* ${iprefix}/lualib/resty
+if [ $? -ne 0 ]; then
+    echo "Error: cannot install smtp.lua script !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+     rm /var/tmp/build.${module}
+     exit 3
+else
+    step2=1
+fi
+
+# final check; all 2 steps
+auth_libluasmtp_done=`expr $step1 + $step2`
+if [ $auth_libluasmtp_done -eq 2 ]; then
+   auth_libluasmtp_done=1
+else
+   auth_libluasmtp_done=90
+fi
+
+clean_module
+
+# back to root
+cd ..
+}
+
+
+### inspect.lua
+build_auth_libluainspect() {
+dir="inspect.lua"
+step1=0
+step2=0
+step3=0
+
+
+cd lib
+
+# STEP 1
+init_module "$dir"
+if [ $? -eq 0 ]; then
+    step1=1
+fi
+
+
+# STEP 2
+
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 2 - Install inspect.lua ..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+cp inspect.lua ${iprefix}/lualib
+if [ $? -ne 0 ]; then
+    echo "Error: cannot install inspect.lua script !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+     rm /var/tmp/build.${module}
+     exit 3
+else
+    step2=1
+fi
+
+# final check; all 2 steps
+auth_libluainspect_done=`expr $step1 + $step2`
+if [ $auth_libluainspect_done -eq 2 ]; then
+   auth_libluainspect_done=1
+else
+   auth_libluainspect_done=90
+fi
+
+clean_module
+
+# back to root
+cd ..
+
+}
+
+
+### configuration settings
+build_auth_config() {
+
+dir=config
+step1=0
+
+## change OS name directory
+cd $dir/${OS_NAME}
+
+echo "############################################################"
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Submodule: $dir ${OS_NAME}" | tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+# STEP 1
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 1 - Installing nginx wrappers ..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+if [ $entreprise_sem -eq 1 ]; then
+    cp nginx.conf.maas ${iprefix}/nginx/conf/nginx.conf
+elif [ $rbpi_sem -eq 1 ]; then
+    cp nginx.conf.rbpi ${iprefix}/nginx/conf/nginx.conf
+fi
+
+if [ $? -ne 0 ]; then
+    echo "Error: cannot install nginx.conf script !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+     rm /var/tmp/build.${module}
+     exit 3
+else
+    step1=1
+fi
+
+
+# final check
+auth_config_done=$step1
+if [ $auth_config_done -eq 1 ]; then
+   auth_config_done=1
+else
+   auth_config_done=90
+fi
+
+cd ../..
+
+}
+
+
+### finalize
+build_auth_fin() {
+
+dir=etc
+step1=0
+step2=0
+step3=0
+step4=0
+
+sdrver=$version
+
+# export iprefix
+export iprefix=${iprefix}
+
+if [ ! -z "$build_num" ]; then
+   buildno="$build_num"
+else
+   buildno=0
+fi
+
+cd $dir
+echo "############################################################"
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Submodule: $dir" | tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+
+# STEP 1
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 1 - Setting up directory structure ..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+if [ ! -d ${iprefix}/etc ]; then
+    mkdir ${iprefix}/etc
+    if [ $? -ne 0 ]; then
+        echo "Error: cannot setup etc directory !" |\
+         tee -a ${BUILD_PATH}/${BUILD_LOG}
+        rm /var/tmp/build.${module}
+        exit 3
+    else
+        step1=`expr $step1 + 1`
+    fi
+fi
+
+
+if [ ! -d ${iprefix}/static ]; then
+    mkdir ${iprefix}/static
+    if [ $? -ne 0 ]; then
+        echo "Error: cannot setup static directory !" |\
+         tee -a ${BUILD_PATH}/${BUILD_LOG}
+        rm /var/tmp/build.${module}
+        exit 3
+    else
+        step1=`expr $step1 + 1`
+    fi
+fi
+
+
+if [ ! -d ${iprefix}/app ]; then
+    mkdir ${iprefix}/app
+    if [ $? -ne 0 ]; then
+        echo "Error: cannot setup app directory !" |\
+         tee -a ${BUILD_PATH}/${BUILD_LOG}
+        rm /var/tmp/build.${module}
+        exit 3
+    else
+        step1=`expr $step1 + 1`
+    fi
+fi
+
+
+if [ ! -d ${iprefix}/logs ]; then
+    mkdir ${iprefix}/logs
+    if [ $? -ne 0 ]; then
+        echo "Error: cannot setup logs directory !" |\
+         tee -a ${BUILD_PATH}/${BUILD_LOG}
+        rm /var/tmp/build.${module}
+        exit 3
+    else
+        step1=`expr $step1 + 1`
+    fi
+
+    step1=`expr $step1 + 1`
+fi
+
+
+# there are 4 settings
+step1=`expr $step1 / 4`
+
+
+# STEP 2
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 2 - Installing sdrauth startup services ..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+cp auth* ${iprefix}/etc/
+if [ $entreprise_sem -eq 1 ]; then
+    cp redis.conf.maas ${iprefix}/etc/redis.conf
+elif [ $rbpi_sem -eq 1 ]; then
+    cp redis.conf.rbpi ${iprefix}/etc/redis.conf
+fi
+
+if [ $? -ne 0 ]; then
+    echo "Error: cannot install sdrauth startup services !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step2=1
+fi
+
+
+# STEP 3
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 3 - Installing RELEASENOTES and README ..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+cd ..
+cp README RELEASENOTES TUNING ${iprefix}/
+if [ $? -ne 0 ]; then
+    echo "Error: cannot install RELEASENOTES and README !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step3=1
+fi
+
+
+# STEP 4
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 4 - Creating sdranalytics-auth package ..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+cd ${iprefix}/../../..
+if [ "$buildno" -ne 0 ]; then
+    tar cf /var/tmp/sdranalytics-auth-${sdrver}b${buildno}-${OS_NAME}.${PT_NAME}.tar sdr/analytics/auth
+    if [ -f /var/tmp/sdranalytics-auth-${sdrver}b${buildno}-${OS_NAME}.${PT_NAME}.tar.bz2 ]; then
+        rm /var/tmp/sdranalytics-auth-${sdrver}b${buildno}-${OS_NAME}.${PT_NAME}.tar.bz2
+    fi
+    bzip2 /var/tmp/sdranalytics-auth-${sdrver}b${buildno}-${OS_NAME}.${PT_NAME}.tar
+    if [ $? -ne 0 ]; then
+        echo "Error: cannot create sdranalytics-auth package !" |\
+         tee -a ${BUILD_PATH}/${BUILD_LOG}
+        rm /var/tmp/build.${module}
+        exit 3
+    else
+        step4=1
+    fi
+else
+    # GA General Release
+    tar cf /var/tmp/sdranalytics-auth-${sdrver}-${OS_NAME}.${PT_NAME}.tar sdr/analytics/auth
+    if [ -f /var/tmp/sdranalytics-auth-${sdrver}-${OS_NAME}.${PT_NAME}.tar.bz2 ]; then
+        rm /var/tmp/sdranalytics-auth-${sdrver}-${OS_NAME}.${PT_NAME}.tar.bz2
+    fi
+    bzip2 /var/tmp/sdranalytics-auth-${sdrver}-${OS_NAME}.${PT_NAME}.tar
+    if [ $? -ne 0 ]; then
+        echo "Error: cannot create sdranalytics-auth package !" |\
+         tee -a ${BUILD_PATH}/${BUILD_LOG}
+        rm /var/tmp/build.${module}
+        exit 3
+    else
+        step4=1
+    fi
+fi
+# final check; all 4 steps
+auth_fin_done=`expr $step1 + $step2 + $step3 + $step4`
+if [ "$auth_fin_done" -eq 4 ]; then
+   auth_fin_done=1
+else
+   auth_fin_done=90
+fi
+
+cd ..
+
+}
+

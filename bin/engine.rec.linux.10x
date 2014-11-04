@@ -1,0 +1,1362 @@
+#!/bin/sh
+#
+#  SDR Development tools, Linux recording engine 
+#
+#  Copyright (c) 2014 Stefan Parvu (www.systemdatarecorder.org).
+#
+#  This program is free software; you can redistribute it and/or
+#  modify it under the terms of the GNU General Public License
+#  as published by the Free Software Foundation; either version 2
+#  of the License, or (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this program; if not, write to the Free Software Foundation,
+#  Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+#
+#  (http://www.gnu.org/copyleft/gpl.html)
+
+# VERSION: 1.2
+
+# ############################################################### #
+# SDR Engine: Linux                                               # 
+# ############################################################### #
+
+
+### extract_archive
+extract_archive() {
+
+# $1 module name
+# $2 dir build
+
+modfile=$1
+bfile=$2
+
+# Debug
+# echo "module name: $modfile"
+# echo "archive dir: $bfile"
+
+if [ -d $bfile ]; then
+    echo "Info: Step 1 - Extracting $bfile ..." | tee -a ${BUILD_PATH}/${BUILD_LOG}
+    echo "Warning: ${bfile} directory found, cleaning..." | tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+    rm -rf ${bfile}
+    if [ $? -ne 0 ]; then
+        echo "Error: cannot clean. Check ${modfile} , ${bfile}" | tee -a ${BUILD_PATH}/${BUILD_LOG}
+        exit 3
+    fi 
+    gzip -dc ${bfile}.tar.gz | tar xvf - >> ${BUILD_PATH}/${BUILD_LOG}
+else
+    echo "Info: Step 1 - Extracting $bfile ..." | tee -a ${BUILD_PATH}/${BUILD_LOG}
+    gzip -dc ${bfile}.tar.gz | tar xvf - >> ${BUILD_PATH}/${BUILD_LOG}
+fi
+
+}
+
+
+### init_module
+init_module() {
+
+# $1 directory name
+directory=$1
+
+cd $directory
+echo "############################################################"
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Submodule: $directory" | tee -a ${BUILD_PATH}/${BUILD_LOG}
+archive_file=`ls *.tar.gz`
+# Debug
+#echo "Directory: $directory"
+#echo "Archive: $archive_file"
+
+# dirarchive=${archive_file%%.tar*}
+dirarchive=`echo $archive_file | sed 's/\.tar.*//'`
+
+# Debug
+#echo "DirArchive: $dirarchive"
+
+extract_archive "$directory" "$dirarchive"
+
+cd $dirarchive
+
+}
+
+
+### clean_module
+clean_module() {
+cd ..
+rm -rf $dirarchive >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if [ $? -ne 0 ]; then
+    echo "Error: cleaning up $dirarchive !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 5
+fi
+cd ..
+
+}
+
+
+### perl
+build_rec_perl() {
+dir=perl
+step1=0
+step2=0
+step3=0
+step4=0
+step5=0
+step6=0
+
+init_module "$dir"
+if [ $? -eq 0 ]; then
+    step1=1
+fi
+
+# get CPAN version
+cpanver=`echo $dirarchive | sed 's/perl-//'`
+
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 2 - Configure perl ..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+if [ "$PT_NAME" = "x86_64" ]; then
+    sh Configure -Doptimize='-O3' -Duselargefiles -Duse64bitall \
+        -Dcf_by="support@systemdatarecorder.org"       \
+        -Dcf_email="support@systemdatarecorder.org"    \
+        -Dman1dir="none" -Dman3dir="none"        \
+        -Dprefix=${iprefix}/perl -des >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+else
+    sh Configure -Doptimize='-O3' -Duselargefiles -Duse64bitint \
+        -Dcf_by="support@systemdatarecorder.org"       \
+        -Dcf_email="support@systemdatarecorder.org"    \
+        -Dman1dir="none" -Dman3dir="none"        \
+        -Dprefix=${iprefix}/perl -des >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+fi
+
+if [ $? -ne 0 ]; then
+    echo "Error: configure perl failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step2=1
+fi
+
+# STEP 3
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 3 - Make perl..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+make >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if [ $? -ne 0 ]; then
+    echo "Error: make perl failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step3=1
+fi
+
+# STEP 4
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 4 - Make test perl..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+make test >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if [ $? -ne 0 ]; then
+    echo "Error: make test perl failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step4=1
+fi
+
+# STEP 5
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 5 - Make install perl..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+ 
+if [ -d ${iprefix}/perl ]; then
+    echo "Warning: perl directory found, cleaning it..." |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm -rf ${iprefix}/perl
+    if [ $? -ne 0 ]; then
+        echo "Error: cleaning $dir directory" |\
+         tee -a ${BUILD_PATH}/${BUILD_LOG}
+        rm /var/tmp/build.${module}
+        exit 3
+    fi
+fi
+ 
+make install >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if [ $? -ne 0 ]; then
+    echo "Error: make install perl failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step5=1
+fi
+
+           
+# STEP 6
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 6 - CPAN modules" | tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+cp ${BUILDER_PREFIX}/etc/Config.pm ${iprefix}/perl/lib/${cpanver}/CPAN
+
+${iprefix}/perl/bin/perl -MCPAN -e 'install Sys::Statistics::Linux' >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if [ $? -ne 0 ]; then
+    echo "Error: Sys::Statistics::Linux installation failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step6=`expr $step6 + 1`
+fi
+
+for lib in Digest::SHA Proc::Daemon Proc::PID::File File::Tail \
+           JSON HTTP::Response Data::UUID
+do
+    ${iprefix}/perl/bin/perl -MCPAN -e 'install "'$lib'"' >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+    if [ $? -ne 0 ]; then
+        echo "Error: $lib installation failed !" |\
+         tee -a ${BUILD_PATH}/${BUILD_LOG}
+        rm /var/tmp/build.${module}
+        exit 3
+    else
+        step6=`expr $step6 + 1`
+    fi
+done
+
+# there are 8 perl modules install calls 
+step6=`expr $step6 / 8`
+
+# final check; all 6 steps
+perl_done=`expr $step1 + $step2 + $step3 + $step4 + $step5 + $step6`
+if [ "$perl_done" -eq 6 ]; then
+   perl_done=1
+else
+   perl_done=90
+fi
+
+clean_module
+
+}
+
+
+### openssl
+build_rec_ossl() {
+dir="openssl"
+step1=0
+step2=0
+step3=0
+step4=0
+
+cd lib
+init_module "$dir"
+if [ $? -eq 0 ]; then
+    step1=1
+fi
+
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 2 - Configure $dir ..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+if [ "$PT_NAME" = "x86_64" ]; then
+    env PATH=${iprefix}/bin:${iprefix}/perl/bin:$PATH \
+     ./Configure linux-x86_64 threads shared --prefix=${iprefix} \
+     --openssldir=${iprefix}/openssl >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+elif [ "$PT_NAME" = "armv6l" ]; then
+    env PATH=${iprefix}/bin:${iprefix}/perl/bin:$PATH \
+     ./Configure linux-armv4 threads shared --prefix=${iprefix} \
+     --openssldir=${iprefix}/openssl >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+else
+    env PATH=${iprefix}/bin:${iprefix}/perl/bin:$PATH \
+     ./Configure linux-elf threads shared --prefix=${iprefix} \
+     --openssldir=${iprefix}/openssl >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+fi
+
+if [ $? -ne 0 ]; then
+    echo "Error: configure $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step2=1
+fi
+
+# STEP 3
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 3 - Make $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+echo "Fixing SHARED_LDFLAGS flag..." >> ${BUILD_PATH}/${BUILD_LOG}
+if [ "$PT_NAME" = "x86_64" ]; then
+    sed "s:^SHARED_LDFLAGS=.*:SHARED_LDFLAGS=-m64 -L${iprefix}/lib -Wl,-rpath -Wl,${iprefix}/lib:" Makefile > Makefile.tmp
+else
+    sed "s:^SHARED_LDFLAGS=.*:SHARED_LDFLAGS=-m32 -L${iprefix}/lib -Wl,-rpath -Wl,${iprefix}/lib:" Makefile > Makefile.tmp
+fi
+
+if [ $? -ne 0 ]; then
+    echo "Error: fixing SHARED_LDFLAGS Makefile failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+fi
+mv Makefile.tmp Makefile
+
+
+make >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if [ $? -ne 0 ]; then
+    echo "Error: make $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step3=1
+fi
+
+# STEP 4
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 4 - Make install $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+make install >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if [ $? -ne 0 ]; then
+    echo "Error: make install perl failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step4=1
+fi
+
+
+# final check; all 4 steps
+ossl_done=`expr $step1 + $step2 + $step3 + $step4`
+if [ "$ossl_done" -eq 4 ]; then
+   ossl_done=1
+else
+   ossl_done=90
+fi
+
+clean_module
+
+# back to root
+cd ..
+
+}
+
+
+### libidn
+build_rec_idn() {
+dir=idn
+step1=0
+step2=0
+step3=0
+step4=0
+
+cd lib
+init_module "$dir"
+if [ $? -eq 0 ]; then
+    step1=1
+fi
+
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 2 - Configure $dir ..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+if [ "$PT_NAME" = "x86_64" ]; then 
+    env CC=cc CFLAGS="-O3 -I${iprefix}/include" \
+        LDFLAGS="-L${iprefix}/lib -Wl,-rpath -Wl,${iprefix}/lib \
+        -L/lib64 -L/usr/lib64" ./configure \
+    --prefix=${iprefix} >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+else
+    env CC=cc CFLAGS="-O3 -I${iprefix}/include" \
+        LDFLAGS="-L${iprefix}/lib -Wl,-rpath -Wl,${iprefix}/lib\
+        -L/lib -L/usr/lib" ./configure \
+    --prefix=${iprefix} >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+fi
+
+if [ $? -ne 0 ]; then
+    echo "Error: configure $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step2=1
+fi  
+
+# STEP 3
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 3 - Make $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+make >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if [ $? -ne 0 ]; then
+    echo "Error: make $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step3=1
+fi 
+
+# STEP 4
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 4 - Make install $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+
+make install >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if [ $? -ne 0 ]; then
+    echo "Error: make install perl failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step4=1
+fi
+
+# final check; all 4 steps
+idn_done=`expr $step1 + $step2 + $step3 + $step4`
+if [ "$idn_done" -eq 4 ]; then
+   idn_done=1
+else
+   idn_done=90
+fi
+
+clean_module
+
+# back to root
+cd ..
+
+}
+
+
+### libxml2
+build_rec_libxml2() {
+dir=libxml2
+step1=0
+step2=0
+step3=0
+step4=0
+
+cd lib
+init_module "$dir"
+if [ $? -eq 0 ]; then
+    step1=1
+fi
+
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 2 - Configure $dir ..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+env PATH=${iprefix}/bin:${iprefix}/perl/bin:$PATH CC=cc \
+    CFLAGS="-O3 -I${iprefix}/include" \
+    LDFLAGS="-L${iprefix}/lib -Wl,-rpath -Wl,${iprefix}/lib \
+    -L/lib64 -L/usr/lib64" ./configure --with-python=no \
+    --prefix=${iprefix} >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+
+if [ $? -ne 0 ]; then
+    echo "Error: configure $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step2=1
+fi
+# STEP 3
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 3 - Make $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+make >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if [ $? -ne 0 ]; then
+    echo "Error: make $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step3=1
+fi
+
+# STEP 4
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 4 - Make install $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+
+make install >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if [ $? -ne 0 ]; then
+    echo "Error: make install gd failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step4=1
+fi
+
+
+# clean docbook, html
+if [ -d ${iprefix}/share/gtk\-doc ]; then
+    rm -rf ${iprefix}/share/gtk\-doc
+fi
+
+if [ -d ${iprefix}/share/doc ]; then
+    rm -rf ${iprefix}/share/doc
+fi
+
+
+# final check; all 4 steps
+rec_libxml2_done=`expr $step1 + $step2 + $step3 + $step4`
+if [ "$rec_libxml2_done" -eq 4 ]; then
+   rec_libxml2_done=1
+else
+   rec_libxml2_done=90
+fi
+
+clean_module
+
+# back to root
+cd ..
+
+}
+
+
+### perl XML::LibXML
+build_rec_xmllibxml() {
+
+dir=XML-LibXML
+step1=0
+step2=0
+step3=0
+step4=0
+step5=0
+
+cd lib
+init_module "$dir"
+if [ $? -eq 0 ]; then
+    step1=1
+fi
+
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 2 - Configure $dir ..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+env ${iprefix}/perl/bin/perl Makefile.PL XMLPREFIX=${iprefix} >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+
+if [ $? -ne 0 ]; then
+    echo "Error: configure $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step2=1
+fi
+
+
+# STEP 3
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 3 - Make $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+make >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if [ $? -ne 0 ]; then
+    echo "Error: make $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step3=1
+fi
+
+
+# STEP 4
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 4 - Make install $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+make install >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if [ $? -ne 0 ]; then
+    echo "Error: make install perl failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step4=1
+fi
+
+#
+# final check; all 4 steps
+rec_perllxml_done=`expr $step1 + $step2 + $step3 + $step4`
+if [ "$rec_perllxml_done" -eq 4 ]; then
+   rec_perllxml_done=1
+else
+   rec_perllxml_done=90
+fi
+
+clean_module
+
+# back to root
+cd ..
+
+}
+
+
+### curl
+build_rec_curl() {
+dir=curl
+step1=0
+step2=0
+step3=0
+step4=0
+
+cd lib
+init_module "$dir"
+if [ $? -eq 0 ]; then
+    step1=1
+fi
+
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 2 - Configure $dir ..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+ 
+#env PKG_CONFIG_PATH=${iprefix}/lib/pkgconfig:/usr/lib64/pkgconfig \
+env CFLAGS="-O3" \
+    CPPFLAGS="-I${iprefix}/include"   \
+    LDFLAGS="-L${iprefix}/lib -Wl,-rpath -Wl,${iprefix}/lib" \
+    ./configure --with-ssl=${iprefix} --with-libidn=${iprefix} \
+     --prefix=${iprefix} --enable-cookies --enable-nonblocking \
+     --disable-ldap --disable-ldaps >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if [ $? -ne 0 ]; then
+    echo "Error: configure $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step2=1
+fi  
+
+
+# STEP 3
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 3 - Make $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+make >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if [ $? -ne 0 ]; then
+    echo "Error: make $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step3=1
+fi 
+
+
+# STEP 4
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 4 - Make install $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+if [ -f ${iprefix}/bin/curl ]; then
+    echo "Warning: $dir binary found, cleaning it..." |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm ${iprefix}/bin/curl
+    rm ${iprefix}/bin/curl-config
+    if [ $? -ne 0 ]; then
+        echo "Error: cleaning idn binary failed !" |\
+         tee -a ${BUILD_PATH}/${BUILD_LOG}
+        rm /var/tmp/build.${module}
+        exit 3
+    fi
+
+fi
+
+if [ -d ${iprefix}/lib ]; then
+    echo "Warning: lib directory found..." |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    for f in $(find ${iprefix}/lib -name '*curl*')
+    do
+        echo "Cleaning file: $f..." |\
+         tee -a ${BUILD_PATH}/${BUILD_LOG}
+        rm $f
+        if [ $? -ne 0 ]; then
+            echo "Error: cleaning lib $f file failed !" |\
+             tee -a ${BUILD_PATH}/${BUILD_LOG}
+            rm /var/tmp/build.${module}
+            exit 3
+        fi
+    done
+fi
+
+
+make install >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if [ $? -ne 0 ]; then
+    echo "Error: make install perl failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step4=1
+fi
+
+# final check; all 4 steps
+curl_done=`expr $step1 + $step2 + $step3 + $step4`
+if [ "$curl_done" -eq 4 ]; then
+   curl_done=1
+else
+   curl_done=90
+fi
+
+clean_module
+
+# back to root
+cd ..
+
+}
+
+
+### perl WWW::Curl
+build_rec_wcurl() {
+
+#  perl Makefile.PL
+#  Modify the Makefile to include -L/opt/sdr/lib -R/opt/sdr/lib
+#
+#  LDDLFLAGS = -L/lib64 -L/usr/lib64 -L/opt/sdr/lib
+#  LDFLAGS = -L/lib64 -L/usr/lib64 -L/opt/sdr/lib
+#
+#  make
+#  make install
+
+dir=WWW-Curl
+step1=0
+step2=0
+step3=0
+step4=0
+
+cd lib
+init_module "$dir"
+if [ $? -eq 0 ]; then
+    step1=1
+fi
+
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 2 - Configure $dir ..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+
+env PATH=${iprefix}/bin:$PATH ${iprefix}/perl/bin/perl Makefile.PL >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+#sed -i.backup '/^LDFLAGS =/ {s/.*/& \-L\/lib64 \-L\/usr\/lib64 \-L\/opt\/sdr\/lib/}' Makefile
+# LDFLAGS =  -fstack-protector -L/usr/local/lib
+sed "s:^LDFLAGS =  -fstack-protector -L/usr/local/lib:LDFLAGS = -fstack-protector -L${iprefix}/lib -L/usr/local/lib -Wl,-rpath -Wl,${iprefix}/lib:" Makefile > Makefile.tmp
+
+mv Makefile.tmp Makefile
+
+#sed -i.backup '/^LDDLFLAGS =/ {s/.*/& \-L\/lib64 \-L\/usr\/lib64 \-L\/opt\/sdr\/lib/ -Wl,-rpath -Wl,${iprefix}/lib}' Makefile
+sed "s:^LDDLFLAGS = -shared -O3 -L/usr/local/lib -fstack-protector:LDDLFLAGS = -shared -O3 -fstack-protector -L${iprefix}/lib -Wl,-rpath -Wl,${iprefix}/lib:" Makefile > Makefile.tmp
+mv Makefile.tmp Makefile
+
+if [ $? -ne 0 ]; then
+    echo "Error: configure $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step2=1
+fi  
+
+
+# STEP 3
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 3 - Make $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+make >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if [ $? -ne 0 ]; then
+    echo "Error: make $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step3=1
+fi 
+
+
+# STEP 4
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 4 - Make install $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+make install >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if [ $? -ne 0 ]; then
+    echo "Error: make install perl failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step4=1
+fi
+
+## final check; all 4 steps
+wwwcurl_done=`expr $step1 + $step2 + $step3 + $step4`
+if [ "$wwwcurl_done" -eq 4 ]; then
+   wwwcurl_done=1
+else
+   wwwcurl_done=90
+fi
+
+clean_module
+
+# back to root
+cd ..
+
+}
+
+
+### nicrec
+build_rec_nrec() {
+
+dir=nicrec
+step1=0
+step2=0
+step3=0
+step4=0
+
+init_module "$dir"
+if [ $? -eq 0 ]; then
+    step1=1
+fi
+
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 2 - Configure $dir ..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+cp Makefile.${OS_NAME} Makefile
+if [ $? -ne 0 ]; then
+    echo "Error: configure $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step2=1
+fi
+
+
+# STEP 3
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 3 - Make $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+make >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if [ $? -ne 0 ]; then
+    echo "Error: make $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    [step3 = step3 + 1]
+fi
+
+
+# STEP 4
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 4 - Make install $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+ 
+if [ -f ${iprefix}/bin/nicrec ]; then
+    echo "Warning: nicrec binary found, cleaning it..." |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm -f ${iprefix}/bin/nicrec
+    if [ $? -ne 0 ]; then
+        echo "Error: cleaning nicrec binary failed !" |\
+         tee -a ${BUILD_PATH}/${BUILD_LOG}
+        rm /var/tmp/build.${module}
+        exit 3
+    fi
+fi
+
+
+if [ -f ${iprefix}/bin/enicstat ]; then
+    echo "Warning: enicstat found, cleaning it..." |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm -f ${iprefix}/bin/enicstat
+    if [ $? -ne 0 ]; then
+        echo "Error: cleaning enicstat failed !" |\
+         tee -a ${BUILD_PATH}/${BUILD_LOG}
+        rm /var/tmp/build.${module}
+        exit 3
+    fi
+fi
+
+if [ ! -d $iprefix}/man ]; then
+    mkdir -p ${iprefix}/man/man1
+fi
+
+make install >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if [ $? -ne 0 ]; then
+    echo "Error: make install perl failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step4=1
+fi
+
+mv -f ${iprefix}/bin/nicrec ${iprefix}/bin/nicrec_x64
+mv -f ${iprefix}/man/man1/nicrec.1 ${iprefix}/man/man1/nicrec_x64.1
+cp enicstat ${iprefix}/bin
+
+# final check; all 4 steps
+nrec_done=`expr $step1 + $step2 + $step3 + $step4`
+if [ "$nrec_done" -eq 4 ]; then
+   nrec_done=1
+else
+   nrec_done=90
+fi
+
+cd ../..
+}
+
+
+# webrec
+build_rec_webrec() {
+
+dir=WebRec
+step1=0
+step2=0
+step3=0
+
+
+cd $dir
+echo "\n############################################################"
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Submodule: $dir" | tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+# STEP 1
+
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 1 - Configure $dir ..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+env JAVA_HOME=/opt/java/current ant clean >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+
+if [ $? -ne 0 ]; then
+    echo "Error: configure $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step1=1
+fi  
+
+# STEP 2
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 2 - Make $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+env JAVA_HOME=/opt/java/current ant >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if [ $? -ne 0 ]; then
+    echo "Error: make $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step2=1
+fi 
+
+# STEP 3
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 3 - Make install $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+# etc copy
+if [ ! -d ${iprefix}/etc ]; then
+    mkdir ${iprefix}/etc
+fi
+
+cp etc/log4j.properties ${iprefix}/etc
+cp etc/webrec.conf ${iprefix}/etc
+
+# lib
+if [ ! -d ${iprefix}/lib ]; then
+    mkdir ${iprefix}/lib
+fi
+
+cp lib/*.jar ${iprefix}/lib
+cp dist/webrec.jar ${iprefix}/lib
+if [ $? -ne 0 ]; then
+    echo "Error: make install perl failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step3=1
+fi
+#
+
+# final check; all 4 steps
+wrec_done=`expr $step1 + $step2 + $step3`
+if [ "$wrec_done" -eq 3 ]; then
+   wrec_done=1
+else
+   wrec_done=90
+fi
+
+
+cd ..
+
+}
+
+
+### sysstat
+build_rec_sysstat() {
+dir=sysstat
+step1=0
+step2=0
+step3=0
+step4=0
+
+cd lib
+init_module "$dir"
+if [ $? -eq 0 ]; then
+    step1=1
+fi
+
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 2 - Configure $dir ..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+if [ "$PT_NAME" = "x86_64" ]; then
+    env CC=cc CFLAGS="-O3" LDFLAGS="-L/lib64 -L/usr/lib64 -Wl,-rpath -Wl,${iprefix}/lib" ./configure \
+     man_group=sdr sa_dir=/opt/sdr/log conf_dir=/opt/sdr/etc  \
+     --prefix=/opt/sdr --disable-documentation --disable-nls >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+else
+    env CC=cc CFLAGS="-O3" LDFLAGS="-L/lib -L/usr/lib -Wl,-rpath -Wl,${iprefix}/lib" ./configure \
+     man_group=sdr sa_dir=/opt/sdr/log conf_dir=/opt/sdr/etc  \
+     --prefix=/opt/sdr --disable-documentation --disable-nls >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+fi
+
+if [ $? -ne 0 ]; then
+    echo "Error: configure $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step2=1
+fi
+
+# STEP 3
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 3 - Make $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+make >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if [ $? -ne 0 ]; then
+    echo "Error: make $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step3=1
+fi 
+
+# STEP 4
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 4 - Make install $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+make install >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if [ $? -ne 0 ]; then
+    echo "Error: make install perl failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step4=1
+fi
+
+if [ -d ${iprefix}/share/doc ]; then
+    rm -rf ${iprefix}/share/doc
+fi
+
+
+# final check; all 4 steps
+sysstat_done=`expr $step1 + $step2 + $step3 + $step4`
+if [ "$sysstat_done" -eq 4 ]; then
+   sysstat_done=1
+else
+   sysstat_done=90
+fi
+
+clean_module
+
+# back to root
+cd ..
+}
+
+
+### configuration settings
+build_rec_scripts() {
+
+dir=bin
+step1=0
+step2=0
+
+cd ${dir}
+echo "############################################################"
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Submodule: $dir ${OS_NAME}" | tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+
+# STEP 1
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 1 - Installing setenv ..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+if [ -f setenv ]; then
+    cp setenv  ${iprefix}/bin
+    if [ $? -ne 0 ]; then
+        echo "Error: cannot install setenv script !" |\
+         tee -a ${BUILD_PATH}/${BUILD_LOG}
+        rm /var/tmp/build.${module}
+        exit 3
+    else
+        step1=1
+    fi
+else
+    echo "Error: setenv missing, check workspace !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+fi
+
+cd ${OS_NAME}
+# STEP 2
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 2 - Installing recorders ..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+
+nrecs=`ls *rec | wc -l`
+
+if [ "$nrecs" -ne 10 ]; then
+    echo "Error: wrong no. of recorders, check workspace !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    if [ "$PT_NAME" != "armv6l" ]; then
+        cp *rec ${iprefix}/bin
+        if [ $? -ne 0 ]; then
+            echo "Error: cannot install rec scripts !" |\
+             tee -a ${BUILD_PATH}/${BUILD_LOG}
+            rm /var/tmp/build.${module}
+            exit 3
+        else
+            step2=1
+        fi
+    else
+        cp sysrec cpurec diskrec nicrec hdwrec ${iprefix}/bin
+        if [ $? -ne 0 ]; then
+            echo "Error: cannot install rec scripts !" |\
+             tee -a ${BUILD_PATH}/${BUILD_LOG}
+            rm /var/tmp/build.${module}
+            exit 3
+        else
+            step2=1
+        fi
+
+    fi
+fi
+
+# set the other bins
+cp sender ${iprefix}/bin
+if [ $? -ne 0 ]; then
+    echo "Error: cannot install additional bins !" |\
+      tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+fi
+
+
+# set etc settings
+cd ../..
+cp etc/${OS_NAME}/* ${iprefix}/etc
+cp etc/*.start ${iprefix}/etc
+cp etc/sdr.json ${iprefix}/etc
+cp etc/sdr ${iprefix}/etc
+cp etc/sdr ${iprefix}/etc
+cp etc/sdr.transport ${iprefix}/etc
+if [ $? -ne 0 ]; then
+    echo "Error: cannot install etc settings !" |\
+      tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+fi
+
+# final check; all 2 steps
+recs_done=`expr $step1 + $step2`
+if [ "$recs_done" -eq 2 ]; then
+   recs_done=1
+else
+   recs_done=0
+fi
+
+# set man pages
+if [ ! -d ${iprefix}/man ]; then
+    mkdir ${iprefix}/man
+fi
+
+cp -pr man/${OS_NAME}/* ${iprefix}/man
+if [ $? -ne 0 ]; then
+    echo "Error: cannot install man pages !" |\
+      tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+fi
+
+# link man to share man
+ln -s ${iprefix}/share/man/man3 ${iprefix}/man
+ln -s ${iprefix}/share/man/man8 ${iprefix}/man
+ln -s ${iprefix}/share/man/man5 ${iprefix}/man
+for man in $(ls ${iprefix}/share/man/man1)
+do
+    ln -s ${iprefix}/share/man/man1/${man} ${iprefix}/man/man1
+done 
+
+
+# set release notes
+cp release.notes.${OS_NAME} ${iprefix}/release.notes
+if [ $? -ne 0 ]; then
+    echo "Error: cannot install release.notes !" |\
+      tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+fi
+
+# set README 
+cp README.${OS_NAME} ${iprefix}
+if [ $? -ne 0 ]; then
+    echo "Error: cannot install README.${OS_NMAE} !" |\
+      tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+fi
+
+# set log directory
+if [ ! -d ${iprefix}/log ]; then
+    # setup daily log
+    mkdir -p ${iprefix}/log/daily
+    if [ $? -ne 0 ]; then
+        echo "Error: cannot set log/daily director !" |\
+          tee -a ${BUILD_PATH}/${BUILD_LOG}
+        rm /var/tmp/build.${module}
+        exit 3
+    fi
+
+    # setup current log
+    mkdir -p ${iprefix}/log/current
+    if [ $? -ne 0 ]; then
+        echo "Error: cannot set log/current director !" |\
+          tee -a ${BUILD_PATH}/${BUILD_LOG}
+        rm /var/tmp/build.${module}
+        exit 3
+    fi
+else
+    # we have log dir, check daily, raw
+    if [ ! -d ${iprefix}/log/daily ]; then 
+        mkdir ${iprefix}/log/daily
+        if [ $? -ne 0 ]; then
+            echo "Error: cannot set log/daily director !" |\
+             tee -a ${BUILD_PATH}/${BUILD_LOG}
+            rm /var/tmp/build.${module}
+            exit 3
+        fi
+    fi
+
+    if [ ! -d ${iprefix}/log/current ]; then 
+        mkdir ${iprefix}/log/current
+        if [ $? -ne 0 ]; then
+            echo "Error: cannot set log/current director !" |\
+             tee -a ${BUILD_PATH}/${BUILD_LOG}
+            rm /var/tmp/build.${module}
+            exit 3
+        fi
+    fi
+fi
+
+
+}
+
+
+### testing
+test_rec_scripts() {
+
+dir=tests
+step1=0
+step2=0
+
+
+cd $dir
+echo "\n############################################################"
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Testing SDR" | tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+# STEP 1
+# Check all recorders if they are sane and execute properly
+
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 1 - Check recorders" |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+. ${iprefix}/bin/setenv
+for r in sys cpu disk nic hdw
+do
+    echo "" >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+    echo "Executing ${r}rec" | tee -a ${BUILD_PATH}/${BUILD_LOG}
+    ${SDR_BIN}/${r}rec >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+    #fi
+    if [ $? -ne 0 ]; then
+        echo "Error: cannot run ${r}rec !" |\
+         tee -a ${BUILD_PATH}/${BUILD_LOG}
+        rm /var/tmp/build.${module}
+        exit 3
+    else
+        step1=`expr $step1 + 1`
+    fi
+done
+
+step1=`expr $step1 / 6`
+
+# STEP 2
+# Check all shared libs if they are build correctly
+
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 2 - Check libs" |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+noErrors=0
+for lib in `ls ${iprefix}/lib/*.so`
+do
+    noErrors=`ldd $lib | grep 'not found' | wc -l`
+    if [ "$noErrors" -ne 0 ]; then
+        echo "LIB ERROR: $lib" |\
+         tee -a ${BUILD_PATH}/${BUILD_LOG}
+        noErrors=`expr $noErrors + 1`
+    fi
+done
+
+if [ "$noErrors" -eq 0 ]; then
+    step2=1
+fi
+
+
+# final check; all 4 steps
+tests_done=`expr $step1 + $step2` 
+if [ "$tests_done" -eq 2 ]; then
+   tests_done=1
+else
+   tests_done=90
+fi
+
+cd ..
+
+}

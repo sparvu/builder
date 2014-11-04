@@ -1,0 +1,1624 @@
+#!/usr/bin/ksh93
+#
+#  SDR Development tools, Linux recording engine 
+#
+#  Copyright (c) 2014 Stefan Parvu (www.systemdatarecorder.org).
+#
+#  This program is free software; you can redistribute it and/or
+#  modify it under the terms of the GNU General Public License
+#  as published by the Free Software Foundation; either version 2
+#  of the License, or (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this program; if not, write to the Free Software Foundation,
+#  Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+#
+#  (http://www.gnu.org/copyleft/gpl.html)
+
+# VERSION: 0.7.1
+
+# ############################################################### #
+# SDR Engine: Linux                                               # 
+# ############################################################### #
+
+
+# ############################################################### #
+# extract_archive                                                 #
+# ############################################################### #
+extract_archive() {
+
+    # $1 module name
+    # $2 dir build
+
+    modfile=$1
+    bfile=$2
+
+    # Debug
+    # print "module name: $modfile"
+    # print "archive dir: $bfile"
+
+    if [[ -d $bfile ]]; then
+        print "Info: Step 1 - Extracting $bfile ..." |\
+         tee -a ${BUILD_PATH}/${BUILD_LOG}
+        print "Warning: ${bfile} directory found, cleaning..." |\
+         tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+        rm -rf ${bfile}
+        if (( $? != 0 )); then
+            print "Error: cannot clean. Check ${modfile} , ${bfile}" |\
+             tee -a ${BUILD_PATH}/${BUILD_LOG}
+            exit 3
+        fi 
+        gzip -dc ${bfile}.tar.gz | tar xvf - >> ${BUILD_PATH}/${BUILD_LOG}
+    else
+        print "Info: Step 1 - Extracting $bfile ..." |\
+        tee -a ${BUILD_PATH}/${BUILD_LOG}
+        gzip -dc ${bfile}.tar.gz | tar xvf - >> ${BUILD_PATH}/${BUILD_LOG}
+    fi
+}
+
+
+# ############################################################### #
+# init_module                                                  #
+# ############################################################### #
+init_module() {
+
+    # $1 directory name
+    directory=$1
+
+    cd $directory
+    print "\n############################################################"
+    print "" >> ${BUILD_PATH}/${BUILD_LOG}
+    print "Submodule: $directory" | tee -a ${BUILD_PATH}/${BUILD_LOG}
+    ls *.tar.gz | read archive_file
+    # Debug
+    # print "Archive: $archive_file"
+    # print "Dir: ${archive_file%%.tar*}"
+
+    dirarchive=${archive_file%%.tar*}
+
+    extract_archive "$directory" "$dirarchive"
+
+    cd ${archive_file%%.tar*}
+}
+
+
+# ############################################################### #
+# clean_module                                                  #
+# ############################################################### #
+clean_module() {
+    cd ..
+    rm -rf $dirarchive >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+    if (( $? != 0 )); then
+        print "Error: cleaning up $dirarchive !" |\
+         tee -a ${BUILD_PATH}/${BUILD_LOG}
+        rm /var/tmp/build.${module}
+        exit 5
+    fi
+    cd ..
+}
+
+
+# ############################################################### #
+# Recording: Libssh2 Build Phase                                  #
+# ############################################################### #
+
+build_rec_ssh2() {
+dir=libssh2
+step1=0
+step2=0
+step3=0
+step4=0
+
+init_module "$dir"
+if (( $? == 0)); then
+    step1=1
+fi
+
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 2 - Configure $dir ..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+if [[ "$PT_NAME" == "x86_64" ]]; then
+    env CC=cc CFLAGS="-O3 -I${iprefix}/include" \
+     LDFLAGS="-L${iprefix}/lib -Wl,-rpath -Wl,${iprefix}/lib \
+      -L/lib64 -L/usr/lib64" \
+      ./configure --prefix=${iprefix} >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+else
+    env CC=cc CFLAGS="-O3 -I${iprefix}/include" \
+     LDFLAGS="-L${iprefix}/lib -Wl,-rpath -Wl,${iprefix}/lib \
+      -L/lib -L/usr/lib" \
+      ./configure --prefix=${iprefix} >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+fi
+
+if (( $? != 0 )); then
+    print "Error: configure $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step2=1
+fi  
+
+
+
+# STEP 3
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 3 - Make $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+make >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if (( $? != 0 )); then
+    print "Error: make $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step3=1
+fi 
+
+
+# STEP 4
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 4 - Make install $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+make install >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if (( $? != 0 )); then
+    print "Error: make install gd failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step4=1
+fi
+
+# final check; all 4 steps
+(( rec_ssh2_done = step1 + step2 + step3 + step4 ))
+if (( rec_ssh2_done == 4 )); then
+   rec_ssh2_done=1
+else
+   rec_ssh2_done=90
+fi
+
+clean_module
+
+}
+
+
+# ############################################################### #
+# Recording: Perl Modules: Net::SSH2                              #
+# ############################################################### #
+
+build_rec_perlssh2() {
+
+dir=Net-SSH2
+step1=0
+step2=0
+step3=0
+step4=0
+step5=0
+
+
+init_module "$dir"
+if (( $? == 0)); then
+    step1=1
+fi
+
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 2 - Configure $dir ..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+
+env LD_LIBRARY_PATH=${iprefix}/lib \
+${iprefix}/perl/bin/perl Makefile.PL lib=${iprefix}/lib inc=${iprefix}/include >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+
+sed "s:LDFLAGS =  -fstack-protector -L/usr/local/lib:LDFLAGS = -fstack-protector -L${iprefix}/lib -L/usr/local/lib -Wl,-rpath -Wl,${iprefix}/lib:" Makefile > Makefile.tmp
+mv Makefile.tmp Makefile
+
+sed "s:LDDLFLAGS = -shared -O3 -L/usr/local/lib -fstack-protector:LDDLFLAGS = -shared -O3 -L${iprefix}/lib -L/usr/local/lib -fstack-protector -Wl,-rpath -Wl,${iprefix}/lib:" Makefile > Makefile.tmp
+mv Makefile.tmp Makefile
+
+
+sed "s:CCFLAGS = -fno-strict-aliasing -pipe -fstack-protector -I/usr/local/include -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64:CCFLAGS = -fno-strict-aliasing -pipe -fstack-protector -I${iprefix}/include -I/usr/local/include -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64:" Makefile > Makefile.tmp
+mv Makefile.tmp Makefile
+
+if (( $? != 0 )); then
+    print "Error: configure $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step2=1
+fi
+
+
+# STEP 3
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 3 - Make $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+make >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if (( $? != 0 )); then
+    print "Error: make $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step3=1
+fi 
+
+
+
+# STEP 4
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 4 - Make test $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+make test >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if (( $? != 0 )); then
+    print "Error: make install perl failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step4=1
+fi
+
+
+# STEP 4
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 4 - Make install $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+make install >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if (( $? != 0 )); then
+    print "Error: make install perl failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step5=1
+fi
+
+#
+# final check; all 5 steps
+(( rec_perlssh2_done = step1 + step2 + step3 + step4 + step5 ))
+if (( rec_perlssh2_done == 5 )); then
+   rec_perlssh2_done=1
+else
+   rec_perlssh2_done=90
+fi
+
+clean_module
+}
+
+
+
+# ############################################################### #
+# Recording: Perl Build Phase                                     #
+# ############################################################### #
+build_rec_perl() {
+dir=perl
+step1=0
+step2=0
+step3=0
+step4=0
+step5=0
+step6=0
+
+init_module "$dir"
+if (( $? == 0)); then
+    step1=1
+fi
+
+# get CPAN version
+print $dirarchive | sed 's/perl-//' | read cpanver
+
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 2 - Configure perl ..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+if [[ "$PT_NAME" == "x86_64" ]]; then
+    sh Configure -Doptimize='-O3' -Duselargefiles -Duse64bitall \
+        -Dcf_by="support@systemdatarecorder.org"       \
+        -Dcf_email="support@systemdatarecorder.org"    \
+        -Dprefix=${iprefix}/perl -des >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+else
+    sh Configure -Doptimize='-O3' -Duselargefiles -Duse64bitint \
+        -Dcf_by="support@systemdatarecorder.org"       \
+        -Dcf_email="support@systemdatarecorder.org"    \
+        -Dprefix=${iprefix}/perl -des >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+fi
+
+if (( $? != 0 )); then
+    print "Error: configure perl failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step2=1
+fi
+
+# STEP 3
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 3 - Make perl..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+make >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if (( $? != 0 )); then
+    print "Error: make perl failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step3=1
+fi
+
+# STEP 4
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 4 - Make test perl..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+make test >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if (( $? != 0 )); then
+    print "Error: make test perl failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step4=1
+fi
+
+# STEP 5
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 5 - Make install perl..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+ 
+if [[ -d ${iprefix}/perl ]]; then
+    print "Warning: perl directory found, cleaning it..." |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm -rf ${iprefix}/perl
+    if (( $? != 0 )); then
+        print "Error: cleaning $dir directory" |\
+         tee -a ${BUILD_PATH}/${BUILD_LOG}
+        rm /var/tmp/build.${module}
+        exit 3
+    fi
+fi
+ 
+make install >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if (( $? != 0 )); then
+    print "Error: make install perl failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step5=1
+fi
+
+           
+# STEP 6
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 6 - CPAN modules" | tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+cp /opt/build/etc/Config.pm ${iprefix}/perl/lib/${cpanver}/CPAN
+#${iprefix}/perl/bin/perl -MCPAN -e 'install Bundle::LWP' >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+#if (( $? != 0 )); then
+#    print "Error: Bundle::LWP installation failed !" |\
+#     tee -a ${BUILD_PATH}/${BUILD_LOG}
+#    rm /var/tmp/build.${module}
+#    exit 3
+#else
+#    (( step6 = step6 + 1))
+#fi
+
+
+${iprefix}/perl/bin/perl -MCPAN -e 'install Sys::Statistics::Linux' >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if (( $? != 0 )); then
+    print "Error: Sys::Statistics::Linux installation failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    ((step6 = step6 + 1))
+fi
+
+# 24 module
+for lib in PerlIO::gzip Date::Calc \
+   Net::Telnet Authen::SASL Email::Valid Text::CSV_XS JSON::XS \
+   Text::CSV Regexp::Common Regexp::Log::DateRange \
+   UUID::Tiny XML::NamespaceSupport XML::SAX Net::SFTP::Foreign \
+   Data::Dumper Proc::Daemon Proc::PID::File File::Tail Devel::NYTProf
+do
+    ${iprefix}/perl/bin/perl -MCPAN -e 'install "'$lib'"' >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+    if (( $? != 0 )); then
+        print "Error: $lib installation failed !" |\
+         tee -a ${BUILD_PATH}/${BUILD_LOG}
+        rm /var/tmp/build.${module}
+        exit 3
+    else
+        ((step6 = step6 + 1))
+    fi
+done
+
+# there are 26 perl modules install calls 
+(( step6 = step6 / 20 ));
+
+# final check; all 6 steps
+(( perl_done = step1 + step2 + step3 + step4 + step5 + step6 ))
+if (( perl_done == 6 )); then
+   perl_done=1
+else
+   perl_done=90
+fi
+
+clean_module
+
+}
+
+
+
+# ############################################################### #
+# Recording: openssl Build Phase                                  #
+# ############################################################### #
+build_rec_ossl() {
+dir=openssl
+step1=0
+step2=0
+step3=0
+step4=0
+
+init_module "$dir"
+if (( $? == 0)); then
+    step1=1
+fi
+
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 2 - Configure $dir ..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+if [[ "$PT_NAME" == "x86_64" ]]; then
+    env PATH=${iprefix}/bin:${iprefix}/perl/bin:$PATH \
+     ./Configure linux-x86_64 threads shared --prefix=${iprefix} \
+     --openssldir=${iprefix}/openssl >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+else
+    env PATH=${iprefix}/bin:${iprefix}/perl/bin:$PATH \
+     ./Configure linux-elf threads shared --prefix=${iprefix} \
+     --openssldir=${iprefix}/openssl >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+fi
+
+if (( $? != 0 )); then
+    print "Error: configure $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step2=1
+fi
+
+# STEP 3
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 3 - Make $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+
+print "Fixing SHARED_LDFLAGS flag..." >> ${BUILD_PATH}/${BUILD_LOG}
+if [[ "$PT_NAME" == "x86_64" ]]; then
+    sed "s:^SHARED_LDFLAGS=.*:SHARED_LDFLAGS=-m64 -L${iprefix}/lib -Wl,-rpath -Wl,${iprefix}/lib:" Makefile > Makefile.tmp
+else
+    sed "s:^SHARED_LDFLAGS=.*:SHARED_LDFLAGS=-m32 -L${iprefix}/lib -Wl,-rpath -Wl,${iprefix}/lib:" Makefile > Makefile.tmp
+fi
+
+if (( $? != 0 )); then
+    print "Error: fixing SHARED_LDFLAGS Makefile failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+fi
+mv Makefile.tmp Makefile
+
+
+make >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if (( $? != 0 )); then
+    print "Error: make $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step3=1
+fi
+
+# STEP 4
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 4 - Make install $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+make install >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if (( $? != 0 )); then
+    print "Error: make install perl failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step4=1
+fi
+
+
+# final check; all 4 steps
+(( ossl_done = step1 + step2 + step3 + step4 ))
+if (( ossl_done == 4 )); then
+   ossl_done=1
+else
+   ossl_done=90
+fi
+
+clean_module
+}
+
+
+# ############################################################### #
+# Recording: Idn Build Phase                                      #
+# ############################################################### #
+build_rec_idn() {
+dir=idn
+step1=0
+step2=0
+step3=0
+step4=0
+
+init_module "$dir"
+if (( $? == 0)); then
+    step1=1
+fi
+
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 2 - Configure $dir ..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+if [[ "$PT_NAME" == "x86_64" ]]; then 
+    env CC=cc CFLAGS="-O3 -I${iprefix}/include" \
+        LDFLAGS="-L${iprefix}/lib -Wl,-rpath -Wl,${iprefix}/lib \
+        -L/lib64 -L/usr/lib64" ./configure \
+    --prefix=${iprefix} >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+else
+    env CC=cc CFLAGS="-O3 -I${iprefix}/include" \
+        LDFLAGS="-L${iprefix}/lib -Wl,-rpath -Wl,${iprefix}/lib\
+        -L/lib -L/usr/lib" ./configure \
+    --prefix=${iprefix} >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+fi
+
+if (( $? != 0 )); then
+    print "Error: configure $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step2=1
+fi  
+
+# STEP 3
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 3 - Make $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+make >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if (( $? != 0 )); then
+    print "Error: make $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step3=1
+fi 
+
+# STEP 4
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 4 - Make install $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+#if [[ -d ${iprefix}/share ]]; then
+#    print "Warning: share directory found, cleaning it..." |\
+#     tee -a ${BUILD_PATH}/${BUILD_LOG}
+#    rm -rf ${iprefix}/share
+#    if (( $? != 0 )); then
+#        print "Error: cleaning share directory failed !" |\
+#         tee -a ${BUILD_PATH}/${BUILD_LOG}
+#        rm /var/tmp/build.${module}
+#        exit 3
+#    fi
+#fi
+
+#if [[ -d ${iprefix}/include ]]; then
+#    print "Warning: include directory found, cleaning it..." |\
+#     tee -a ${BUILD_PATH}/${BUILD_LOG}
+#    rm -rf ${iprefix}/include
+#    if (( $? != 0 )); then
+#        print "Error: cleaning include directory failed !" |\
+#         tee -a ${BUILD_PATH}/${BUILD_LOG}
+#        rm /var/tmp/build.${module}
+#        exit 3
+#    fi
+#
+#fi
+
+
+#if [[ -f ${iprefix}/bin/idn ]]; then
+#    print "Warning: $dir binary found, cleaning it..." |\
+#     tee -a ${BUILD_PATH}/${BUILD_LOG}
+#    rm ${iprefix}/bin/idn
+#    if (( $? != 0 )); then
+#        print "Error: cleaning idn binary failed !" |\
+#         tee -a ${BUILD_PATH}/${BUILD_LOG}
+#        rm /var/tmp/build.${module}
+#        exit 3
+#    fi
+#
+#fi
+
+#if [[ -d ${iprefix}/lib ]]; then
+#    print "Warning: lib directory found..." |\
+#     tee -a ${BUILD_PATH}/${BUILD_LOG}
+#    for f in $(find ${iprefix}/lib -name '*idn*')
+#    do
+#        print "Cleaning file: $f..." |\
+#         tee -a ${BUILD_PATH}/${BUILD_LOG}
+#        rm $f
+#        if (( $? != 0 )); then
+#            print "Error: cleaning lib $f file failed !" |\
+#             tee -a ${BUILD_PATH}/${BUILD_LOG}
+#            rm /var/tmp/build.${module}
+#            exit 3
+#        fi
+#    done
+#fi
+
+
+make install >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if (( $? != 0 )); then
+    print "Error: make install perl failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step4=1
+fi
+
+# final check; all 4 steps
+(( idn_done = step1 + step2 + step3 + step4 ))
+if (( idn_done == 4 )); then
+   idn_done=1
+else
+   idn_done=90
+fi
+
+clean_module
+}
+
+
+# ############################################################### #
+# Recording: libxml2 Build Phase                                  #
+# ############################################################### #
+build_rec_libxml2() {
+dir=libxml2
+step1=0
+step2=0
+step3=0
+step4=0
+
+init_module "$dir"
+if (( $? == 0)); then
+    step1=1
+fi
+
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 2 - Configure $dir ..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+env PATH=${iprefix}/bin:${iprefix}/perl/bin:$PATH CC=cc \
+    CFLAGS="-O3 -I${iprefix}/include" \
+    LDFLAGS="-L${iprefix}/lib -Wl,-rpath -Wl,${iprefix}/lib \
+    -L/lib64 -L/usr/lib64" ./configure --with-python=no \
+    --prefix=${iprefix} >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+
+if (( $? != 0 )); then
+    print "Error: configure $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step2=1
+fi
+# STEP 3
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 3 - Make $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+make >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if (( $? != 0 )); then
+    print "Error: make $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step3=1
+fi
+
+# STEP 4
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 4 - Make install $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+
+make install >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if (( $? != 0 )); then
+    print "Error: make install gd failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step4=1
+fi
+
+# final check; all 4 steps
+(( rec_libxml2_done = step1 + step2 + step3 + step4 ))
+if (( rec_libxml2_done == 4 )); then
+   rec_libxml2_done=1
+else
+   rec_libxml2_done=90
+fi
+
+clean_module
+}
+
+
+# ############################################################### #
+# Recording: Perl Module:  XML::LibXML                            #
+# ############################################################### #
+build_rec_xmllibxml() {
+
+dir=XML-LibXML
+step1=0
+step2=0
+step3=0
+step4=0
+step5=0
+
+init_module "$dir"
+if (( $? == 0)); then
+    step1=1
+fi
+
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 2 - Configure $dir ..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+env ${iprefix}/perl/bin/perl Makefile.PL XMLPREFIX=${iprefix} >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+
+if (( $? != 0 )); then
+    print "Error: configure $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step2=1
+fi
+
+
+# STEP 3
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 3 - Make $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+make >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if (( $? != 0 )); then
+    print "Error: make $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step3=1
+fi
+
+
+# STEP 4
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 4 - Make install $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+make install >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if (( $? != 0 )); then
+    print "Error: make install perl failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step4=1
+fi
+
+#
+# final check; all 4 steps
+(( rec_perllxml_done = step1 + step2 + step3 + step4 ))
+if (( rec_perllxml_done == 4 )); then
+   rec_perllxml_done=1
+else
+   rec_perllxml_done=90
+fi
+
+clean_module
+}
+
+
+# ############################################################### #
+# Recording: Curl Build Phase                                     #
+# ############################################################### #
+build_rec_curl() {
+dir=curl
+step1=0
+step2=0
+step3=0
+step4=0
+
+init_module "$dir"
+if (( $? == 0)); then
+    step1=1
+fi
+
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 2 - Configure $dir ..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+ 
+#env PKG_CONFIG_PATH=${iprefix}/lib/pkgconfig:/usr/lib64/pkgconfig \
+env CFLAGS="-O3" \
+    CPPFLAGS="-I${iprefix}/include"   \
+    LDFLAGS="-L${iprefix}/lib -Wl,-rpath -Wl,${iprefix}/lib" \
+    ./configure --with-ssl=${iprefix} --with-libidn=${iprefix} --with-libssh2=${iprefix} \
+     --prefix=${iprefix} --enable-cookies --enable-nonblocking \
+     --disable-ldap --disable-ldaps >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if (( $? != 0 )); then
+    print "Error: configure $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step2=1
+fi  
+
+
+# STEP 3
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 3 - Make $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+make >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if (( $? != 0 )); then
+    print "Error: make $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step3=1
+fi 
+
+
+# STEP 4
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 4 - Make install $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+if [[ -f ${iprefix}/bin/curl ]]; then
+    print "Warning: $dir binary found, cleaning it..." |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm ${iprefix}/bin/curl
+    rm ${iprefix}/bin/curl-config
+    if (( $? != 0 )); then
+        print "Error: cleaning idn binary failed !" |\
+         tee -a ${BUILD_PATH}/${BUILD_LOG}
+        rm /var/tmp/build.${module}
+        exit 3
+    fi
+
+fi
+
+if [[ -d ${iprefix}/lib ]]; then
+    print "Warning: lib directory found..." |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    for f in $(find ${iprefix}/lib -name '*curl*')
+    do
+        print "Cleaning file: $f..." |\
+         tee -a ${BUILD_PATH}/${BUILD_LOG}
+        rm $f
+        if (( $? != 0 )); then
+            print "Error: cleaning lib $f file failed !" |\
+             tee -a ${BUILD_PATH}/${BUILD_LOG}
+            rm /var/tmp/build.${module}
+            exit 3
+        fi
+    done
+fi
+
+
+make install >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if (( $? != 0 )); then
+    print "Error: make install perl failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step4=1
+fi
+
+# final check; all 4 steps
+(( curl_done = step1 + step2 + step3 + step4 ))
+if (( curl_done == 4 )); then
+   curl_done=1
+else
+   curl_done=90
+fi
+
+clean_module
+
+}
+
+
+# ############################################################### #
+# Recording: WWW::Curl Phase                                      #
+# ############################################################### #
+build_rec_wcurl() {
+
+#=============
+#4. WWW::Curl 
+#=============
+#
+#  WWW-Curl-4.xx:
+#  perl Makefile.PL
+#  Modify the Makefile to include -L/opt/sdr/lib -R/opt/sdr/lib
+#
+#  LDDLFLAGS = -L/lib64 -L/usr/lib64 -L/opt/sdr/lib
+#  LDFLAGS = -L/lib64 -L/usr/lib64 -L/opt/sdr/lib
+#
+#  make
+#  make install
+
+dir=WWW-Curl
+step1=0
+step2=0
+step3=0
+step4=0
+
+init_module "$dir"
+if (( $? == 0)); then
+    step1=1
+fi
+
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 2 - Configure $dir ..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+
+env PATH=${iprefix}/bin:$PATH ${iprefix}/perl/bin/perl Makefile.PL >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+#sed -i.backup '/^LDFLAGS =/ {s/.*/& \-L\/lib64 \-L\/usr\/lib64 \-L\/opt\/sdr\/lib/}' Makefile
+# LDFLAGS =  -fstack-protector -L/usr/local/lib
+sed "s:^LDFLAGS =  -fstack-protector -L/usr/local/lib:LDFLAGS = -fstack-protector -L${iprefix}/lib -L/usr/local/lib -Wl,-rpath -Wl,${iprefix}/lib:" Makefile > Makefile.tmp
+
+mv Makefile.tmp Makefile
+
+#sed -i.backup '/^LDDLFLAGS =/ {s/.*/& \-L\/lib64 \-L\/usr\/lib64 \-L\/opt\/sdr\/lib/ -Wl,-rpath -Wl,${iprefix}/lib}' Makefile
+sed "s:^LDDLFLAGS = -shared -O3 -L/usr/local/lib -fstack-protector:LDDLFLAGS = -shared -O3 -fstack-protector -L${iprefix}/lib -Wl,-rpath -Wl,${iprefix}/lib:" Makefile > Makefile.tmp
+mv Makefile.tmp Makefile
+
+if (( $? != 0 )); then
+    print "Error: configure $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step2=1
+fi  
+
+
+# STEP 3
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 3 - Make $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+make >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if (( $? != 0 )); then
+    print "Error: make $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step3=1
+fi 
+
+
+# STEP 4
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 4 - Make install $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+#if [[ -f /opt/sdr/bin/curl ]]; then
+#    print "Warning: $dir binary found, cleaning it..." |\
+#     tee -a ${BUILD_PATH}/${BUILD_LOG}
+#    rm /opt/sdr/bin/curl
+#    rm /opt/sdr/bin/curl-config
+#    if (( $? != 0 )); then
+#        print "Error: cleaning idn binary failed !" |\
+#         tee -a ${BUILD_PATH}/${BUILD_LOG}
+#        exit 3
+#    fi
+#
+#fi
+#
+#if [[ -d /opt/sdr/lib ]]; then
+#    print "Warning: lib directory found..." |\
+#     tee -a ${BUILD_PATH}/${BUILD_LOG}
+#    for f in $(find /opt/sdr/lib -name '*curl*')
+#    do
+#        print "Cleaning file: $f..." |\
+#         tee -a ${BUILD_PATH}/${BUILD_LOG}
+#        rm $f
+#        if (( $? != 0 )); then
+#            print "Error: cleaning lib $f file failed !" |\
+#             tee -a ${BUILD_PATH}/${BUILD_LOG}
+#            exit 3
+#        fi
+#    done
+#fi
+#
+#
+make install >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if (( $? != 0 )); then
+    print "Error: make install perl failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step4=1
+fi
+
+#
+# final check; all 4 steps
+(( wwwcurl_done = step1 + step2 + step3 + step4 ))
+if (( wwwcurl_done == 4 )); then
+   wwwcurl_done=1
+else
+   wwwcurl_done=90
+fi
+
+clean_module
+}
+
+
+# ############################################################### #
+# Recording: Nicrec Native Phase                                  #
+# ############################################################### #
+build_rec_nrec() {
+
+dir=nicrec
+step1=0
+step2=0
+step3=0
+step4=0
+
+init_module "$dir"
+if (( $? == 0)); then
+    step1=1
+fi
+
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 2 - Configure $dir ..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+cp Makefile.${OS_NAME} Makefile
+if (( $? != 0 )); then
+    print "Error: configure $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step2=1
+fi
+
+
+# STEP 3
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 3 - Make $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+make >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if (( $? != 0 )); then
+    print "Error: make $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    ((step3 = step3 + 1))
+fi
+
+
+# STEP 4
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 4 - Make install $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+ 
+if [[ -f ${iprefix}/bin/nicrec ]]; then
+    print "Warning: nicrec binary found, cleaning it..." |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm -f ${iprefix}/bin/nicrec
+    if (( $? != 0 )); then
+        print "Error: cleaning nicrec binary failed !" |\
+         tee -a ${BUILD_PATH}/${BUILD_LOG}
+        rm /var/tmp/build.${module}
+        exit 3
+    fi
+fi
+
+
+if [[ -f ${iprefix}/bin/enicstat ]]; then
+    print "Warning: enicstat found, cleaning it..." |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm -f ${iprefix}/bin/enicstat
+    if (( $? != 0 )); then
+        print "Error: cleaning enicstat failed !" |\
+         tee -a ${BUILD_PATH}/${BUILD_LOG}
+        rm /var/tmp/build.${module}
+        exit 3
+    fi
+fi
+
+if [[ ! -d $iprefix}/man ]]; then
+    mkdir -p ${iprefix}/man/man1
+fi
+
+make install >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if (( $? != 0 )); then
+    print "Error: make install perl failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step4=1
+fi
+
+mv -f ${iprefix}/bin/nicrec ${iprefix}/bin/nicrec_x64
+mv -f ${iprefix}/man/man1/nicrec.1 ${iprefix}/man/man1/nicrec_x64.1
+cp enicstat ${iprefix}/bin
+
+# final check; all 4 steps
+(( nrec_done = step1 + step2 + step3 + step4 ))
+if (( nrec_done == 4 )); then
+   nrec_done=1
+else
+   nrec_done=90
+fi
+
+cd ../..
+}
+
+
+# ############################################################### #
+# Recording: WebRec Phase                                         #
+# ############################################################### #
+build_rec_webrec() {
+
+dir=WebRec
+step1=0
+step2=0
+step3=0
+
+
+cd $dir
+print "\n############################################################"
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Submodule: $dir" | tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+# STEP 1
+
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 1 - Configure $dir ..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+env JAVA_HOME=/opt/java/current ant clean >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+
+if (( $? != 0 )); then
+    print "Error: configure $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step1=1
+fi  
+
+# STEP 2
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 2 - Make $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+env JAVA_HOME=/opt/java/current ant >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if (( $? != 0 )); then
+    print "Error: make $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step2=1
+fi 
+
+# STEP 3
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 3 - Make install $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+# etc copy
+if [[ ! -d ${iprefix}/etc ]]; then
+    mkdir ${iprefix}/etc
+fi
+
+cp etc/log4j.properties ${iprefix}/etc
+cp etc/webrec.conf ${iprefix}/etc
+
+# lib
+if [[ ! -d ${iprefix}/lib ]]; then
+    mkdir ${iprefix}/lib
+fi
+
+cp lib/*.jar ${iprefix}/lib
+cp dist/webrec.jar ${iprefix}/lib
+if (( $? != 0 )); then
+    print "Error: make install perl failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step3=1
+fi
+#
+
+# final check; all 4 steps
+(( wrec_done = step1 + step2 + step3 ))
+if (( wrec_done == 3 )); then
+   wrec_done=1
+else
+   wrec_done=90
+fi
+
+
+cd ..
+
+}
+
+
+# ############################################################### #
+# Recording: Sysstat Build Phase                                  #
+# ############################################################### #
+build_rec_sysstat() {
+dir=sysstat
+step1=0
+step2=0
+step3=0
+step4=0
+
+init_module "$dir"
+if (( $? == 0)); then
+    step1=1
+fi
+
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 2 - Configure $dir ..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+if [[ "$PT_NAME" == "x86_64" ]]; then
+    env CC=cc CFLAGS="-O3" LDFLAGS="-L/lib64 -L/usr/lib64 -Wl,-rpath -Wl,${iprefix}/lib" ./configure \
+     man_group=sdr sa_dir=/opt/sdr/log conf_dir=/opt/sdr/etc  \
+     --prefix=/opt/sdr >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+else
+    env CC=cc CFLAGS="-O3" LDFLAGS="-L/lib -L/usr/lib -Wl,-rpath -Wl,${iprefix}/lib" ./configure \
+     man_group=sdr sa_dir=/opt/sdr/log conf_dir=/opt/sdr/etc  \
+     --prefix=/opt/sdr >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+fi
+
+if (( $? != 0 )); then
+    print "Error: configure $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step2=1
+fi  
+
+# STEP 3
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 3 - Make $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+make >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if (( $? != 0 )); then
+    print "Error: make $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step3=1
+fi 
+
+# STEP 4
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 4 - Make install $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+make install >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if (( $? != 0 )); then
+    print "Error: make install perl failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step4=1
+fi
+
+# final check; all 4 steps
+(( sysstat_done = step1 + step2 + step3 + step4 ))
+if (( sysstat_done == 4 )); then
+   sysstat_done=1
+else
+   sysstat_done=90
+fi
+
+clean_module
+}
+
+
+# ############################################################### #
+# Recording: Scripts                                              #
+# ############################################################### #
+build_rec_scripts() {
+
+dir=scripts
+step1=0
+step2=0
+
+
+cd $dir/${OS_NAME}
+print "\n############################################################"
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Submodule: $dir ${OS_NAME}" | tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+# STEP 1
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 1 - Installing setenv ..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+if [[ -f setenv ]]; then
+    cp setenv  ${iprefix}/bin
+    if (( $? != 0 )); then
+        print "Error: cannot install setenv script !" |\
+         tee -a ${BUILD_PATH}/${BUILD_LOG}
+        rm /var/tmp/build.${module}
+        exit 3
+    else
+        step1=1
+    fi
+else
+    print "Error: setenv missing, check workspace !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+fi
+
+
+# STEP 2
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 2 - Installing recorders ..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+ls *rec | wc -l | read nrecs
+if (( nrecs != 8 )); then
+    print "Error: wrong no. of recorders, check workspace !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    cp *rec ${iprefix}/bin
+    if (( $? != 0 )); then
+        print "Error: cannot install rec scripts !" |\
+
+         tee -a ${BUILD_PATH}/${BUILD_LOG}
+        rm /var/tmp/build.${module}
+        exit 3
+    else
+        step2=1
+    fi
+fi
+
+
+# set the other bins
+cp sender raw2day ${iprefix}/bin
+if (( $? != 0 )); then
+    print "Error: cannot install additional bins !" |\
+      tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+fi
+
+
+# set etc settings
+cp -pr etc ${iprefix}
+if (( $? != 0 )); then
+    print "Error: cannot install etc settings !" |\
+      tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+fi
+
+# final check; all 2 steps
+(( recs_done = step1 + step2 ))
+if (( recs_done == 2 )); then
+   recs_done=1
+else
+   recs_done=0
+fi
+
+cd ../..
+
+# set man pages
+if [[ ! -d ${iprefix}/man ]]; then
+    mkdir ${iprefix}/man
+fi
+
+cd man/${OS_NAME}
+cp -pr * ${iprefix}/man
+if (( $? != 0 )); then
+    print "Error: cannot install man pages !" |\
+      tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+fi
+
+# link man to share man
+ln -s ${iprefix}/share/man/man3 ${iprefix}/man
+ln -s ${iprefix}/share/man/man8 ${iprefix}/man
+ln -s ${iprefix}/share/man/man5 ${iprefix}/man
+for man in $(ls ${iprefix}/share/man/man1)
+do
+    ln -s ${iprefix}/share/man/man1/${man} ${iprefix}/man/man1
+done 
+
+
+# set release notes
+cd ../..
+cp release.notes.${OS_NAME} ${iprefix}/release.notes
+if (( $? != 0 )); then
+    print "Error: cannot install release.notes !" |\
+      tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+fi
+
+# set README 
+cp README.${OS_NAME} ${iprefix}
+if (( $? != 0 )); then
+    print "Error: cannot install README.${OS_NMAE} !" |\
+      tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+fi
+
+# set log directory
+if [[ ! -d ${iprefix}/log ]]; then
+    # setup daily log
+    mkdir -p ${iprefix}/log/daily
+    if (( $? != 0 )); then
+        print "Error: cannot set log/daily director !" |\
+          tee -a ${BUILD_PATH}/${BUILD_LOG}
+        rm /var/tmp/build.${module}
+        exit 3
+    fi
+
+    # setup current log
+    mkdir -p ${iprefix}/log/current
+    if (( $? != 0 )); then
+        print "Error: cannot set log/current director !" |\
+          tee -a ${BUILD_PATH}/${BUILD_LOG}
+        rm /var/tmp/build.${module}
+        exit 3
+    fi
+else
+    # we have log dir, check daily, raw
+    if [[ ! -d ${iprefix}/log/daily ]]; then 
+        mkdir ${iprefix}/log/daily
+        if (( $? != 0 )); then
+            print "Error: cannot set log/daily director !" |\
+             tee -a ${BUILD_PATH}/${BUILD_LOG}
+            rm /var/tmp/build.${module}
+            exit 3
+        fi
+    fi
+
+    if [[ ! -d ${iprefix}/log/current ]]; then 
+        mkdir ${iprefix}/log/current
+        if (( $? != 0 )); then
+            print "Error: cannot set log/current director !" |\
+             tee -a ${BUILD_PATH}/${BUILD_LOG}
+            rm /var/tmp/build.${module}
+            exit 3
+        fi
+    fi
+fi
+
+
+}
+
+
+# ############################################################### #
+# Recording: Test Scripts                                         #
+# ############################################################### #
+test_rec_scripts() {
+
+dir=tests
+step1=0
+step2=0
+
+
+cd $dir
+print "\n############################################################"
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Testing SDR" | tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+# STEP 1
+# Check all recorders if they are sane and execute properly
+
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 1 - Check recorders" |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+. ${iprefix}/bin/setenv
+for r in sys cpu net hdw nic proc
+do
+    print "" >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+    print "Executing ${r}rec" | tee -a ${BUILD_PATH}/${BUILD_LOG}
+    #if [[ $r == "jvm" ]]; then
+    #    ${SDR_BIN}/${r}rec >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+    #else
+    ${SDR_BIN}/${r}rec >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+    #fi
+    if (( $? != 0 )); then
+        print "Error: cannot run ${r}rec !" |\
+         tee -a ${BUILD_PATH}/${BUILD_LOG}
+        rm /var/tmp/build.${module}
+        exit 3
+    else
+        ((step1=step1+1))
+    fi
+done
+
+(( step1 = step1 / 6 ))
+
+# STEP 2
+# Check all shared libs if they are build correctly
+
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 2 - Check libs" |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+noErrors=0
+for lib in $(ls ${iprefix}/lib/*.so)
+do
+    ldd $lib | grep 'not found' | wc -l | read noErrors
+    if (( noErrors != 0 )); then
+        print "LIB ERROR: $lib" |\
+         tee -a ${BUILD_PATH}/${BUILD_LOG}
+        (( noErrors = noErrors + 1))
+    fi
+done
+
+if (( noErrors == 0 )); then
+    step2=1;
+fi
+
+
+# final check; all 4 steps
+(( tests_done = step1 + step2 ))
+if (( tests_done == 2 )); then
+   tests_done=1
+else
+   tests_done=90
+fi
+
+cd ..
+
+}

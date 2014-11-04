@@ -1,0 +1,2498 @@
+#!/usr/bin/ksh93
+#
+#  SDR Development tools, Solaris NGINX engine 
+#
+#  Copyright (c) 2014 Stefan Parvu (www.systemdatarecorder.org).
+#
+#  This program is free software; you can redistribute it and/or
+#  modify it under the terms of the GNU General Public License
+#  as published by the Free Software Foundation; either version 2
+#  of the License, or (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this program; if not, write to the Free Software Foundation,
+#  Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+#
+#  (http://www.gnu.org/copyleft/gpl.html)
+
+# ############################################################### #
+# NGINX Engine: Solaris                                           #
+#  Includes: PHP, MariaDB                                         #
+#    build_nginx_perl                                             #
+#    build_nginx_ossl                                             #
+#    build_nginx_gettext                                          #
+#    build_nginx_iconv                                            #
+#    build_nginx_gettext                                          #
+#    build_nginx_readline                                         #
+#    build_nginx_gd                                               #
+#    build_nginx_perlmods                                         #
+#    build_nginx_pcre                                             #
+#    build_nginx_fcgi                                             #
+#    build_nginx_ws                                               #
+#    build_nginx_fcgiwrap                                         #
+#    build_nginx_dbdpg                                            #
+#    build_nginx_mariadb                                          #
+#    build_nginx_scripts                                          #
+#                                                                 #
+#  - /opt/prefix...                                               #
+#    - nginx/                                                     #
+#    - mariadb/                                                   #
+#    - php/                                                       #
+#    - perl/                                                      #
+#    - mcd/                                                       #
+#    - logs/                                                      #
+#    - docroot/                                                   #
+#    - mariadb_data/                                              #
+#    - src/                                                       #
+# ############################################################### #
+
+
+# ############################################################### #
+# extract_archive                                                 #
+# ############################################################### #
+extract_archive() {
+# $1 module name
+# $2 dir build
+
+modfile=$1
+bfile=$2
+
+# Debug
+# print "module name: $modfile"
+# print "archive dir: $bfile"
+
+if [[ -d $bfile ]]; then
+    print "Info: Step 1 - Extracting $bfile ..." |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    print "Warning: ${bfile} directory found, cleaning..." |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+    rm -rf ${bfile}
+    if (( $? != 0 )); then
+        print "Error: cannot clean. Check ${modfile} , ${bfile}" |\
+         tee -a ${BUILD_PATH}/${BUILD_LOG}
+        exit 3
+    fi 
+    gzip -dc ${bfile}.tar.gz | tar xvf - >> ${BUILD_PATH}/${BUILD_LOG}
+else
+    print "Info: Step 1 - Extracting $bfile ..." |\
+    tee -a ${BUILD_PATH}/${BUILD_LOG}
+    gzip -dc ${bfile}.tar.gz | tar xvf - >> ${BUILD_PATH}/${BUILD_LOG}
+fi
+
+}
+
+
+# ############################################################### #
+# NGINX: Perl Build Phase                                         #
+# ############################################################### #
+build_nginx_perl() {
+dir=perl
+step1=0
+step2=0
+step3=0
+step4=0
+step5=0
+step6=0
+
+cd $dir
+print "\n##################################################"
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Submodule: $dir" | tee -a ${BUILD_PATH}/${BUILD_LOG}
+ls *.tar.gz | read archive_file
+# Debug
+# print "Archive: $archive_file"
+# print "Dir: ${archive_file%%.tar*}"
+
+dirarchive=${archive_file%%.tar*}
+
+# get CPAN version
+print $dirarchive | sed 's/perl-//' | read cpanver
+
+
+# STEP 1
+extract_archive "$dir" "$dirarchive"
+if (( $? == 0)); then
+    step1=1
+fi
+
+# STEP 2
+cd ${archive_file%%.tar*}
+
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 2 - Configure perl ..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+sh Configure -Dcc='cc' -Doptimize='-xO3' -Duselargefiles -Duse64bitall \
+             -Dcf_by="support@systemdatarecorder.org"       \
+             -Dcf_email="support@systemdatarecorder.org"    \
+             -Dprefix=${iprefix}/perl -des >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if (( $? != 0 )); then
+    print "Error: configure perl failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    # fix config.sh
+    # Workaround: Bug 32 - SDR Perl - Memory leak in Perl 5.10+
+    # on Solaris 10 with %ENV remove flag: -DPERL_USE_SAFE_PUTENV
+
+
+
+    # ################################################################## #
+    # fix ldflags
+    # ################################################################## #
+
+    print "Fixing ldflags..." >> ${BUILD_PATH}/${BUILD_LOG}
+    if [[ $PT_NAME == "i86pc" ]]; then
+        sed 's/^ldflags\=.*/ldflags\='\''\-m64 \-L\/lib\/64'\''/' config.sh > config.sh.tmp
+    else
+        sed 's/^ldflags\=.*/ldflags\='\''\-m64 \-L\/lib\/64 \-L\/usr\/lib\/sparcv9'\''/' config.sh > config.sh.tmp
+    fi
+    if (( $? != 0 )); then
+        print "Error: fixing ldflags perl failed !" |\
+         tee -a ${BUILD_PATH}/${BUILD_LOG}
+        rm /var/tmp/build.${module}
+        exit 3
+    fi
+
+    mv config.sh.tmp config.sh
+
+
+    # ################################################################## #
+    # fix lddflags
+    # ################################################################## #
+
+    print "Fixing ldflags..." >> ${BUILD_PATH}/${BUILD_LOG}
+    if [[ $PT_NAME == "i86pc" ]]; then
+        sed 's/^lddlflags\=.*/lddlflags\='\''\-G \-m64 \-L\/lib\/64'\''/' config.sh >> config.sh.tmp
+    else
+        sed 's/^lddlflags\=.*/lddlflags\='\''\-G \-m64 \-L\/lib\/64  \-L\/usr\/lib\/sparcv9'\''/' config.sh >> config.sh.tmp
+    fi
+    if (( $? != 0 )); then
+        print "Error: fixing ldflags perl failed !" |\
+         tee -a ${BUILD_PATH}/${BUILD_LOG}
+        rm /var/tmp/build.${module}
+        exit 3
+    fi
+
+    mv config.sh.tmp config.sh
+
+
+    # ################################################################## #
+    # fix libspath
+    # ################################################################## #
+    # libspath=' /opt/sunstudio12.1/prod/lib/amd64 /lib/64 /usr/lib /usr/ccs/lib'
+
+    print "Fixing libspath..." >> ${BUILD_PATH}/${BUILD_LOG}
+
+    if [[ $PT_NAME == "i86pc" ]]; then
+        sed 's/^libspath\=.*/libspath\='\''\/lib\/64 \/usr\/lib\/64 \/usr\/ccs\/lib\/amd64'\''/' config.sh > config.sh.tmp
+    else
+        sed 's/^libspath\=.*/libspath\='\''\/lib\/64 \/usr\/lib\/sparcv9 \/usr\/ccs\/lib\/sparcv9'\''/' config.sh > config.sh.tmp
+    fi
+    if (( $? != 0 )); then
+        print "Error: fixing libpath perl failed !" |\
+         tee -a ${BUILD_PATH}/${BUILD_LOG}
+        rm /var/tmp/build.${module}
+        exit 3
+    fi
+    mv config.sh.tmp config.sh
+
+
+
+    # ################################################################## #
+    # fix loclibpth
+    # ################################################################## #
+
+    print "Fixing loclibpth..." >> ${BUILD_PATH}/${BUILD_LOG} 
+
+    if [[ $PT_NAME == "i86pc" ]]; then
+        sed 's/\/opt\/sunstudio12.1\/prod\/lib\/amd64 \/amd64 \/lib\/64 \/64 \/usr\/local\/lib \/opt\/local\/lib \/usr\/gnu\/lib \/opt\/gnu\/lib \/usr\/GNU\/lib \/opt\/GNU\/lib/\/amd64 \/lib\/64 \/64 \/usr\/lib \/usr\/ccs\/lib \/usr\/sfw\/lib\/amd64/' config.sh > config.sh.tmp
+    else
+        sed 's/^loclibpth=.*/loclibpth\='\''\/lib\/64 \/usr\/lib\/sparcv9 \/usr\/ccs\/lib\/sparcv9'\''/' config.sh > config.sh.tmp
+    fi
+    if (( $? != 0 )); then
+        print "Error: fixing loclibpth perl failed !" |\
+         tee -a ${BUILD_PATH}/${BUILD_LOG}
+        rm /var/tmp/build.${module}
+        exit 3
+    fi
+    mv config.sh.tmp config.sh
+   
+
+
+    # ################################################################## #
+    # fix ccflags
+    # ################################################################## #
+    print "Fixing ccflags..." >> ${BUILD_PATH}/${BUILD_LOG}
+    if [[ $PT_NAME == "i86pc" ]]; then
+        sed 's/\-xarch=generic64 \-D_LARGEFILE_SOURCE \-D_FILE_OFFSET_BITS=64 \-DPERL_USE_SAFE_PUTENV/\-m64 \-D_LARGEFILE_SOURCE \-D_FILE_OFFSET_BITS=64/' config.sh > config.sh.tmp
+    else
+        sed 's/^ccflags\=.*/ccflags\='\''\-m64 \-D_LARGEFILE_SOURCE \-D_FILE_OFFSET_BITS=64'\''/' config.sh > config.sh.tmp
+    fi
+    if (( $? != 0 )); then
+        print "Error: fixing ccflags perl failed !" |\
+         tee -a ${BUILD_PATH}/${BUILD_LOG}
+        rm /var/tmp/build.${module}
+        exit 3
+    fi
+    mv config.sh.tmp config.sh
+
+
+
+    # ################################################################## #
+    # fix cppflags
+    # ################################################################## #
+
+    print "Fixing cppflags..." >> ${BUILD_PATH}/${BUILD_LOG}
+    sed 's/\-xarch=generic64/\-m64/' config.sh > config.sh.tmp
+    if (( $? != 0 )); then
+        print "Error: fixing cppflags perl failed !" |\
+         tee -a ${BUILD_PATH}/${BUILD_LOG}
+        rm /var/tmp/build.${module}
+        exit 3
+    fi
+    mv config.sh.tmp config.sh
+ 
+    sh Configure -S >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+    make depend >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+    if (( $? != 0 )); then
+        print "Error: make depend perl failed !" |\
+         tee -a ${BUILD_PATH}/${BUILD_LOG}
+        rm /var/tmp/build.${module}
+        exit 3
+    else
+        step2=1
+    fi
+fi
+
+# STEP 3
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 3 - Make perl..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+make >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if (( $? != 0 )); then
+    print "Error: make perl failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step3=1
+fi
+
+# STEP 4
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 4 - Make test perl..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+make test >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if (( $? != 0 )); then
+    print "Error: make test perl failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step4=1
+fi
+
+# STEP 5
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 5 - Make install perl..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+ 
+if [[ -d ${iprefix}/perl ]]; then
+    print "Warning: perl directory found, cleaning it..." |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm -rf ${iprefix}/perl
+    if (( $? != 0 )); then
+        print "Error: cleaning $dir directory" |\
+         tee -a ${BUILD_PATH}/${BUILD_LOG}
+        rm /var/tmp/build.${module}
+        exit 3
+    fi
+fi
+ 
+make install >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if (( $? != 0 )); then
+    print "Error: make install perl failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step5=1
+fi
+
+
+# STEP 6
+
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 6 - CPAN modules" | tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+cp /opt/build/cpan/Config.pm ${iprefix}/perl/lib/${cpanver}/CPAN
+${iprefix}/perl/bin/perl -MCPAN -e 'install Bundle::LWP' >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if (( $? != 0 )); then
+    print "Error: Bundle::LWP installation failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    (( step6 = step6 + 1))
+fi
+
+for lib in CGI FCGI CGI::Simple CGI::Minimal FCGI::ProcManager \
+    IO::All HTTP::Async Email::Valid MIME::Lite Date::Format Date::Parse \
+    Date::Calc HTML::Parser HTML::Entities Digest::SHA DateTime \
+    DateTime::Timezone DBI Template Email::Send Email::MIME \
+    Email::MIME::Encodings Email::MIME::Modifier \
+    URI Email::MIME::Attachment::Stripper Email::Reply HTML::Scrubber \
+    MIME::Parser Authen::SASL Captcha::reCAPTCHA Archive::Tar Geo::ReadGRIB
+do
+    if [[ $lib == "MIME::Lite" ]]; then
+        env PERL_MM_USE_DEFAULT=1 \
+          ${iprefix}/perl/bin/perl -MCPAN -e 'install "'$lib'"' >> \
+          ${BUILD_PATH}/${BUILD_LOG} 2>&1
+        if (( $? != 0 )); then
+            tee -a ${BUILD_PATH}/${BUILD_LOG}
+            exit 3
+        else
+            ((step6 = step6 + 1))
+            continue
+        fi
+    fi
+
+    ${iprefix}/perl/bin/perl -MCPAN -e 'install "'$lib'"' >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+    if (( $? != 0 )); then
+        print "Error: $lib installation failed !" |\
+         tee -a ${BUILD_PATH}/${BUILD_LOG}
+        rm /var/tmp/build.${module}
+        exit 3
+    else
+        ((step6 = step6 + 1))
+    fi
+done
+
+
+# there are 31 perl modules install calls 
+(( step6 = step6 / 31 ));
+
+
+# final check; all 6 steps
+(( ngx_perl_done = step1 + step2 + step3 + step4 + step5 + step6 ))
+if (( ngx_perl_done == 6 )); then
+  ngx_perl_done=1
+else
+  ngx_perl_done=0
+fi
+
+print "##################################################"
+
+cd ../..
+
+}
+
+# ############################################################### #
+# NGINX ALL: readline Build Phase                                 #
+# ############################################################### #
+
+build_nginx_readline() {
+dir=readline
+step1=0
+step2=0
+step3=0
+step4=0
+
+
+cd $dir
+print "\n##################################################"
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Submodule: $dir" | tee -a ${BUILD_PATH}/${BUILD_LOG}
+ls *.tar.gz | read archive_file
+# Debug
+# print "Archive: $archive_file"
+# print "Dir: ${archive_file%%.tar*}"
+
+dirarchive=${archive_file%%.tar*}
+
+# STEP 1
+extract_archive "$dir" "$dirarchive"
+if (( $? == 0)); then
+    step1=1
+fi
+
+# STEP 2
+cd ${archive_file%%.tar*}
+
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 2 - Configure $dir ..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+env PATH=${iprefix}/bin:${iprefix}/perl/bin:$PATH \
+CC=cc CFLAGS="-m64 -xO3 -Kpic -I${iprefix}/include" \
+LDFLAGS="-m64 -L${iprefix}/lib -R${iprefix}/lib" \
+./configure --prefix=${iprefix} >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if (( $? != 0 )); then
+    print "Error: configure $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step2=1
+fi
+
+# STEP 3
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 3 - Make $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+make >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if (( $? != 0 )); then
+    print "Error: make $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step3=1
+fi
+
+# STEP 4
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 4 - Make install $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+
+make install >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if (( $? != 0 )); then
+    print "Error: make install failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step4=1
+fi
+
+# final check; all 4 steps
+(( ngx_rdln_done = step1 + step2 + step3 + step4 ))
+if (( ngx_rdln_done == 4 )); then
+  ngx_rdln_done=1
+else
+   ngx_rdln_done=90
+fi
+
+cd ../..
+
+}
+
+
+# ############################################################### #
+# NGINX ALL: gettext Build Phase                                  #
+# ############################################################### #
+build_nginx_gettext() {
+dir=gettext
+step1=0
+step2=0
+step3=0
+step4=0
+
+
+cd $dir
+print "\n##################################################"
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Submodule: $dir" | tee -a ${BUILD_PATH}/${BUILD_LOG}
+ls *.tar.gz | read archive_file
+# Debug
+# print "Archive: $archive_file"
+# print "Dir: ${archive_file%%.tar*}"
+
+dirarchive=${archive_file%%.tar*}
+
+# STEP 1
+extract_archive "$dir" "$dirarchive"
+if (( $? == 0)); then
+    step1=1
+fi
+
+# STEP 2
+cd ${archive_file%%.tar*}
+
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 2 - Configure $dir ..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+ 
+env PATH=${iprefix}/bin:${iprefix}/perl/bin:$PATH \
+    CC=cc CXX="/usr/bin/CC -lCrun" CFLAGS="-m64 -xO3 -Kpic -I${iprefix}/include" \
+    CXXFLAGS="-m64 -xO3 -Kpic -I${iprefix}/include" \
+    LDFLAGS="-m64 -L${iprefix}/lib -R${iprefix}/lib" \
+    ./configure --prefix=${iprefix} >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if (( $? != 0 )); then
+    print "Error: configure $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    exit 3
+else
+    step2=1
+fi
+
+
+# STEP 3
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 3 - Make $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+make >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if (( $? != 0 )); then
+    print "Error: make $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    exit 3
+else
+    step3=1
+fi
+
+
+# STEP 4
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 4 - Make install $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+make install >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if (( $? != 0 )); then
+    print "Error: make install perl failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    exit 3
+else
+    step4=1
+fi
+
+
+# final check; all 4 steps
+(( ngx_gett_done = step1 + step2 + step3 + step4 ))
+if (( ngx_gett_done == 4 )); then
+   ngx_gett_done=1
+else
+   ngx_gett_done=90
+fi
+
+cd ../..
+
+}
+
+
+# ############################################################### #
+# NGINX: iconv Build Phase                                           #
+# ############################################################### #
+
+build_nginx_iconv() {
+dir=iconv
+step1=0
+step2=0
+step3=0
+step4=0
+
+
+cd $dir
+print "\n##################################################"
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Submodule: $dir" | tee -a ${BUILD_PATH}/${BUILD_LOG}
+ls *.tar.gz | read archive_file
+# Debug
+# print "Archive: $archive_file"
+# print "Dir: ${archive_file%%.tar*}"
+
+dirarchive=${archive_file%%.tar*}
+
+# STEP 1
+extract_archive "$dir" "$dirarchive"
+if (( $? == 0)); then
+    step1=1
+fi
+
+# STEP 2
+cd ${archive_file%%.tar*}
+
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 2 - Configure $dir ..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+ 
+env PATH=${iprefix}/bin:${iprefix}/perl/bin:$PATH CC=cc \
+    CFLAGS="-m64 -xO3 -Kpic -I${iprefix}/include" \
+    LDFLAGS="-m64 -L${iprefix}/lib -R${iprefix}/lib" ./configure \
+ --prefix=${iprefix} >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if (( $? != 0 )); then
+    print "Error: configure $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step2=1
+fi  
+
+# STEP 3
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 3 - Make $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+make >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if (( $? != 0 )); then
+    print "Error: make $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step3=1
+fi 
+
+# STEP 4
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 4 - Make install $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+
+make install >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if (( $? != 0 )); then
+    print "Error: make install failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step4=1
+fi
+
+# final check; all 4 steps
+(( ngx_iconv_done = step1 + step2 + step3 + step4 ))
+if (( ngx_iconv_done == 4 )); then
+   ngx_iconv_done=1
+else
+   ngx_conv_done=0
+fi
+
+cd ../..
+
+}
+
+
+# ############################################################### #
+# NGINX: openssl Build Phase                                      #
+# ############################################################### #
+
+build_nginx_ossl() {
+dir=openssl
+step1=0
+step2=0
+step3=0
+step4=0
+
+
+cd $dir
+print "\n##################################################"
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Submodule: $dir" | tee -a ${BUILD_PATH}/${BUILD_LOG}
+ls *.tar.gz | read archive_file
+# Debug
+# print "Archive: $archive_file"
+# print "Dir: ${archive_file%%.tar*}"
+
+dirarchive=${archive_file%%.tar*}
+
+# STEP 1
+extract_archive "$dir" "$dirarchive"
+if (( $? == 0)); then
+    step1=1
+fi
+
+# STEP 2
+cd ${archive_file%%.tar*}
+
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 2 - Configure $dir ..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+if [[ $PT_NAME == "i86pc" ]]; then
+    env PATH=${iprefix}/bin:${iprefix}/perl/bin:$PATH \
+    ./Configure solaris64-x86_64-cc threads shared no-sse2 --prefix=${iprefix} \
+    --openssldir=${iprefix}/openssl >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+else
+    env PATH=${iprefix}/bin:${iprefix}/perl/bin:$PATH \
+    ./Configure solaris64-sparcv9-cc threads shared --prefix=${iprefix} \
+    --openssldir=${iprefix}/openssl >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+fi
+
+if (( $? != 0 )); then
+    print "Error: configure $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step2=1
+fi  
+
+# STEP 3
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 3 - Make $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+# fix xarch
+print "Fixing arch flag..." >> ${BUILD_PATH}/${BUILD_LOG}
+
+if [[ $PT_NAME == "i86pc" ]]; then
+    sed 's/\-xarch\=amd64/\-m64/g' Makefile > Makefile.tmp
+    sed 's/\-fast//g' Makefile.tmp > Makefile.tmp.1
+    mv Makefile.tmp.1 Makefile
+else
+    sed 's/\-xarch\=v9/\-m64/g' Makefile > Makefile.tmp
+    mv Makefile.tmp Makefile
+fi
+
+if (( $? != 0 )); then
+    print "Error: fixing xarch Makefile failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+fi
+
+
+
+print "Fixing SHARED_LDFLAGS flag..." >> ${BUILD_PATH}/${BUILD_LOG}
+
+# we change the delimiter of sed since we deal with paths
+if [[ $PT_NAME == "i86pc" ]]; then
+    sed "s:SHARED_LDFLAGS=-m64 -G -dy -z text:SHARED_LDFLAGS=-m64 -G -dy -z text -L${iprefix}/lib -R${iprefix}/lib:" Makefile > Makefile.tmp
+else
+    sed "s:SHARED_LDFLAGS=.*:SHARED_LDFLAGS=-m64 -G -dy -z text -L${iprefix}/lib -R${iprefix}/lib:" Makefile > Makefile.tmp
+fi
+
+
+#sed "s:SHARED_LDFLAGS=-m64 -G -dy -z text:SHARED_LDFLAGS=-m64 -G -dy -z text -L${iprefix}/lib -R${iprefix}/lib:" Makefile > Makefile.tmp
+
+if (( $? != 0 )); then
+    print "Error: fixing SHARED_LDFLAGS Makefile failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+fi
+mv Makefile.tmp Makefile
+
+
+
+make >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if (( $? != 0 )); then
+    print "Error: make $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step3=1
+fi 
+
+
+# STEP 4
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 4 - Make install $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+make install >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if (( $? != 0 )); then
+    print "Error: make install perl failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step4=1
+fi
+
+
+# final check; all 4 steps
+(( ngx_ossl_done = step1 + step2 + step3 + step4 ))
+if (( ngx_ossl_done == 4 )); then
+   ngx_ossl_done=1
+else
+   ngx_ossl_done=0
+fi
+
+cd ../..
+
+}
+
+
+
+# ############################################################### #
+# NGINX: GD Build Phase                                           #
+# ############################################################### #
+
+build_nginx_gd() {
+dir=gd
+step1=0
+step2=0
+step3=0
+step4=0
+
+
+cd $dir
+print "\n##################################################"
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Submodule: $dir" | tee -a ${BUILD_PATH}/${BUILD_LOG}
+ls *.tar.gz | read archive_file
+# Debug
+# print "Archive: $archive_file"
+# print "Dir: ${archive_file%%.tar*}"
+
+dirarchive=${archive_file%%.tar*}
+
+# STEP 1
+extract_archive "$dir" "$dirarchive"
+if (( $? == 0)); then
+    step1=1
+fi
+
+# STEP 2
+cd ${archive_file%%.tar*}
+
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 2 - Configure $dir ..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+ 
+env PATH=${iprefix}/bin:${iprefix}/perl/bin:$PATH \
+    CC=cc CFLAGS="-m64 -xO3 -Kpic -I${iprefix}/include" \
+    LDFLAGS="-m64 -L${iprefix}/lib -R${iprefix}/lib -L/lib/64 -L/usr/lib/64 \
+      -L/usr/sfw/lib/amd64 -R/usr/sfw/lib/amd64" ./configure \
+    --prefix=${iprefix} >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if (( $? != 0 )); then
+    print "Error: configure $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step2=1
+fi  
+
+# STEP 3
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 3 - Make $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+make >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if (( $? != 0 )); then
+    print "Error: make $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step3=1
+fi 
+
+# STEP 4
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 4 - Make install $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+
+make install >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if (( $? != 0 )); then
+    print "Error: make install gd failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step4=1
+fi
+
+# final check; all 4 steps
+(( ngx_gd_done = step1 + step2 + step3 + step4 ))
+if (( ngx_gd_done == 4 )); then
+   ngx_gd_done=1
+else
+   ngx_gd_done=0
+fi
+
+cd ../..
+
+}
+
+# ############################################################### #
+# NGINX: Perl Modules: GD                                         #
+# ############################################################### #
+
+build_nginx_perlmods() {
+
+dir=perlmods
+step1=0
+step2=0
+step3=0
+step4=0
+step5=0
+
+cd $dir
+print "\n##################################################"
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Submodule: $dir" | tee -a ${BUILD_PATH}/${BUILD_LOG}
+ls *.tar.gz | read archive_file
+# Debug
+# print "Archive: $archive_file"
+# print "Dir: ${archive_file%%.tar*}"
+
+dirarchive=${archive_file%%.tar*}
+
+# STEP 1
+extract_archive "$dir" "$dirarchive"
+if (( $? == 0)); then
+    step1=1
+fi
+
+# STEP 2
+cd ${archive_file%%.tar*}
+
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 2 - Configure $dir ..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+env PATH=${iprefix}/bin:$PATH \
+${iprefix}/perl/bin/perl Makefile.PL  >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+
+# LDFLAGS =  -m64 -L/lib/64 
+# we change the delimiter sed we deal with paths
+sed "s:LDFLAGS =  -m64 -L/lib/64:LDFLAGS = -m64 -L${iprefix}/lib -R${iprefix}/lib -L/lib/64 -L/usr/sfw/lib/amd64 -R/usr/sfw/lib/amd64:" Makefile > Makefile.tmp
+mv Makefile.tmp Makefile
+
+# LDDLFLAGS =  -G -m64 -L/lib/64
+sed "s:LDDLFLAGS =  -G -m64 -L/lib/64:LDDLFLAGS = -G -m64 -L${iprefix}/lib -R${ipreifx}/lib -L/usr/sfw/lib/amd64 -R/usr/sfw/lib/amd64 -L/lib/64:" Makefile > Makefile.tmp
+mv Makefile.tmp Makefile
+
+
+# CCFLAGS
+sed 's/^CCFLAGS.*/CCFLAGS \= \-m64/' Makefile > Makefile.tmp
+mv Makefile.tmp Makefile
+
+if (( $? != 0 )); then
+    print "Error: configure $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step2=1
+fi
+
+
+# STEP 3
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 3 - Make $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+make >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if (( $? != 0 )); then
+    print "Error: make $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step3=1
+fi 
+
+
+# STEP 4
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 4 - Make install $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+make install >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if (( $? != 0 )); then
+    print "Error: make install perl failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step4=1
+fi
+
+# STEP 5
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 5 - Install CPAN GD modules..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+for lib in GD::Text GD::Graph Chart::Base Template::Plugin::GD::Image
+do
+    env PERL_MM_USE_DEFAULT=1 \
+      ${NGXAL_PERLBIN}/perl -MCPAN -e 'install "'$lib'"' >> \
+        ${BUILD_PATH}/${BUILD_LOG} 2>&1
+        if (( $? != 0 )); then
+            tee -a ${BUILD_PATH}/${BUILD_LOG}
+            exit 3
+        else
+            ((step5 = step5 + 1))
+        fi
+done
+
+# there are 4 perl modules install calls
+(( step5 = step5 / 4 ));
+
+
+#
+# final check; all 5 steps
+(( ngx_perlmodules_done = step1 + step2 + step3 + step4 + step5))
+if (( ngx_perlmodules_done == 5 )); then
+   ngx_perlmodules_done=1
+else
+   ngx_perlmodules_done=0
+fi
+
+cd ../..
+
+}
+
+
+# ############################################################### #
+# NGINX: Perl Module: DBD::mysql                                  #
+# ############################################################### #
+
+build_nginx_dbdmysql() {
+
+dir=DBD-mysql
+step1=0
+step2=0
+step3=0
+step4=0
+step5=0
+
+cd $dir
+print "\n##################################################"
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Submodule: $dir" | tee -a ${BUILD_PATH}/${BUILD_LOG}
+ls *.tar.gz | read archive_file
+# Debug
+# print "Archive: $archive_file"
+# print "Dir: ${archive_file%%.tar*}"
+
+dirarchive=${archive_file%%.tar*}
+
+# STEP 1
+extract_archive "$dir" "$dirarchive"
+if (( $? == 0)); then
+    step1=1
+fi
+
+# STEP 2
+cd ${archive_file%%.tar*}
+
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 2 - Configure $dir ..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+env PATH=${iprefix}/mariadb/bin:$PATH \
+ ${iprefix}/perl/bin/perl Makefile.PL \
+  --cflags="-I${iprefix}/mariadb/include/mysql -I${iprefix}/include" \
+  --libs="-L${iprefix}/lib -R${iprefix}/lib -L${iprefix}/mariadb/lib/mysql -R${iprefix}/mariadb/lib/mysql -lmysqlclient -lz -lposix4 -lsocket -lnsl -lm" >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+
+if (( $? != 0 )); then
+    print "Error: configure perl Makefile.PL $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step2=1
+fi
+
+
+
+
+# STEP 3
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 3 - Make $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+make >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if (( $? != 0 )); then
+    print "Error: make $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step3=1
+fi 
+
+
+# STEP 4
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 4 - Make install $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+make install >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if (( $? != 0 )); then
+    print "Error: make install perl failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step4=1
+fi
+
+#
+# final check; all 4 steps
+(( ngx_dbdmysql_done = step1 + step2 + step3 + step4 ))
+if (( ngx_dbdmysql_done == 4 )); then
+   ngx_dbdmysql_done=1
+else
+   ngx_dbdmysql_done=0
+fi
+
+cd ../..
+
+}
+
+
+
+# ############################################################### #
+# NGINX: Perl Module: DBD::Pg                                     #
+# ############################################################### #
+
+build_nginx_dbdpg() {
+
+dir=dbdpg
+step1=0
+step2=0
+step3=0
+step4=0
+step5=0
+
+cd $dir
+print "\n##################################################"
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Submodule: $dir" | tee -a ${BUILD_PATH}/${BUILD_LOG}
+ls *.tar.gz | read archive_file
+# Debug
+# print "Archive: $archive_file"
+# print "Dir: ${archive_file%%.tar*}"
+
+dirarchive=${archive_file%%.tar*}
+
+# STEP 1
+extract_archive "$dir" "$dirarchive"
+if (( $? == 0)); then
+    step1=1
+fi
+
+# STEP 2
+cd ${archive_file%%.tar*}
+
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 2 - Configure $dir ..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+env PATH=${iprefix}/bin:$PATH \
+ ${iprefix}/perl/bin/perl Makefile.PL >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+
+
+
+# fix Makefile
+
+# LDFLAGS =  -m64 -L/lib/64
+# we change the delimiter sed we deal with paths
+sed "s:LDFLAGS = -m64 -L/lib/64:LDFLAGS = -m64 -L${iprefix}/lib -R${iprefix}/lib -L/lib/64 -L/usr/postgres/8.3/lib/amd64 -R/usr/postgres/8.3/lib/amd64:" Makefile > Makefile.tmp
+mv Makefile.tmp Makefile
+
+# LDDLFLAGS =  -G -m64 -L/lib/64
+sed "s:LDDLFLAGS = -G -m64 -L/lib/64:LDDLFLAGS = -G -m64 -L${iprefix}/lib -R${ipreifx}/lib -L/lib/64 -L/usr/postgres/8.3/lib/amd64 -R/usr/postgres/8.3/lib/amd64:" Makefile > Makefile.tmp
+mv Makefile.tmp Makefile
+
+if (( $? != 0 )); then
+    print "Error: configure $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step2=1
+fi
+
+
+# STEP 3
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 3 - Make $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+make >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if (( $? != 0 )); then
+    print "Error: make $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step3=1
+fi 
+
+
+# STEP 4
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 4 - Make install $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+make install >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if (( $? != 0 )); then
+    print "Error: make install perl failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step4=1
+fi
+
+#
+# final check; all 4 steps
+(( ngx_dbdpg_done = step1 + step2 + step3 + step4 ))
+if (( ngx_dbdpg_done == 4 )); then
+   ngx_dbdpg_done=1
+else
+   ngx_dbdpg_done=0
+fi
+
+cd ../..
+
+}
+
+
+# ############################################################### #
+# NGINX: PCRE Build Phase                                         #
+# ############################################################### #
+
+build_nginx_pcre() {
+dir=pcre
+step1=0
+step2=0
+step3=0
+step4=0
+
+
+cd $dir
+print "\n##################################################"
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Submodule: $dir" | tee -a ${BUILD_PATH}/${BUILD_LOG}
+ls *.tar.gz | read archive_file
+# Debug
+# print "Archive: $archive_file"
+# print "Dir: ${archive_file%%.tar*}"
+
+dirarchive=${archive_file%%.tar*}
+
+# STEP 1
+extract_archive "$dir" "$dirarchive"
+if (( $? == 0)); then
+    step1=1
+fi
+
+# STEP 2
+cd ${archive_file%%.tar*}
+
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 2 - Configure $dir ..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+ 
+env PATH=${iprefix}/bin:${iprefix}/perl/bin:$PATH \
+    CC=cc CFLAGS="-m64 -xO3 -Kpic -I${iprefix}/include" \
+    LDFLAGS="-m64 -L${iprefix}/lib -R${iprefix}/lib \
+     -L/lib/64 -L/usr/lib/64 -L/usr/sfw/lib/amd64 \
+     -R/usr/sfw/lib/amd64" \
+    ./configure --disable-cpp --enable-utf8 --enable-unicode-properties \
+      --prefix=${iprefix} >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if (( $? != 0 )); then
+    print "Error: configure $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step2=1
+fi  
+
+# STEP 3
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 3 - Make $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+make >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if (( $? != 0 )); then
+    print "Error: make $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step3=1
+fi 
+
+# STEP 4
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 4 - Make install $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+
+make install >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if (( $? != 0 )); then
+    print "Error: make install gd failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step4=1
+fi
+
+# final check; all 4 steps
+(( ngx_pcre_done = step1 + step2 + step3 + step4 ))
+if (( ngx_pcre_done == 4 )); then
+   ngx_pcre_done=1
+else
+   ngx_pcre_done=0
+fi
+
+cd ../..
+
+}
+
+
+# ############################################################### #
+# NGINX: FCGI Build Phase                                         #
+# ############################################################### #
+
+build_nginx_fcgi() {
+dir=fcgi
+step1=0
+step2=0
+step3=0
+step4=0
+
+
+cd $dir
+print "\n##################################################"
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Submodule: $dir" | tee -a ${BUILD_PATH}/${BUILD_LOG}
+ls *.tar.gz | read archive_file
+# Debug
+# print "Archive: $archive_file"
+# print "Dir: ${archive_file%%.tar*}"
+
+dirarchive=${archive_file%%.tar*}
+
+# STEP 1
+extract_archive "$dir" "$dirarchive"
+if (( $? == 0)); then
+    step1=1
+fi
+
+# STEP 2
+cd ${archive_file%%.tar*}
+
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 2 - Configure $dir ..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+ 
+env PATH=${iprefix}/bin:${iprefix}/perl/bin:$PATH \
+    CC=cc CFLAGS="-m64 -xO3 -Kpic -I${iprefix}/include" \
+    CXX=CC CXXFLAGS="-xO3 -m64 -Kpic -I${iprefix}/include" \
+    LDFLAGS="-m64 -L${iprefix}/lib -R${iprefix}/lib \
+     -L/lib/64 -L/usr/lib/64 -L/usr/sfw/lib/amd64 \
+     -R/usr/sfw/lib/amd64" ./configure \
+     --prefix=${iprefix} >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if (( $? != 0 )); then
+    print "Error: configure $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step2=1
+fi  
+
+# STEP 3
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 3 - Make $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+make >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if (( $? != 0 )); then
+    print "Error: make $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step3=1
+fi 
+
+# STEP 4
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 4 - Make install $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+
+make install >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if (( $? != 0 )); then
+    print "Error: make install gd failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step4=1
+fi
+
+# final check; all 4 steps
+(( ngx_fcgi_done = step1 + step2 + step3 + step4 ))
+if (( ngx_fcgi_done == 4 )); then
+   ngx_fcgi_done=1
+else
+   ngx_fcgi_done=0
+fi
+
+cd ../..
+
+}
+
+
+# ############################################################### #
+# NGINX: FCGIWRAP Build Phase                                     #
+# ############################################################### #
+
+build_nginx_fcgiwrap() {
+dir=fcgiwrap
+step1=0
+step2=0
+step3=0
+
+
+cd $dir
+print "\n##################################################"
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Submodule: $dir" | tee -a ${BUILD_PATH}/${BUILD_LOG}
+ls *.tar.gz | read archive_file
+# Debug
+# print "Archive: $archive_file"
+# print "Dir: ${archive_file%%.tar*}"
+
+dirarchive=${archive_file%%.tar*}
+
+# STEP 1
+extract_archive "$dir" "$dirarchive"
+if (( $? == 0)); then
+    step1=1
+fi
+
+# STEP 2
+cd ${archive_file%%.tar*}
+
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 2 - Make $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+env iprefix=${iprefix} make >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if (( $? != 0 )); then
+    print "Error: make $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step2=1
+fi 
+
+# STEP 3
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 3 - Make install $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+if [[ ! -d ${iprefix}/nginx/sbin ]]; then
+    mkdir ${iprefix}/nginx/sbin
+fi
+
+env iprefix=${iprefix} make install >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if (( $? != 0 )); then
+    print "Error: make install fcgiwrap failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step3=1
+fi
+
+# final check; all 3 steps
+(( ngx_fcgiw_done = step1 + step2 + step3 ))
+if (( ngx_fcgi_done == 3 )); then
+   ngx_fcgiw_done=1
+else
+   ngx_fcgiw_done=0
+fi
+
+cd ../..
+
+}
+
+
+
+# ############################################################### #
+# NGINX: WS nginx Build Phase                                     #
+# ############################################################### #
+
+build_nginx_ws() {
+dir=ws
+step1=0
+step2=0
+step3=0
+step4=0
+
+
+cd $dir
+print "\n##################################################"
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Submodule: $dir" | tee -a ${BUILD_PATH}/${BUILD_LOG}
+ls *.tar.gz | read archive_file
+# Debug
+# print "Archive: $archive_file"
+# print "Dir: ${archive_file%%.tar*}"
+
+dirarchive=${archive_file%%.tar*}
+
+# STEP 1
+extract_archive "$dir" "$dirarchive"
+if (( $? == 0)); then
+    step1=1
+fi
+
+# STEP 2
+cd ${archive_file%%.tar*}
+
+# copy the fair plugin
+cp -pr ../../upstream .
+
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 2 - Configure $dir ..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+# fix configure
+sed 's/\#\!\/bin\/sh/\#\!\/usr\/xpg4\/bin\/sh/' configure > configure.tmp
+mv configure.tmp configure
+chmod 755 configure
+
+env NGX_AUX=" src/os/unix/ngx_sunpro_amd64.il"       \
+    CC=cc CFLAGS="-m64 -xO3 -Kpic"                   \
+    ./configure --prefix=${iprefix}/nginx --with-ipv6\
+    --with-perl=${iprefix}/perl/bin                  \
+    --with-http_ssl_module                           \
+    --with-http_stub_status_module                   \
+    --with-http_realip_module                        \
+    --with-http_flv_module                           \
+    --with-http_gzip_static_module                   \
+    --with-sha1=/usr/lib/amd64                       \
+    --with-cc-opt="-I ${iprefix}/include"            \
+    --with-ld-opt="-m64 -L${iprefix}/lib -R${iprefix}/lib -R/usr/lib/amd64 -R/lib/amd64" \
+    --add-module=upstream >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if (( $? != 0 )); then
+    print "Error: configure $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step2=1
+fi  
+
+# STEP 3
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 3 - Make $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+make >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if (( $? != 0 )); then
+    print "Error: make $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step3=1
+fi 
+
+# STEP 4
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 4 - Make install $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+
+make install >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if (( $? != 0 )); then
+    print "Error: make install gd failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step4=1
+fi
+
+# final check; all 4 steps
+(( ngx_ws_done = step1 + step2 + step3 + step4 ))
+if (( ngx_ws_done == 4 )); then
+   ngx_ws_done=1
+else
+   ngx_ws_done=0
+fi
+
+cd ../..
+
+}
+
+
+
+# ############################################################### #
+# NGINX: MariaDB Build Phase                                      #
+# ############################################################### #
+
+build_nginx_mariadb() {
+dir=mariadb
+step1=0
+step2=0
+step3=0
+step4=0
+
+
+cd $dir
+print "\n##################################################"
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Submodule: $dir" | tee -a ${BUILD_PATH}/${BUILD_LOG}
+ls *.tar.gz | read archive_file
+# Debug
+# print "Archive: $archive_file"
+# print "Dir: ${archive_file%%.tar*}"
+
+dirarchive=${archive_file%%.tar*}
+
+# STEP 1
+extract_archive "$dir" "$dirarchive"
+if (( $? == 0)); then
+    step1=1
+fi
+
+# STEP 2
+cd ${archive_file%%.tar*}
+
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 2 - Configure $dir ..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+env CC=cc CFLAGS="-m64 -xO3 -Kpic -I${iprefix}/include" \
+ CXX="/usr/bin/CC -lCrun" CXXPICFLAGS="-Kpic" \
+ CXXFLAGS="-m64 -xO3 -Kpic -I${iprefix}/include" \
+ LDFLAGS="-m64 -L${iprefix}/lib -R${iprefix}/lib -L/lib/64 -L/usr/lib/64 \
+ -L/usr/sfw/lib/64 -R/usr/sfw/lib/64" \
+ ./configure --prefix=${iprefix}/mariadb --exec-prefix=${iprefix}/mariadb \
+ --enable-local-infile --with-big-tables --with-system-type="sun-solaris10" \
+  --with-mysqld-user=$iuser \
+ --with-plugins=myisam,archive,heap,aria,xtradb \
+ --with-aria-tmp-tables >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if (( $? != 0 )); then
+    print "Error: configure $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step2=1
+fi  
+
+# STEP 3
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 3 - Make $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+gmake >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if (( $? != 0 )); then
+    print "Error: make $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step3=1
+fi 
+
+# STEP 4
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 4 - Make install $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+
+gmake install >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if (( $? != 0 )); then
+    print "Error: make install gd failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step4=1
+fi
+
+# final check; all 4 steps
+(( ngx_mariadb_done = step1 + step2 + step3 + step4 ))
+if (( ngx_mariadb_done == 4 )); then
+   ngx_mariadb_done=1
+else
+   ngx_mariadb_done=0
+fi
+
+cd ../..
+
+}
+
+
+# ############################################################### #
+# NGINX: Libevent Build Phase                                     #
+# ############################################################### #
+
+build_nginx_event() {
+dir=event
+step1=0
+step2=0
+step3=0
+step4=0
+
+
+cd $dir
+print "\n##################################################"
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Submodule: $dir" | tee -a ${BUILD_PATH}/${BUILD_LOG}
+ls *.tar.gz | read archive_file
+# Debug
+# print "Archive: $archive_file"
+# print "Dir: ${archive_file%%.tar*}"
+
+dirarchive=${archive_file%%.tar*}
+
+# STEP 1
+extract_archive "$dir" "$dirarchive"
+if (( $? == 0)); then
+    step1=1
+fi
+
+# STEP 2
+cd ${archive_file%%.tar*}
+
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 2 - Configure $dir ..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+
+env CC=cc CFLAGS="-m64 -xO3 -Kpic -I${iprefix}/include" \
+    LDFLAGS="-m64 -L${iprefix}/lib -R${iprefix}/lib" \
+   ./configure --prefix=${iprefix} \
+    --enable-shared >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+
+if (( $? != 0 )); then
+    print "Error: configure $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step2=1
+fi  
+
+# STEP 3
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 3 - Make $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+make >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if (( $? != 0 )); then
+    print "Error: make $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step3=1
+fi 
+
+# STEP 4
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 4 - Make install $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+
+make install >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if (( $? != 0 )); then
+    print "Error: make install gd failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step4=1
+fi
+
+# final check; all 4 steps
+(( ngx_event_done = step1 + step2 + step3 + step4 ))
+if (( ngx_event_done == 4 )); then
+   ngx_event_done=1
+else
+   ngx_event_done=0
+fi
+
+cd ../..
+
+}
+
+
+
+# ############################################################### #
+# NGINX: Memcached Build Phase                                    #
+# ############################################################### #
+
+build_nginx_mcd() {
+dir=memcached
+step1=0
+step2=0
+step3=0
+step4=0
+
+
+cd $dir
+print "\n##################################################"
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Submodule: $dir" | tee -a ${BUILD_PATH}/${BUILD_LOG}
+ls *.tar.gz | read archive_file
+# Debug
+# print "Archive: $archive_file"
+# print "Dir: ${archive_file%%.tar*}"
+
+dirarchive=${archive_file%%.tar*}
+
+# STEP 1
+extract_archive "$dir" "$dirarchive"
+if (( $? == 0)); then
+    step1=1
+fi
+
+# STEP 2
+cd ${archive_file%%.tar*}
+
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 2 - Configure $dir ..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+
+env CC=cc CFLAGS="-m64 -xO3 -Kpic -I${iprefix}/include" \
+    LDFLAGS="-m64 -L${iprefix}/lib -R${iprefix}/lib" ./configure \
+    --prefix=${iprefix}/mcd --enable-64bit >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+
+if (( $? != 0 )); then
+    print "Error: configure $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step2=1
+fi  
+
+# STEP 3
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 3 - Make $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+make >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if (( $? != 0 )); then
+    print "Error: make $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step3=1
+fi 
+
+# STEP 4
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 4 - Make install $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+
+make install >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if (( $? != 0 )); then
+    print "Error: make install gd failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step4=1
+fi
+
+# final check; all 4 steps
+(( ngx_mcd_done = step1 + step2 + step3 + step4 ))
+if (( ngx_mcd_done == 4 )); then
+   ngx_mcd_done=1
+else
+   ngx_mcd_done=0
+fi
+
+cd ../..
+
+
+}
+
+
+
+
+# ############################################################### #
+# NGINX: Libidn Build Phase                                       #
+# ############################################################### #
+
+build_nginx_idn() {
+dir=idn
+step1=0
+step2=0
+step3=0
+step4=0
+
+
+cd $dir
+print "\n##################################################"
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Submodule: $dir" | tee -a ${BUILD_PATH}/${BUILD_LOG}
+ls *.tar.gz | read archive_file
+# Debug
+# print "Archive: $archive_file"
+# print "Dir: ${archive_file%%.tar*}"
+
+dirarchive=${archive_file%%.tar*}
+
+# STEP 1
+extract_archive "$dir" "$dirarchive"
+if (( $? == 0)); then
+    step1=1
+fi
+
+# STEP 2
+cd ${archive_file%%.tar*}
+
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 2 - Configure $dir ..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+
+env PATH=${iprefix}/bin:${iprefix}/perl/bin:$PATH \
+    CC=cc CFLAGS="-m64 -xO3 -Kpic -I${iprefix}/include" \
+    LDFLAGS="-m64 -L${iprefix}/lib -R${iprefix}/lib" \
+    ./configure --prefix=${iprefix} >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if (( $? != 0 )); then
+    print "Error: configure $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step2=1
+fi  
+
+# STEP 3
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 3 - Make $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+make >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if (( $? != 0 )); then
+    print "Error: make $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step3=1
+fi 
+
+# STEP 4
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 4 - Make install $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+make install >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if (( $? != 0 )); then
+    print "Error: make install gd failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step4=1
+fi
+
+# final check; all 4 steps
+(( ngx_idn_done = step1 + step2 + step3 + step4 ))
+if (( ngx_idn_done == 4 )); then
+   ngx_idn_done=1
+else
+   ngx_idn_done=0
+fi
+
+cd ../..
+
+}
+
+
+# ############################################################### #
+# NGINX: Libcurl Build Phase                                      #
+# ############################################################### #
+
+build_nginx_curl() {
+dir=curl
+step1=0
+step2=0
+step3=0
+step4=0
+
+
+cd $dir
+print "\n##################################################"
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Submodule: $dir" | tee -a ${BUILD_PATH}/${BUILD_LOG}
+ls *.tar.gz | read archive_file
+# Debug
+# print "Archive: $archive_file"
+# print "Dir: ${archive_file%%.tar*}"
+
+dirarchive=${archive_file%%.tar*}
+
+# STEP 1
+extract_archive "$dir" "$dirarchive"
+if (( $? == 0)); then
+    step1=1
+fi
+
+# STEP 2
+cd ${archive_file%%.tar*}
+
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 2 - Configure $dir ..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+
+env PATH=${iprefix}/bin:${iprefix}/perl/bin:$PATH \
+    CC=cc CFLAGS="-m64 -xO3 -Kpic -I${iprefix}/include" \
+    LDFLAGS="-m64 -L${iprefix}/lib -R${iprefix}/lib -L/usr/lib/64 -R/usr/lib/64 \
+    -L/usr/sfw/lib/64 -R/usr/sfw/lib/64" \
+    ./configure --prefix=${iprefix} --enable-cookies --enable-nonblocking \
+     --with-libidn >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if (( $? != 0 )); then
+    print "Error: configure $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step2=1
+fi  
+
+# STEP 3
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 3 - Make $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+make >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if (( $? != 0 )); then
+    print "Error: make $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step3=1
+fi 
+
+# STEP 4
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 4 - Make install $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+make install >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if (( $? != 0 )); then
+    print "Error: make install gd failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step4=1
+fi
+
+# final check; all 4 steps
+(( ngx_curl_done = step1 + step2 + step3 + step4 ))
+if (( ngx_curl_done == 4 )); then
+   ngx_curl_done=1
+else
+   ngx_curl_done=0
+fi
+
+cd ../..
+
+}
+
+
+
+# ############################################################### #
+# NGINX: Libmcrypt Build Phase                                      #
+# ############################################################### #
+
+build_nginx_mcrypt() {
+dir=libmcrypt
+step1=0
+step2=0
+step3=0
+step4=0
+
+cd $dir
+print "\n##################################################"
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Submodule: $dir" | tee -a ${BUILD_PATH}/${BUILD_LOG}
+ls *.tar.gz | read archive_file
+# Debug
+# print "Archive: $archive_file"
+# print "Dir: ${archive_file%%.tar*}"
+
+dirarchive=${archive_file%%.tar*}
+
+# STEP 1
+extract_archive "$dir" "$dirarchive"
+if (( $? == 0)); then
+    step1=1
+fi
+
+# STEP 2
+cd ${archive_file%%.tar*}
+
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 2 - Configure $dir ..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+
+env CC=cc CFLAGS="-m64 -xO3 -I${iprefix}/include" \
+    LDFLAGS="-m64 -L${iprefix}/lib -R${iprefix}/lib" \
+    ./configure --prefix=${iprefix} --disable-posix-threads \
+    --enable-dynamic-loading  \
+    --with-included-algos=cast-128,gost,rijndael-128,twofish,arcfour,cast-256,loki97,rijndael-192,saferplus,wake,blowfish-compat,des,rijndael-256,serpent,xtea,blowfish,enigma,rc2,tripledes >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if (( $? != 0 )); then
+    print "Error: configure $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step2=1
+fi  
+
+# STEP 3
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 3 - Make $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+make >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if (( $? != 0 )); then
+    print "Error: make $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step3=1
+fi 
+
+# STEP 4
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 4 - Make install $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+make install >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if (( $? != 0 )); then
+    print "Error: make install gd failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step4=1
+fi
+
+# final check; all 4 steps
+(( ngx_mcrypt_done = step1 + step2 + step3 + step4 ))
+if (( ngx_mcrypt_done == 4 )); then
+   ngx_mcrypt_done=1
+else
+   ngx_mcrypt_done=0
+fi
+
+cd ../..
+
+}
+
+
+
+# ############################################################### #
+# NGINX: PHP Build Phase                                          #
+# ############################################################### #
+
+build_nginx_php() {
+dir=php
+step1=0
+step2=0
+step3=0
+step4=0
+
+
+cd $dir
+print "\n##################################################"
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Submodule: $dir" | tee -a ${BUILD_PATH}/${BUILD_LOG}
+ls *.tar.gz | read archive_file
+# Debug
+# print "Archive: $archive_file"
+# print "Dir: ${archive_file%%.tar*}"
+
+dirarchive=${archive_file%%.tar*}
+
+# STEP 1
+extract_archive "$dir" "$dirarchive"
+if (( $? == 0)); then
+    step1=1
+fi
+
+# STEP 2
+cd ${archive_file%%.tar*}
+
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 2 - Configure $dir ..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+env PATH=${iprefix}/bin:${iprefix}/perl/bin:$PATH \
+    CC=cc CFLAGS="-m64 -xO3 -Kpic -I${iprefix}/include" \
+    LDFLAGS="-m64 -L${iprefix}/lib -R${iprefix}/lib -L/usr/lib/64 -R/usr/lib/64 \
+    -L/usr/sfw/lib/64 -R/usr/sfw/lib/64" \
+    ./configure --prefix=${iprefix}/php --with-mysql=${iprefix}/mariadb \
+     --with-mysqli=${iprefix}/mariadb/bin/mysql_config \
+     --with-gd=${iprefix} --with-curl=${iprefix} --with-pear --enable-libxml \
+     --enable-fpm --enable-zip --with-zlib --enable-mbstring --with-mcrypt=${iprefix} >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if (( $? != 0 )); then
+    print "Error: configure $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step2=1
+fi
+
+# STEP 3
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 3 - Make $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+make >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if (( $? != 0 )); then
+    print "Error: make $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step3=1
+fi 
+
+# STEP 4
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 4 - Make install $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+make install >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if (( $? != 0 )); then
+    print "Error: make install gd failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step4=1
+fi
+
+# final check; all 4 steps
+(( ngx_php_done = step1 + step2 + step3 + step4 ))
+if (( ngx_php_done == 4 )); then
+   ngx_php_done=1
+else
+   ngx_php_done=0
+fi
+
+cd ../..
+
+}
+
+
+
+# ############################################################### #
+# NGINX: PECL + MEMCACHE Build Phase                              #
+# ############################################################### #
+
+build_nginx_peclmcd() {
+dir=peclmemcache
+step1=0
+step2=0
+step3=0
+step4=0
+
+
+cd $dir
+print "\n##################################################"
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Submodule: $dir" | tee -a ${BUILD_PATH}/${BUILD_LOG}
+ls *.tar.gz | read archive_file
+# Debug
+# print "Archive: $archive_file"
+# print "Dir: ${archive_file%%.tar*}"
+
+dirarchive=${archive_file%%.tar*}
+
+# STEP 1
+extract_archive "$dir" "$dirarchive"
+if (( $? == 0)); then
+    step1=1
+fi
+
+# STEP 2
+cd ${archive_file%%.tar*}
+
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 2 - Configure $dir ..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+env PATH=${iprefix}/php/bin:${iprefix}/perl/bin:$PATH \
+    CC=cc CFLAGS="-m64 -xO3 -Kpic -I${iprefix}/include" \
+    LDFLAGS="-m64 -L${iprefix}/lib -R${iprefix}/lib" \
+    ./configure --prefix=${iprefix} --enable-memcache >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if (( $? != 0 )); then
+    print "Error: configure $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step2=1
+fi
+
+# STEP 3
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 3 - Make $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+make >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if (( $? != 0 )); then
+    print "Error: make $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step3=1
+fi 
+
+# STEP 4
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 4 - Make install $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+make install >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if (( $? != 0 )); then
+    print "Error: make install gd failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step4=1
+fi
+
+# final check; all 4 steps
+(( ngx_peclmcd_done = step1 + step2 + step3 + step4 ))
+if (( ngx_peclmcd_done == 4 )); then
+   ngx_peclmcd_done=1
+else
+   ngx_peclmcd_done=0
+fi
+
+cd ../..
+
+}
+
+
+
+# ############################################################### #
+# Recording: Scripts                                              #
+# ############################################################### #
+
+# init.nginx-fcgi
+# nginx-fcgi.pl
+# nginx-fcgi.x86.boot
+# htpasswd
+
+build_nginx_scripts() {
+
+dir=scripts
+step1=0
+step2=0
+
+
+cd $dir/${OS_NAME}
+print "\n##################################################"
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Submodule: $dir ${OS_NAME}" | tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+# STEP 1
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 1 - Installing nginx wrappers ..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+cp *nginx* htpasswd ${iprefix}/nginx/sbin
+if (( $? != 0 )); then
+    print "Error: cannot install nginx scripts !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step1=1
+fi
+
+# set smf directory
+cp -pr smf ${iprefix}/nginx/
+if (( $? != 0 )); then
+    print "Error: cannot install additional smf scripts !" |\
+      tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step2=1
+fi
+
+
+# final check; all 2 steps
+(( ngx_scripts_done = step1 + step2 ))
+if (( ngx_scripts_done == 2 )); then
+   ngx_scripts_done=1
+else
+   ngx_scripts_done=0
+fi
+
+cd ../..
+
+}
+
+
+# ############################################################### #
+# Recording: Test Scripts                                         #
+# ############################################################### #
+test_rec_scripts() {
+
+dir=tests
+step1=0
+step2=0
+step3=0
+
+
+cd $dir
+print "\n##################################################"
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Testing SDR" | tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+# STEP 1
+# Check all recorders if they are sane and execute properly
+
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 1 - Check recorders" |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+. /opt/sdr/bin/setenv
+for r in sys cpu net nic hdw zone
+do
+    print "" >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+    print "Executing ${r}rec" | tee -a ${BUILD_PATH}/${BUILD_LOG}
+    if [[ $r == "nic" ]]; then
+        ${SDR_BIN}/${r}rec_x64 >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+    else
+        ${SDR_BIN}/${r}rec >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+    fi
+    
+    if (( $? != 0 )); then
+        print "Error: cannot run ${r}rec !" |\
+         tee -a ${BUILD_PATH}/${BUILD_LOG}
+        rm /var/tmp/build.${module}
+        exit 3
+    else
+        ((step1=step1+1))
+    fi
+done
+
+(( step1 = step1 / 5 ))
+
+# final check; all 4 steps
+(( tests_done = step1 ))
+if (( tests_done == 1 )); then
+   tests_done=1
+else
+   tests_done=0
+fi
+
+cd ..
+
+}
+

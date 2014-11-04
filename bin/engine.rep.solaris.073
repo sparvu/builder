@@ -1,0 +1,3090 @@
+#!/usr/bin/ksh93
+#
+#  SDR Development tools, Solaris reporting engine 
+#
+#  Copyright (c) 2014 Stefan Parvu (www.systemdatarecorder.org).
+#
+#  This program is free software; you can redistribute it and/or
+#  modify it under the terms of the GNU General Public License
+#  as published by the Free Software Foundation; either version 2
+#  of the License, or (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this program; if not, write to the Free Software Foundation,
+#  Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+#
+#  (http://www.gnu.org/copyleft/gpl.html)
+
+# VERSION: 0.6.3
+
+# ############################################################### #
+# SDR Engine: Solaris                                             # 
+# ############################################################### #
+
+
+# ############################################################### #
+# extract_archive                                                 #
+# ############################################################### #
+extract_archive() {
+# $1 module name
+# $2 dir build
+
+modfile=$1
+bfile=$2
+
+# Debug
+# print "module name: $modfile"
+# print "archive dir: $bfile"
+
+if [[ -d $bfile ]]; then
+    print "Info: Step 1 - Extracting $bfile ..." |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    print "Warning: ${bfile} directory found, cleaning..." |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+    rm -rf ${bfile}
+    if (( $? != 0 )); then
+        print "Error: cannot clean. Check ${modfile} , ${bfile}" |\
+         tee -a ${BUILD_PATH}/${BUILD_LOG}
+        exit 3
+    fi 
+    gzip -dc ${bfile}.tar.gz | tar xvf - >> ${BUILD_PATH}/${BUILD_LOG}
+else
+    print "Info: Step 1 - Extracting $bfile ..." |\
+    tee -a ${BUILD_PATH}/${BUILD_LOG}
+    gzip -dc ${bfile}.tar.gz | tar xvf - >> ${BUILD_PATH}/${BUILD_LOG}
+fi
+
+}
+
+
+
+# ############################################################### #
+# Reporting: Libidn Build Phase                                   #
+# ############################################################### #
+
+build_rep_idn() {
+dir=idn
+step1=0
+step2=0
+step3=0
+step4=0
+
+
+cd $dir
+print "\n##################################################"
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Submodule: $dir" | tee -a ${BUILD_PATH}/${BUILD_LOG}
+ls *.tar.gz | read archive_file
+# Debug
+# print "Archive: $archive_file"
+# print "Dir: ${archive_file%%.tar*}"
+
+dirarchive=${archive_file%%.tar*}
+
+# STEP 1
+extract_archive "$dir" "$dirarchive"
+if (( $? == 0)); then
+    step1=1
+fi
+
+# STEP 2
+cd ${archive_file%%.tar*}
+
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 2 - Configure $dir ..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+
+env PATH=${iprefix}/bin:${iprefix}/perl/bin:$PATH \
+    CC=cc CFLAGS="-m64 -xO3 -Kpic -I${iprefix}/include" \
+    LDFLAGS="-m64 -L${iprefix}/lib -R${iprefix}/lib" \
+    ./configure --prefix=${iprefix} >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if (( $? != 0 )); then
+    print "Error: configure $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step2=1
+fi  
+
+# STEP 3
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 3 - Make $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+make >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if (( $? != 0 )); then
+    print "Error: make $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step3=1
+fi 
+
+
+# STEP 4
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 4 - Make install $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+make install >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if (( $? != 0 )); then
+    print "Error: make install gd failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step4=1
+fi
+
+# final check; all 4 steps
+(( rep_idn_done = step1 + step2 + step3 + step4 ))
+if (( rep_idn_done == 4 )); then
+   rep_idn_done=1
+else
+   rep_idn_done=90
+fi
+
+cd ../..
+
+}
+
+
+# ############################################################### #
+# Reporting: Libcurl Build Phase                                  #
+# ############################################################### #
+
+build_rep_curl() {
+dir=curl
+step1=0
+step2=0
+step3=0
+step4=0
+
+
+cd $dir
+print "\n##################################################"
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Submodule: $dir" | tee -a ${BUILD_PATH}/${BUILD_LOG}
+ls *.tar.gz | read archive_file
+# Debug
+# print "Archive: $archive_file"
+# print "Dir: ${archive_file%%.tar*}"
+
+dirarchive=${archive_file%%.tar*}
+
+# STEP 1
+extract_archive "$dir" "$dirarchive"
+if (( $? == 0)); then
+    step1=1
+fi
+
+# STEP 2
+cd ${archive_file%%.tar*}
+
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 2 - Configure $dir ..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+
+env PATH=${iprefix}/bin:${iprefix}/perl/bin:$PATH \
+    CC=cc CFLAGS="-m64 -xO3 -Kpic -I${iprefix}/include" \
+    LDFLAGS="-m64 -L${iprefix}/lib -R${iprefix}/lib -L/usr/lib/64 -R/usr/lib/64 \
+    -L/usr/sfw/lib/64 -R/usr/sfw/lib/64" \
+    ./configure --prefix=${iprefix} --enable-cookies --enable-nonblocking \
+     --with-libidn >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if (( $? != 0 )); then
+    print "Error: configure $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step2=1
+fi  
+
+# STEP 3
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 3 - Make $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+make >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if (( $? != 0 )); then
+    print "Error: make $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step3=1
+fi 
+
+# STEP 4
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 4 - Make install $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+make install >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if (( $? != 0 )); then
+    print "Error: make install gd failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step4=1
+fi
+
+# final check; all 4 steps
+(( rep_curl_done = step1 + step2 + step3 + step4 ))
+if (( rep_curl_done == 4 )); then
+   rep_curl_done=1
+else
+   rep_curl_done=90
+fi
+
+cd ../..
+
+}
+
+
+
+
+# ############################################################### #
+# Reporting: pkg-config Build Phase                               #
+# ############################################################### #
+build_rep_pkgconfig() {
+dir=pkgconfig
+step1=0
+step2=0
+step3=0
+step4=0
+
+
+cd $dir
+print "\n#######################################################"
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Submodule: $dir" | tee -a ${BUILD_PATH}/${BUILD_LOG}
+ls *.tar.gz | read archive_file
+# Debug
+# print "Archive: $archive_file"
+# print "Dir: ${archive_file%%.tar*}"
+
+dirarchive=${archive_file%%.tar*}
+
+# STEP 1
+extract_archive "$dir" "$dirarchive"
+if (( $? == 0)); then
+    step1=1
+fi
+
+# STEP 2
+cd ${archive_file%%.tar*}
+
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 2 - Configure $dir ..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+env PATH=${iprefix}/bin:${iprefix}/perl/bin:$PATH \
+    CC=cc CFLAGS="-m64 -xO3 -Kpic -I${iprefix}/include" \
+    LDFLAGS="-m64 -L${iprefix}/lib -R${iprefix}/lib" \
+    ./configure --prefix=${iprefix} >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if (( $? != 0 )); then
+    print "Error: configure $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    exit 3
+else
+    step2=1
+fi  
+
+
+# STEP 3
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 3 - Make $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+make >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if (( $? != 0 )); then
+    print "Error: make $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    exit 3
+else
+    step3=1
+fi 
+
+
+# STEP 4
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 4 - Make install $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+make install >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if (( $? != 0 )); then
+    print "Error: make install perl failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    exit 3
+else
+    step4=1
+fi
+
+
+# final check; all 4 steps
+(( rep_pkgc_done = step1 + step2 + step3 + step4 ))
+if (( rep_pkgc_done == 4 )); then
+   rep_pkgc_done=1
+else
+   rep_pkgc_done=90
+fi
+
+cd ../..
+
+}
+
+
+# ############################################################### #
+# Reporting: pixman Build Phase                                   #
+# ############################################################### #
+build_rep_pixman() {
+dir=pixman
+step1=0
+step2=0
+step3=0
+step4=0
+
+
+cd $dir
+print "\n#######################################################"
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Submodule: $dir" | tee -a ${BUILD_PATH}/${BUILD_LOG}
+ls *.tar.gz | read archive_file
+# Debug
+# print "Archive: $archive_file"
+# print "Dir: ${archive_file%%.tar*}"
+
+dirarchive=${archive_file%%.tar*}
+
+# STEP 1
+extract_archive "$dir" "$dirarchive"
+if (( $? == 0)); then
+    step1=1
+fi
+
+# STEP 2
+cd ${archive_file%%.tar*}
+
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 2 - Configure $dir ..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+env PATH=${iprefix}/bin:${iprefix}/perl/bin:$PATH \
+    CC=cc CFLAGS="-m64 -xO3 -Kpic -I${iprefix}/include" \
+    LDFLAGS="-m64 -L${iprefix}/lib -R${iprefix}/lib" \
+    ./configure --prefix=${iprefix} >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if (( $? != 0 )); then
+    print "Error: configure $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    exit 3
+else
+    step2=1
+fi  
+
+
+# STEP 3
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 3 - Make $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+make >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if (( $? != 0 )); then
+    print "Error: make $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    exit 3
+else
+    step3=1
+fi 
+
+
+# STEP 4
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 4 - Make install $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+make install >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if (( $? != 0 )); then
+    print "Error: make install perl failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    exit 3
+else
+    step4=1
+fi
+
+
+# final check; all 4 steps
+(( rep_pixm_done = step1 + step2 + step3 + step4 ))
+if (( rep_pixm_done == 4 )); then
+   rep_pixm_done=1
+else
+   rep_pixm_done=90
+fi
+
+cd ../..
+
+}
+
+
+# ############################################################### #
+# Reporting: cairo Build Phase                                    #
+# ############################################################### #
+build_rep_cairo() {
+dir=cairo
+step1=0
+step2=0
+step3=0
+step4=0
+
+
+cd $dir
+print "\n#######################################################"
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Submodule: $dir" | tee -a ${BUILD_PATH}/${BUILD_LOG}
+ls *.tar.gz | read archive_file
+# Debug
+# print "Archive: $archive_file"
+# print "Dir: ${archive_file%%.tar*}"
+
+dirarchive=${archive_file%%.tar*}
+
+# STEP 1
+extract_archive "$dir" "$dirarchive"
+if (( $? == 0)); then
+    step1=1
+fi
+
+# STEP 2
+cd ${archive_file%%.tar*}
+
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 2 - Configure $dir ..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+/bin/perl -pe "s%grep \-e%ggrep \-e%" -i configure
+
+env PATH=${iprefix}/bin:${iprefix}/perl/bin:$PATH \
+    PKG_CONFIG_PATH=${iprefix}/lib/pkgconfig:/usr/lib/pkgconfig \
+    CC=cc CFLAGS="-m64 -xO3 -Kpic -I${iprefix}/include" \
+    LDFLAGS="-m64 -L${iprefix}/lib -R${iprefix}/lib -L/usr/sfw/lib/64 \
+             -R/usr/sfw/lib/64 -L/usr/openwin/lib/64 -R/usr/openwin/lib/64" \
+    ./configure --prefix=${iprefix} --enable-win32=no >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if (( $? != 0 )); then
+    print "Error: configure $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    exit 3
+else
+    step2=1
+fi  
+
+
+# STEP 3
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 3 - Make $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+make >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if (( $? != 0 )); then
+    print "Error: make $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    exit 3
+else
+    step3=1
+fi 
+
+
+# STEP 4
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 4 - Make install $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+make install >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if (( $? != 0 )); then
+    print "Error: make install perl failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    exit 3
+else
+    step4=1
+fi
+
+
+# final check; all 4 steps
+(( rep_cairo_done = step1 + step2 + step3 + step4 ))
+if (( rep_cairo_done == 4 )); then
+   rep_cairo_done=1
+else
+   rep_cairo_done=90
+fi
+
+cd ../..
+
+}
+
+
+# ############################################################### #
+# Reporting: glib Build Phase                                     #
+# ############################################################### #
+build_rep_glib() {
+dir=glib
+step1=0
+step2=0
+step3=0
+step4=0
+
+
+cd $dir
+print "\n#######################################################"
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Submodule: $dir" | tee -a ${BUILD_PATH}/${BUILD_LOG}
+ls *.tar.gz | read archive_file
+# Debug
+# print "Archive: $archive_file"
+# print "Dir: ${archive_file%%.tar*}"
+
+dirarchive=${archive_file%%.tar*}
+
+# STEP 1
+extract_archive "$dir" "$dirarchive"
+if (( $? == 0)); then
+    step1=1
+fi
+
+# STEP 2
+cd ${archive_file%%.tar*}
+
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 2 - Configure $dir ..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+/bin/perl -pe "s%lresolv%lresolv -lsocket%" -i configure
+env PATH=${iprefix}/bin:${iprefix}/perl/bin:$PATH \
+    CC=cc CFLAGS="-m64 -xO3 -Kpic -I${iprefix}/include" \
+    LDFLAGS="-m64 -L${iprefix}/lib -R${iprefix}/lib" \
+    ./configure --prefix=${iprefix} --with-libiconv=gnu >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if (( $? != 0 )); then
+    print "Error: configure $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    exit 3
+else
+    step2=1
+fi  
+
+
+# STEP 3
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 3 - Make $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+gmake >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if (( $? != 0 )); then
+    print "Error: make $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    exit 3
+else
+    step3=1
+fi 
+
+
+# STEP 4
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 4 - Make install $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+gmake install >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if (( $? != 0 )); then
+    print "Error: make install perl failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    exit 3
+else
+    step4=1
+fi
+
+
+# final check; all 4 steps
+(( rep_glib_done = step1 + step2 + step3 + step4 ))
+if (( rep_glib_done == 4 )); then
+   rep_glib_done=1
+else
+   rep_glib_done=90
+fi
+
+cd ../..
+
+}
+
+
+# ############################################################### #
+# Reporting: pango Build Phase                                    #
+# ############################################################### #
+build_rep_pango() {
+dir=pango
+step1=0
+step2=0
+step3=0
+step4=0
+
+
+cd $dir
+print "\n#######################################################"
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Submodule: $dir" | tee -a ${BUILD_PATH}/${BUILD_LOG}
+ls *.tar.gz | read archive_file
+# Debug
+# print "Archive: $archive_file"
+# print "Dir: ${archive_file%%.tar*}"
+
+dirarchive=${archive_file%%.tar*}
+
+# STEP 1
+extract_archive "$dir" "$dirarchive"
+if (( $? == 0)); then
+    step1=1
+fi
+
+# STEP 2
+cd ${archive_file%%.tar*}
+
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 2 - Configure $dir ..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+/bin/perl -pe "s%CXXFLAGS -fno-rtti -fno-exceptions%CXXFLAGS%" -i configure
+
+env PATH=${iprefix}/bin:${iprefix}/perl/bin:$PATH \
+    PKG_CONFIG_PATH=${iprefix}/lib/pkgconfig:/usr/lib/pkgconfig \
+    CC=cc CFLAGS="-m64 -xO3 -Kpic -I${iprefix}/include" \
+    CXX="/usr/bin/CC" CXXFLAGS="-m64 -xO3 -Kpic -I${iprefix}/include" \
+    LDFLAGS="-m64 -L${iprefix}/lib -R${iprefix}/lib -L/usr/sfw/lib/64 \
+             -R/usr/sfw/lib/64 -L/usr/openwin/lib/64 -R/usr/openwin/lib/64" \
+    ./configure --without-x --prefix=${iprefix} >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if (( $? != 0 )); then
+    print "Error: configure $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    exit 3
+else
+    step2=1
+fi  
+
+
+# STEP 3
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 3 - Make $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+env PATH=${iprefix}/bin:${iprefix}/perl/bin:$PATH \
+gmake >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if (( $? != 0 )); then
+    print "Error: make $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    exit 3
+else
+    step3=1
+fi 
+
+
+# STEP 4
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 4 - Make install $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+gmake install >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if (( $? != 0 )); then
+    print "Error: make install perl failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    exit 3
+else
+    step4=1
+fi
+
+
+# final check; all 4 steps
+(( rep_pango_done = step1 + step2 + step3 + step4 ))
+if (( rep_pango_done == 4 )); then
+   rep_pango_done=1
+else
+   rep_pango_done=90
+fi
+
+cd ../..
+
+}
+
+
+# ############################################################### #
+# Reporting: rrd Build Phase                                      #
+# ############################################################### #
+build_rep_rrd() {
+dir=rrd
+step1=0
+step2=0
+step3=0
+step4=0
+
+
+cd $dir
+print "\n#######################################################"
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Submodule: $dir" | tee -a ${BUILD_PATH}/${BUILD_LOG}
+ls *.tar.gz | read archive_file
+# Debug
+# print "Archive: $archive_file"
+# print "Dir: ${archive_file%%.tar*}"
+
+dirarchive=${archive_file%%.tar*}
+
+# STEP 1
+extract_archive "$dir" "$dirarchive"
+if (( $? == 0)); then
+    step1=1
+fi
+
+# STEP 2
+cd ${archive_file%%.tar*}
+
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 2 - Configure $dir ..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+env PATH=${iprefix}/bin:${iprefix}/perl/bin:$PATH \
+    PKG_CONFIG_PATH=${iprefix}/lib/pkgconfig:/usr/lib/pkgconfig \
+    CC=cc CFLAGS="-m64 -xO3 -Kpic -I${iprefix}/include" \
+    LDFLAGS="-m64 -L${iprefix}/lib -R${iprefix}/lib -L/usr/sfw/lib/64 -R/usr/sfw/lib/64" \
+    ./configure -disable-ruby --disable-tcl --disable-python --prefix=${iprefix} >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if (( $? != 0 )); then
+    print "Error: configure $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    exit 3
+else
+    step2=1
+fi  
+
+
+# STEP 3
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 3 - Make $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+gmake >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if (( $? != 0 )); then
+    print "Error: make $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    exit 3
+else
+    step3=1
+fi 
+
+
+# STEP 4
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 4 - Make install $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+gmake install >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if (( $? != 0 )); then
+    print "Error: make install perl failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    exit 3
+else
+    step4=1
+fi
+
+
+# final check; all 4 steps
+(( rep_rrd_done = step1 + step2 + step3 + step4 ))
+if (( rep_rrd_done == 4 )); then
+   rep_rrd_done=1
+else
+   rep_rrd_done=90
+fi
+
+# get RRD bindings installed
+
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 5 - Perl RRD modules..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+if [[ -d bindings ]];then
+    cd bindings 
+
+    # perl-piped
+    cd perl-piped
+
+    make clean >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+    if (( $? != 0 )); then
+        print "Error: rrd perl-piped make clean failed !" |\
+         tee -a ${BUILD_PATH}/${BUILD_LOG}
+    fi
+
+    ${SDRREP_PERLBIN}/perl Makefile.PL >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+    if (( $? != 0 )); then
+        print "Error: rrd perl-piped Makefile.PL failed !" |\
+         tee -a ${BUILD_PATH}/${BUILD_LOG}
+    fi
+
+    make >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+    if (( $? != 0 )); then
+        print "Error: rrd perl-piped make failed !" |\
+         tee -a ${BUILD_PATH}/${BUILD_LOG}
+    fi
+
+    make test >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+    if (( $? != 0 )); then
+        print "Error: rrd perl-piped make test failed !" |\
+         tee -a ${BUILD_PATH}/${BUILD_LOG}
+    fi
+
+    make install >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+    if (( $? != 0 )); then
+        print "Error: rrd perl-piped make install failed !" |\
+         tee -a ${BUILD_PATH}/${BUILD_LOG}
+    fi
+
+    # perl-shared
+    cd ../perl-shared
+   
+    make clean >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+    if (( $? != 0 )); then
+        print "Error: rrd perl-shared make clean failed !" |\
+         tee -a ${BUILD_PATH}/${BUILD_LOG}
+    fi
+
+    ${SDRREP_PERLBIN}/perl Makefile.PL >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+    if (( $? != 0 )); then
+        print "Error: rrd perl-shared Makefile.PL failed !" |\
+         tee -a ${BUILD_PATH}/${BUILD_LOG}
+    fi
+ 
+    # fix Makefile
+    ${SDRREP_PERLBIN}/perl -pe \
+     "s%^LDFLAGS \= .*%LDFLAGS \= \-m64 \-L\/lib\/64 \-L\/usr\/sfw\/lib\/64 \-R\/usr\/sfw\/lib\/64 \-L\/opt\/sdr\/report\/lib -R\/opt\/sdr\/report\/lib%" \
+      -i Makefile >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+
+    ${SDRREP_PERLBIN}/perl -pe \
+     "s%^LDDLFLAGS \= .*%LDDLFLAGS \= \-G \-m64 \-L\/lib\/64 \-L\/usr\/sfw\/lib\/64 \-R\/usr\/sfw\/lib\/64 \-L\/opt\/sdr\/report\/lib -R\/opt\/sdr\/report\/lib%" \
+     -i Makefile >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+
+    make >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+    if (( $? != 0 )); then
+        print "Error: rrd perl-shared make failed !" |\
+         tee -a ${BUILD_PATH}/${BUILD_LOG}
+    fi
+
+    make test >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+    if (( $? != 0 )); then
+        print "Error: rrd perl-shared make test failed !" |\
+         tee -a ${BUILD_PATH}/${BUILD_LOG}
+    fi
+
+    make install >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+    if (( $? != 0 )); then
+        print "Error: rrd perl-shared make install failed !" |\
+         tee -a ${BUILD_PATH}/${BUILD_LOG}
+    fi
+   
+    # back to rrdtool main installation
+    cd ../..
+fi
+ 
+
+cd ../..
+
+}
+
+
+# ############################################################### #
+# Reporting: gettext Build Phase                                  #
+# ############################################################### #
+build_rep_gettext() {
+dir=gettext
+step1=0
+step2=0
+step3=0
+step4=0
+
+
+cd $dir
+print "\n#######################################################"
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Submodule: $dir" | tee -a ${BUILD_PATH}/${BUILD_LOG}
+ls *.tar.gz | read archive_file
+# Debug
+# print "Archive: $archive_file"
+# print "Dir: ${archive_file%%.tar*}"
+
+dirarchive=${archive_file%%.tar*}
+
+# STEP 1
+extract_archive "$dir" "$dirarchive"
+if (( $? == 0)); then
+    step1=1
+fi
+
+# STEP 2
+cd ${archive_file%%.tar*}
+
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 2 - Configure $dir ..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+ 
+env PATH=${iprefix}/bin:${iprefix}/perl/bin:$PATH \
+    CC=cc CXX="/usr/bin/CC -lCrun" CFLAGS="-m64 -xO3 -Kpic" CXXFLAGS="-m64 -xO3 -Kpic" \
+    LDFLAGS="-m64 -L${iprefix}/lib -R${iprefix}/lib" \
+    ./configure --prefix=${iprefix} >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if (( $? != 0 )); then
+    print "Error: configure $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    exit 3
+else
+    step2=1
+fi  
+
+
+# STEP 3
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 3 - Make $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+make >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if (( $? != 0 )); then
+    print "Error: make $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    exit 3
+else
+    step3=1
+fi 
+
+
+# STEP 4
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 4 - Make install $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+make install >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if (( $? != 0 )); then
+    print "Error: make install perl failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    exit 3
+else
+    step4=1
+fi
+
+
+# final check; all 4 steps
+(( rep_gett_done = step1 + step2 + step3 + step4 ))
+if (( rep_gett_done == 4 )); then
+   rep_gett_done=1
+else
+   rep_gett_done=90
+fi
+
+cd ../..
+
+}
+
+
+# ############################################################### #
+# Reporting: openssl Build Phase                                  #
+# ############################################################### #
+build_rep_ossl() {
+dir=openssl
+step1=0
+step2=0
+step3=0
+step4=0
+
+cd $dir
+print "\n#######################################################"
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Submodule: $dir" | tee -a ${BUILD_PATH}/${BUILD_LOG}
+ls *.tar.gz | read archive_file
+# Debug
+# print "Archive: $archive_file"
+# print "Dir: ${archive_file%%.tar*}"
+
+dirarchive=${archive_file%%.tar*}
+
+# STEP 1
+extract_archive "$dir" "$dirarchive"
+if (( $? == 0)); then
+    step1=1
+fi
+
+# STEP 2
+cd ${archive_file%%.tar*}
+
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 2 - Configure $dir ..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+if [[ $PT_NAME == "i386" ]]; then 
+    env PATH=${iprefix}/bin:${iprefix}/perl/bin:$PATH \
+    ./Configure solaris64-x86_64-cc threads shared --prefix=${iprefix} \
+    --openssldir=${iprefix}/openssl >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+else
+    env PATH=${iprefix}/bin:${iprefix}/perl/bin:$PATH \
+    ./Configure solaris64-sparcv9-cc threads shared --prefix=${iprefix} \
+    --openssldir=${iprefix}/openssl >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+fi
+if (( $? != 0 )); then
+    print "Error: configure $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    exit 3
+else
+    step2=1
+fi  
+
+
+# STEP 3
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 3 - Make $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+# fix xarch
+print "Fixing arch flag..." >> ${BUILD_PATH}/${BUILD_LOG}
+if [[ $PT_NAME == "i386" ]]; then
+    sed 's/\-xarch\=amd64/\-m64/g' Makefile > Makefile.tmp
+else
+    sed 's/\-xarch\=v9/\-m64/g' Makefile > Makefile.tmp
+fi
+if (( $? != 0 )); then
+    print "Error: fixing xarch Makefile failed !" |\
+    tee -a ${BUILD_PATH}/${BUILD_LOG}
+    exit 3
+fi
+mv Makefile.tmp Makefile
+
+
+print "Fixing SHARED_LDFLAGS flag..." >> ${BUILD_PATH}/${BUILD_LOG}
+#if [[ $PT_NAME == "i386" ]]; then
+    sed "s:SHARED_LDFLAGS=-m64 -G -dy -z text:SHARED_LDFLAGS=-m64 -G -dy -z text -L${iprefix}/lib -R${iprefix}/lib:" Makefile > Makefile.tmp
+#else
+#    sed "s:SHARED_LDFLAGS=.*:SHARED_LDFLAGS=-m64 -G -dy -z text -L${iprefix}/lib -R${iprefix}/lib:" Makefile > Makefile.tmp
+#fi
+if (( $? != 0 )); then
+    print "Error: fixing SHARED_LDFLAGS Makefile failed !" |\
+    tee -a ${BUILD_PATH}/${BUILD_LOG}
+    exit 3
+fi
+mv Makefile.tmp Makefile
+
+
+
+make >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if (( $? != 0 )); then
+    print "Error: make $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    exit 3
+else
+    step3=1
+fi 
+
+
+# STEP 4
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 4 - Make install $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+if [[ -d ${iprefix}/lib/openssl ]]; then
+    print "Warning: share directory found, cleaning it..." |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm -rf ${iprefix}/lib/openssl
+    if (( $? != 0 )); then
+        print "Error: cleaning share directory failed !" |\
+         tee -a ${BUILD_PATH}/${BUILD_LOG}
+        exit 3
+    fi
+fi
+
+make install >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if (( $? != 0 )); then
+    print "Error: make install perl failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    exit 3
+else
+    step4=1
+fi
+
+
+# final check; all 4 steps
+(( rep_ossl_done = step1 + step2 + step3 + step4 ))
+if (( rep_ossl_done == 4 )); then
+   rep_ossl_done=1
+else
+   rep_ossl_done=90
+fi
+
+cd ../..
+
+}
+
+
+
+
+# ############################################################### #
+# Reporting: Perl Build Phase                                     #
+# ############################################################### #
+build_rep_perl() {
+dir=perl
+step1=0
+step2=0
+step3=0
+step4=0
+step5=0
+step6=0
+step7=0
+
+cd $dir
+print "\n#######################################################"
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Submodule: $dir" | tee -a ${BUILD_PATH}/${BUILD_LOG}
+ls *.tar.gz | read archive_file
+# Debug
+# print "Archive: $archive_file"
+# print "Dir: ${archive_file%%.tar*}"
+
+dirarchive=${archive_file%%.tar*}
+
+# STEP 1
+extract_archive "$dir" "$dirarchive"
+if (( $? == 0)); then
+    step1=1
+fi
+
+# STEP 2
+cd ${archive_file%%.tar*}
+
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 2 - Configure perl ..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+sh Configure -Dcc='cc' -Doptimize='-xO3' -Duselargefiles -Duse64bitall \
+             -Dcf_by="support@systemdatarecorder.org"       \
+             -Dcf_email="support@systemdatarecorder.org"    \
+             -Dprefix=${iprefix}/perl -des >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if (( $? != 0 )); then
+    print "Error: configure perl failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    exit 3
+else
+    # fix config.sh
+    # Workaround: Bug 32 - SDR Perl - Memory leak in Perl 5.10+
+    # on Solaris 10 with %ENV remove flag: -DPERL_USE_SAFE_PUTENV
+
+    # ################################################################## #
+    # fix ldflags
+    # ################################################################## #
+
+    print "Fixing ldflags..." >> ${BUILD_PATH}/${BUILD_LOG}
+
+    if [[ $PT_NAME == "i386" ]]; then
+        sed 's/\-xarch=generic64 \-L\/opt\/sunstudio12.1\/prod\/lib\/amd64 \-L\/lib\/64/\-m64 \-L\/lib\/64 \-L\/usr\/sfw\/lib\/amd64/' config.sh > config.sh.tmp
+    else
+        sed 's/^ldflags\=.*/ldflags\='\''\-m64 \-L\/lib\/64 \-L\/usr\/lib\/sparcv9'\''/' config.sh > config.sh.tmp
+    fi
+    if (( $? != 0 )); then
+        print "Error: fixing ldflags perl failed !" |\
+        tee -a ${BUILD_PATH}/${BUILD_LOG}
+        exit 3
+    fi
+
+    mv config.sh.tmp config.sh
+
+
+    # ################################################################## #
+    # fix libspath
+    # ################################################################## #
+
+    print "Fixing libspath..." >> ${BUILD_PATH}/${BUILD_LOG}
+
+    if [[ $PT_NAME == "i386" ]]; then
+        sed 's/\/opt\/sunstudio12.1\/prod\/lib\/amd64 \/lib\/64 \/usr\/lib \/usr\/ccs\/lib/\/lib\/64 \/usr\/lib \/usr\/ccs\/lib \/usr\/sfw\/lib\/amd64/' config.sh > config.sh.tmp
+    else
+        sed 's/^libspath\=.*/libspath\='\''\/lib\/64 \/usr\/lib\/sparcv9 \/usr\/ccs\/lib\/sparcv9 \/usr\/lib \/usr\/ccs\/lib'\''/' config.sh > config.sh.tmp
+    fi
+    if (( $? != 0 )); then
+        print "Error: fixing libpath perl failed !" |\
+        tee -a ${BUILD_PATH}/${BUILD_LOG}
+        exit 3
+    fi
+    mv config.sh.tmp config.sh
+
+
+
+    # ################################################################## #
+    # fix loclibpth
+    # ################################################################## #
+
+    print "Fixing loclibpth..." >> ${BUILD_PATH}/${BUILD_LOG} 
+
+    if [[ $PT_NAME == "i386" ]]; then
+        sed 's/\/opt\/sunstudio12.1\/prod\/lib\/amd64 \/amd64 \/lib\/64 \/64 \/usr\/local\/lib \/opt\/local\/lib \/usr\/gnu\/lib \/opt\/gnu\/lib \/usr\/GNU\/lib \/opt\/GNU\/lib/\/amd64 \/lib\/64 \/64 \/usr\/lib \/usr\/ccs\/lib \/usr\/sfw\/lib\/amd64/' config.sh > config.sh.tmp
+    else
+        sed 's/^loclibpth=.*/loclibpth\='\''\/lib\/64 \/usr\/lib\/sparcv9 \/usr\/ccs\/lib\/sparcv9'\''/' config.sh > config.sh.tmp
+    fi
+
+    if (( $? != 0 )); then
+        print "Error: fixing loclibpth perl failed !" |\
+        tee -a ${BUILD_PATH}/${BUILD_LOG}
+        exit 3
+    fi
+    mv config.sh.tmp config.sh
+   
+
+    # ################################################################## #
+    # fix ccflags
+    # ################################################################## #
+    print "Fixing ccflags..." >> ${BUILD_PATH}/${BUILD_LOG}
+    if [[ $PT_NAME == "i386" ]]; then
+        sed 's/\-xarch=generic64 \-D_LARGEFILE_SOURCE \-D_FILE_OFFSET_BITS=64 \-DPERL_USE_SAFE_PUTENV/\-m64 \-D_LARGEFILE_SOURCE \-D_FILE_OFFSET_BITS=64/' config.sh > config.sh.tmp
+    else
+        sed 's/^ccflags\=.*/ccflags\='\''\-m64 \-D_LARGEFILE_SOURCE \-D_FILE_OFFSET_BITS=64'\''/' config.sh > config.sh.tmp
+    fi
+
+    if (( $? != 0 )); then
+        print "Error: fixing ccflags perl failed !" |\
+        tee -a ${BUILD_PATH}/${BUILD_LOG}
+        exit 3
+    fi
+    mv config.sh.tmp config.sh
+
+
+
+    # ################################################################## #
+    # fix cppflags
+    # ################################################################## #
+
+    print "Fixing cppflags..." >> ${BUILD_PATH}/${BUILD_LOG}
+    sed 's/\-xarch=generic64/\-m64/' config.sh > config.sh.tmp
+    if (( $? != 0 )); then
+        print "Error: fixing cppflags perl failed !" |\
+        tee -a ${BUILD_PATH}/${BUILD_LOG}
+        exit 3
+    fi
+    mv config.sh.tmp config.sh
+ 
+    sh Configure -S >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+    make depend >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+    if (( $? != 0 )); then
+        print "Error: make depend perl failed !" |\
+        tee -a ${BUILD_PATH}/${BUILD_LOG}
+        exit 3
+    else
+        step2=1
+    fi
+fi
+
+# STEP 3
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 3 - Make perl..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+make >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if (( $? != 0 )); then
+    print "Error: make perl failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    exit 3
+else
+    step3=1
+fi
+
+# STEP 4
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 4 - Make test perl..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+make test >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if (( $? != 0 )); then
+    print "Error: make test perl failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    exit 3
+else
+    step4=1
+fi
+
+# STEP 5
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 5 - Make install perl..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+ 
+if [[ -d ${iprefix}/perl ]]; then
+    print "Warning: perl directory found, cleaning it..." |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm -rf ${iprefix}/perl
+    if (( $? != 0 )); then
+        print "Error: cleaning $dir directory" |\
+         tee -a ${BUILD_PATH}/${BUILD_LOG}
+        exit 3
+    fi
+fi
+ 
+make install >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if (( $? != 0 )); then
+    print "Error: make install perl failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    exit 3
+else
+    step5=1
+fi
+
+# STEP 6
+
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 6 - CPAN modules" | tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+cp /opt/build/cpan/Config.pm ${iprefix}/perl/lib/5.12.3/CPAN
+${SDRREP_PERLBIN}/perl -MCPAN -e 'install Bundle::LWP' >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if (( $? != 0 )); then
+    print "Error: Bundle::LWP installation failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    exit 3
+else
+    (( step6 = step6 + 1))
+fi
+
+
+for lib in YAML Expect Test::Pod Test::Pod::Coverage HTML::CalendarMonth FCGI CGI \
+           CGI::Simple \
+           CGI::Minimal FCGI::ProcManager FCGI::Spawn IO::All HTTP::Async \
+           Term::ProgressBar PerlIO::gzip Date::Manip Date::Calc PDF::Create \
+           Statistics::Distributions Statistics::Frequency Statistics::Shannon \
+           Statistics::GammaDistribution Statistics::Basic HTML::Calendar::Simple \
+           HTML::Calendar::Monthly HTML::CalendarMonthSimple XML::NamespaceSupport \
+           XML::SAX XML::Simple IO::Prompt Smart::Comments Net::Telnet \
+           Net::SSH::Expect Authen::SASL Email::Send Email::Valid MIME::Lite \
+           Text::CSV_XS Text::CSV \
+           Regexp::Common IO::Interactive Compress::Zlib Regexp::Log::DateRange \
+           Term::Prompt Net::Netmask Text::Autoformat Text::FormatTable \
+           Data::Dumper Perl::Critic Fatal Devel::Cover Devel::Cycle \
+           Data::Report Test::Deep Devel::Size Config::General Config::Std Config::Auto \
+           Logfile::Rotate Log::Log4perl Statistics::R Geo::IPfree
+do
+
+    if [[ $lib == "MIME::Lite" ]]; then
+        env PERL_MM_USE_DEFAULT=1 \
+          ${SDRREP_PERLBIN}/perl -MCPAN -e 'install "'$lib'"' >> \
+          ${BUILD_PATH}/${BUILD_LOG} 2>&1
+        if (( $? != 0 )); then
+            tee -a ${BUILD_PATH}/${BUILD_LOG}
+            exit 3
+        else
+            ((step6 = step6 + 1))
+            continue
+        fi
+    fi
+
+
+    ${SDRREP_PERLBIN}/perl -MCPAN -e 'install "'$lib'"' >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+    if (( $? != 0 )); then
+        print "Error: $lib installation failed !" |\
+         tee -a ${BUILD_PATH}/${BUILD_LOG}
+        exit 3
+    else
+        ((step6 = step6 + 1))
+    fi
+done
+
+env PERL_MM_USE_DEFAULT=1 ${SDRREP_PERLBIN}/perl -MCPAN -e 'install Net::SSH::Perl' >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if (( $? != 0 )); then
+    print "Error: Net::SSH::Perl installation failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    exit 3
+else
+    ((step6 = step6 + 1))
+fi
+
+env PERL_MM_USE_DEFAULT=1 ${SDRREP_PERLBIN}/perl -MCPAN -e 'install Net::SFTP' >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if (( $? != 0 )); then
+    print "Error: Net::SFTP installation failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    exit 3
+else
+    ((step6 = step6 + 1))
+fi
+
+# there are 64 perl modules install calls
+(( step6 = step6 / 64 ));
+
+
+# final check; all 6 steps
+(( rep_perl_done = step1 + step2 + step3 + step4 + step5 + step6 ))
+if (( rep_perl_done == 6 )); then
+   rep_perl_done=1
+else
+   rep_perl_done=90
+fi
+
+print "\n#######################################################"
+
+cd ../..
+
+}
+
+
+
+# ############################################################### #
+# Reporting:: iconv Build Phase                                   #
+# ############################################################### #
+
+build_rep_iconv() {
+dir=iconv
+step1=0
+step2=0
+step3=0
+step4=0
+
+
+cd $dir
+print "\n##################################################"
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Submodule: $dir" | tee -a ${BUILD_PATH}/${BUILD_LOG}
+ls *.tar.gz | read archive_file
+# Debug
+# print "Archive: $archive_file"
+# print "Dir: ${archive_file%%.tar*}"
+
+dirarchive=${archive_file%%.tar*}
+
+# STEP 1
+extract_archive "$dir" "$dirarchive"
+if (( $? == 0)); then
+    step1=1
+fi
+
+# STEP 2
+cd ${archive_file%%.tar*}
+
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 2 - Configure $dir ..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+ 
+env PATH=${iprefix}/bin:${iprefix}/perl/bin:$PATH \
+    CC=cc CFLAGS="-m64 -xO3 -Kpic" \
+    LDFLAGS="-m64 -L${iprefix}/lib -R${iprefix}/lib -L/usr/sfw/lib/64" \
+    ./configure --prefix=${iprefix} >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if (( $? != 0 )); then
+    print "Error: configure $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step2=1
+fi  
+
+# STEP 3
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 3 - Make $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+make >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if (( $? != 0 )); then
+    print "Error: make $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step3=1
+fi 
+
+# STEP 4
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 4 - Make install $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+
+make install >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if (( $? != 0 )); then
+    print "Error: make install gd failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step4=1
+fi
+
+# final check; all 4 steps
+(( rep_iconv_done = step1 + step2 + step3 + step4 ))
+if (( rep_iconv_done == 4 )); then
+   rep_iconv_done=1
+else
+   rep_iconv_done=90
+fi
+
+cd ../..
+
+}
+
+
+# ############################################################### #
+# Reporting:: readline Build Phase                                #
+# ############################################################### #
+
+build_rep_readline() {
+dir=readline
+step1=0
+step2=0
+step3=0
+step4=0
+
+
+cd $dir
+print "\n#######################################################"
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Submodule: $dir" | tee -a ${BUILD_PATH}/${BUILD_LOG}
+ls *.tar.gz | read archive_file
+# Debug
+# print "Archive: $archive_file"
+# print "Dir: ${archive_file%%.tar*}"
+
+dirarchive=${archive_file%%.tar*}
+
+# STEP 1
+extract_archive "$dir" "$dirarchive"
+if (( $? == 0)); then
+    step1=1
+fi
+
+# STEP 2
+cd ${archive_file%%.tar*}
+
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 2 - Configure $dir ..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+env PATH=${iprefix}/bin:${iprefix}/perl/bin:$PATH \
+CC=cc CFLAGS="-m64 -xO3 -Kpic -I${iprefix}/include" \
+LDFLAGS="-m64 -L${iprefix}/lib -R${iprefix}/lib" \
+./configure --prefix=${iprefix} >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if (( $? != 0 )); then
+    print "Error: configure $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step2=1
+fi  
+
+# STEP 3
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 3 - Make $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+make >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if (( $? != 0 )); then
+    print "Error: make $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step3=1
+fi 
+
+# STEP 4
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 4 - Make install $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+
+make install >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if (( $? != 0 )); then
+    print "Error: make install gd failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step4=1
+fi
+
+# final check; all 4 steps
+(( rep_rdln_done = step1 + step2 + step3 + step4 ))
+if (( rep_rdln_done == 4 )); then
+   rep_rdln_done=1
+else
+   rep_rdln_done=90
+fi
+
+cd ../..
+
+}
+
+
+# ############################################################### #
+# Reporting: GD Build Phase                                       #
+# ############################################################### #
+
+build_rep_gd() {
+dir=gd
+step1=0
+step2=0
+step3=0
+step4=0
+
+
+cd $dir
+print "\n#######################################################"
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Submodule: $dir" | tee -a ${BUILD_PATH}/${BUILD_LOG}
+ls *.tar.gz | read archive_file
+# Debug
+# print "Archive: $archive_file"
+# print "Dir: ${archive_file%%.tar*}"
+
+dirarchive=${archive_file%%.tar*}
+
+# STEP 1
+extract_archive "$dir" "$dirarchive"
+if (( $? == 0)); then
+    step1=1
+fi
+
+# STEP 2
+cd ${archive_file%%.tar*}
+
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 2 - Configure $dir ..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+ 
+env PATH=${iprefix}/bin:${iprefix}/perl/bin:$PATH \
+    CC=cc CFLAGS="-m64 -xO3 -Kpic" \
+    LDFLAGS="-m64 -L${iprefix}/lib -R${iprefix}/lib -L/lib/64 -L/usr/lib/64 \
+             -L/usr/sfw/lib/64 -R/usr/sfw/lib/64" ./configure \
+ --prefix=${iprefix} >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if (( $? != 0 )); then
+    print "Error: configure $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step2=1
+fi  
+
+# STEP 3
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 3 - Make $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+make >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if (( $? != 0 )); then
+    print "Error: make $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step3=1
+fi 
+
+# STEP 4
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 4 - Make install $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+
+make install >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if (( $? != 0 )); then
+    print "Error: make install gd failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step4=1
+fi
+
+# final check; all 4 steps
+(( rep_gd_done = step1 + step2 + step3 + step4 ))
+if (( rep_gd_done == 4 )); then
+   rep_gd_done=1
+else
+   rep_gd_done=90
+fi
+
+cd ../..
+
+}
+
+# ############################################################### #
+# Reporting: Perl Modules: GD                                     #
+# ############################################################### #
+
+build_rep_perlmods() {
+
+dir=perlmods
+step1=0
+step2=0
+step3=0
+step4=0
+step5=0
+
+cd $dir
+print "\n#######################################################"
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Submodule: $dir" | tee -a ${BUILD_PATH}/${BUILD_LOG}
+ls *.tar.gz | read archive_file
+# Debug
+# print "Archive: $archive_file"
+# print "Dir: ${archive_file%%.tar*}"
+
+dirarchive=${archive_file%%.tar*}
+
+# STEP 1
+extract_archive "$dir" "$dirarchive"
+if (( $? == 0)); then
+    step1=1
+fi
+
+# STEP 2
+cd ${archive_file%%.tar*}
+
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 2 - Configure $dir ..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+env PATH=${iprefix}/bin:${iprefix}/perl/bin:$PATH \
+    CC=cc ${SDRREP_PERLBIN}/perl Makefile.PL  >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+
+# LDFLAGS =  -m64 -L/lib/64 
+#sed 's/LDFLAGS \=  \-m64 \-L\/lib\/64/LDFLAGS \= \-m64 \-L\/lib\/64 \-L\/usr\/sfw\/lib\/amd64 \-R\/usr\/sfw\/lib\/amd64 \-L\/opt\/sdr\/report\/lib \-R\/opt\/sdr\/report\/lib/' Makefile > Makefile.tmp
+
+sed "s:LDFLAGS =  -m64 -L/lib/64:LDFLAGS = -m64 -L${iprefix}/lib -R${iprefix}/lib -L/lib/64 -L/usr/sfw/lib/64 -R/usr/sfw/lib/64:" Makefile > Makefile.tmp
+mv Makefile.tmp Makefile
+
+# LDDLFLAGS =  -G -m64 -L/lib/64
+#sed 's/LDDLFLAGS \=  \-G \-m64 \-L\/lib\/64/LDDLFLAGS \= \-G \-m64 \-L\/usr\/sfw\/lib\/amd64 \-R\/usr\/sfw\/lib\/amd64 \-L\/lib\/64 \-L\/opt\/sdr\/report\/lib \-R\/opt\/sdr\/report\/lib/' Makefile > Makefile.tmp
+
+sed "s:LDDLFLAGS =  -G -m64 -L/lib/64:LDDLFLAGS = -G -m64 -L${iprefix}/lib -R${iprefix}/lib -L/usr/sfw/lib/64 -R/usr/sfw/lib/64 -L/lib/64:" Makefile > Makefile.tmp
+mv Makefile.tmp Makefile
+
+
+# CCFLAGS
+sed 's/^CCFLAGS.*/CCFLAGS \= \-m64/' Makefile > Makefile.tmp
+mv Makefile.tmp Makefile
+
+if (( $? != 0 )); then
+    print "Error: configure $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step2=1
+fi
+
+
+# STEP 3
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 3 - Make $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+make >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if (( $? != 0 )); then
+    print "Error: make $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step3=1
+fi 
+
+
+# STEP 4
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 4 - Make install $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+make install >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if (( $? != 0 )); then
+    print "Error: make install perl failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step4=1
+fi
+
+# STEP 5
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 5 - Install CPAN GD modules..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+for lib in GD::Text GD::Graph Chart::Base Template::Plugin::GD::Image
+do
+    env PERL_MM_USE_DEFAULT=1 \
+      ${SDRREP_PERLBIN}/perl -MCPAN -e 'install "'$lib'"' >> \
+        ${BUILD_PATH}/${BUILD_LOG} 2>&1
+        if (( $? != 0 )); then
+            tee -a ${BUILD_PATH}/${BUILD_LOG}
+            exit 3
+        else
+            ((step5 = step5 + 1))
+        fi
+done
+
+# there are 4 perl modules install calls
+(( step5 = step5 / 4 ));
+
+
+#
+# final check; all 5 steps
+(( rep_perlmodules_done = step1 + step2 + step3 + step4 + step5))
+if (( rep_perlmodules_done == 5 )); then
+   rep_perlmodules_done=1
+else
+   rep_perlmodules_done=90
+fi
+
+cd ../..
+
+}
+
+
+# ############################################################### #
+# Reporting: Perl Module: DBD::Pg                                 #
+# ############################################################### #
+
+build_rep_dbdpg() {
+
+dir=dbdpg
+step1=0
+step2=0
+step3=0
+step4=0
+step5=0
+
+cd $dir
+print "\n#######################################################"
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Submodule: $dir" | tee -a ${BUILD_PATH}/${BUILD_LOG}
+ls *.tar.gz | read archive_file
+# Debug
+# print "Archive: $archive_file"
+# print "Dir: ${archive_file%%.tar*}"
+
+dirarchive=${archive_file%%.tar*}
+
+# STEP 1
+extract_archive "$dir" "$dirarchive"
+if (( $? == 0)); then
+    step1=1
+fi
+
+# STEP 2
+cd ${archive_file%%.tar*}
+
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 2 - Configure $dir ..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+env PATH=${iprefix}/bin:$PATH ${SDRREP_PERLBIN}/perl Makefile.PL  >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+
+cp ../Makefile.good Makefile
+if (( $? != 0 )); then
+    print "Error: configure $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step2=1
+fi
+
+
+# STEP 3
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 3 - Make $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+make >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if (( $? != 0 )); then
+    print "Error: make $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step3=1
+fi 
+
+
+# STEP 4
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 4 - Make install $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+make install >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if (( $? != 0 )); then
+    print "Error: make install perl failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step4=1
+fi
+
+#
+# final check; all 4 steps
+(( rep_dbdpg_done = step1 + step2 + step3 + step4 ))
+if (( rep_dbdpg_done == 4 )); then
+   rep_dbdpg_done=1
+else
+   rep_dbdpg_done=90
+fi
+
+cd ../..
+
+}
+
+
+# ############################################################### #
+# Reporting: PCRE Build Phase                                     #
+# ############################################################### #
+
+build_rep_pcre() {
+dir=pcre
+step1=0
+step2=0
+step3=0
+step4=0
+
+
+cd $dir
+print "\n#######################################################"
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Submodule: $dir" | tee -a ${BUILD_PATH}/${BUILD_LOG}
+ls *.tar.gz | read archive_file
+# Debug
+# print "Archive: $archive_file"
+# print "Dir: ${archive_file%%.tar*}"
+
+dirarchive=${archive_file%%.tar*}
+
+# STEP 1
+extract_archive "$dir" "$dirarchive"
+if (( $? == 0)); then
+    step1=1
+fi
+
+# STEP 2
+cd ${archive_file%%.tar*}
+
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 2 - Configure $dir ..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+ 
+env PATH=${iprefix}/bin:${iprefix}/perl/bin:$PATH \
+    CC=cc CFLAGS="-m64 -xO3 -Kpic" LDFLAGS="-m64 -L${iprefix}/lib \
+     -R${iprefix}/lib -L/lib/64 -L/usr/lib/64 \
+     -L/usr/sfw/lib/64 -R/usr/sfw/lib/64" \
+     ./configure --disable-cpp --enable-utf8 --enable-unicode-properties \
+ --prefix=${iprefix} >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if (( $? != 0 )); then
+    print "Error: configure $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step2=1
+fi  
+
+# STEP 3
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 3 - Make $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+make >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if (( $? != 0 )); then
+    print "Error: make $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step3=1
+fi 
+
+# STEP 4
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 4 - Make install $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+
+make install >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if (( $? != 0 )); then
+    print "Error: make install gd failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step4=1
+fi
+
+# final check; all 4 steps
+(( rep_pcre_done = step1 + step2 + step3 + step4 ))
+if (( rep_pcre_done == 4 )); then
+   rep_pcre_done=1
+else
+   rep_pcre_done=90
+fi
+
+cd ../..
+
+}
+
+
+# ############################################################### #
+# Reporting: FCGI Build Phase                                     #
+# ############################################################### #
+
+build_rep_fcgi() {
+dir=fcgi
+step1=0
+step2=0
+step3=0
+step4=0
+
+
+cd $dir
+print "\n#######################################################"
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Submodule: $dir" | tee -a ${BUILD_PATH}/${BUILD_LOG}
+ls *.tar.gz | read archive_file
+# Debug
+# print "Archive: $archive_file"
+# print "Dir: ${archive_file%%.tar*}"
+
+dirarchive=${archive_file%%.tar*}
+
+# STEP 1
+extract_archive "$dir" "$dirarchive"
+if (( $? == 0)); then
+    step1=1
+fi
+
+# STEP 2
+cd ${archive_file%%.tar*}
+
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 2 - Configure $dir ..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+ 
+env PATH=${iprefix}/bin:${iprefix}/per/bin:$PATH \
+    CC=cc CFLAGS="-m64 -xO3 -Kpic -I${iprefix}/include" \
+    CXX=CC CXXFLAGS="-xO3 -m64 -Kpic -I${iprefix}/include" \
+    LDFLAGS="-m64 -L${iprefix}/lib -R${iprefix}/lib \
+             -L/lib/64 -L/usr/lib/64 -L/usr/sfw/lib/64 \
+             -R/usr/sfw/lib/64" ./configure \
+    --prefix=${iprefix} >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if (( $? != 0 )); then
+    print "Error: configure $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step2=1
+fi  
+
+# STEP 3
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 3 - Make $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+make >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if (( $? != 0 )); then
+    print "Error: make $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step3=1
+fi 
+
+# STEP 4
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 4 - Make install $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+
+make install >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if (( $? != 0 )); then
+    print "Error: make install gd failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step4=1
+fi
+
+# final check; all 4 steps
+(( rep_fcgi_done = step1 + step2 + step3 + step4 ))
+if (( rep_fcgi_done == 4 )); then
+   rep_fcgi_done=1
+else
+   rep_fcgi_done=90
+fi
+
+cd ../..
+
+}
+
+
+# ############################################################### #
+# Reporting: FCGIWRAP Build Phase                                 #
+# ############################################################### #
+
+build_rep_fcgiwrap() {
+dir=fcgiwrap
+step1=0
+step2=0
+step3=0
+
+cd $dir
+print "\n#######################################################"
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Submodule: $dir" | tee -a ${BUILD_PATH}/${BUILD_LOG}
+ls *.tar.gz | read archive_file
+# Debug
+# print "Archive: $archive_file"
+# print "Dir: ${archive_file%%.tar*}"
+
+dirarchive=${archive_file%%.tar*}
+
+# STEP 1
+extract_archive "$dir" "$dirarchive"
+if (( $? == 0)); then
+    step1=1
+fi
+
+# STEP 2
+cd ${archive_file%%.tar*}
+
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 2 - Make $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+make >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if (( $? != 0 )); then
+    print "Error: make $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step2=1
+fi 
+
+# STEP 3
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 3 - Make install $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+if [[ ! -d ${iprefix}/ws/sbin ]]; then
+    mkdir ${iprefix}/ws/sbin
+fi
+
+make install >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if (( $? != 0 )); then
+    print "Error: make install fcgiwrap failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step3=1
+fi
+
+# final check; all 3 steps
+(( rep_fcgiw_done = step1 + step2 + step3 ))
+if (( rep_fcgiw_done == 3 )); then
+   rep_fcgiw_done=1
+else
+   rep_fcgiw_done=90
+fi
+
+cd ../..
+
+}
+
+
+
+# ############################################################### #
+# Reporting: WS Build Phase                                       #
+# ############################################################### #
+
+build_rep_ws() {
+dir=ws
+step1=0
+step2=0
+step3=0
+step4=0
+
+
+cd $dir
+print "\n#######################################################"
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Submodule: $dir" | tee -a ${BUILD_PATH}/${BUILD_LOG}
+ls *.tar.gz | read archive_file
+# Debug
+# print "Archive: $archive_file"
+# print "Dir: ${archive_file%%.tar*}"
+
+dirarchive=${archive_file%%.tar*}
+
+# STEP 1
+extract_archive "$dir" "$dirarchive"
+if (( $? == 0)); then
+    step1=1
+fi
+
+# STEP 2
+cd ${archive_file%%.tar*}
+
+# copy the fair plugin
+cp -pr ../../upstream .
+
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 2 - Configure $dir ..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+if [[ $PT_NAME == "i386" ]]; then
+    env NGX_AUX=" src/os/unix/ngx_sunpro_amd64.il"  \
+    CC=cc CFLAGS="-m64 -xO3"                    \
+    ./configure --prefix=${iprefix}/ws --with-ipv6 \
+    --with-perl=${iprefix}/perl/bin             \
+    --with-http_ssl_module                      \
+    --with-http_stub_status_module              \
+    --with-http_realip_module                   \
+    --with-http_flv_module                      \
+    --with-http_gzip_static_module              \
+    --with-sha1=/usr/lib/64                     \
+    --with-cc-opt="-I ${iprefix}/include"       \
+    --with-ld-opt="-m64 -L${iprefix}/lib -R${iprefix}/lib -R/usr/lib/64 -R/lib/64" \
+    --add-module=upstream >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+else
+    env NGX_AUX=" src/os/unix/ngx_sunpro_sparc64.il"  \
+    CC=cc CFLAGS="-m64 -xO3"                          \
+    ./configure --prefix=${iprefix}/ws --with-ipv6    \
+    --with-perl=${iprefix}/perl/bin             \
+    --with-http_ssl_module                      \
+    --with-http_stub_status_module              \
+    --with-http_realip_module                   \
+    --with-http_flv_module                      \
+    --with-http_gzip_static_module              \
+    --with-sha1=/usr/lib/64                     \
+    --with-cc-opt="-I ${iprefix}/include"       \
+    --with-ld-opt="-m64 -L${iprefix}/lib -R${iprefix}/lib -R/usr/lib/64 -R/lib/64" \
+    --add-module=upstream >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+fi
+if (( $? != 0 )); then
+    print "Error: configure $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step2=1
+fi  
+
+# STEP 3
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 3 - Make $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+make >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if (( $? != 0 )); then
+    print "Error: make $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step3=1
+fi 
+
+# STEP 4
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 4 - Make install $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+
+make install >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if (( $? != 0 )); then
+    print "Error: make install gd failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step4=1
+fi
+
+# final check; all 4 steps
+(( rep_ws_done = step1 + step2 + step3 + step4 ))
+if (( rep_ws_done == 4 )); then
+   rep_ws_done=1
+else
+   rep_ws_done=90
+fi
+
+cd ../..
+
+}
+
+
+
+# ############################################################### #
+# Reporting: R Build Phase                                        #
+# ############################################################### #
+build_rep_R() {
+dir=R
+step1=0
+step2=0
+step3=0
+step4=0
+
+
+cd $dir
+print "\n#######################################################"
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Submodule: $dir" | tee -a ${BUILD_PATH}/${BUILD_LOG}
+ls *.tar.gz | read archive_file
+# Debug
+# print "Archive: $archive_file"
+# print "Dir: ${archive_file%%.tar*}"
+
+dirarchive=${archive_file%%.tar*}
+
+# STEP 1
+extract_archive "$dir" "$dirarchive"
+if (( $? == 0)); then
+    step1=1
+fi
+
+# STEP 2
+cd ${archive_file%%.tar*}
+
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 2 - Configure $dir ..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+if [[ $PT_NAME == "i386" ]]; then
+    env PATH=${iprefix}/bin:${iprefix}/perl/bin:$PATH \
+    PKG_CONFIG_PATH=/opt/sdr/report/lib/pkgconfig:/usr/lib/pkgconfig \
+    CC=cc CXX="/usr/bin/CC -library=stlport4" \
+    CFLAGS="-m64 -xO3 -Kpic -xc99 -xlibmieee -xlibmil -I${iprefix}/include" \
+    F77="/usr/bin/f95" FC="/usr/bin/f95" \
+    FFLAGS="-m64 -O3 -libmil" \
+    FCFLAGS="-m64 -O3 -libmil" \
+    CXXFLAGS="-m64 -xO3 -Kpic -xlibmil -features=tmplrefstatic \
+          -I${iprefix}/include" \
+    CXXPICFLAGS=-Kpic FCPICFLAGS=-Kpic FPICFLAGS="-m64 -Kpic -O3 -libmil" \
+    SHLIB_LDFLAGS=-shared SHLIB_CXXLDFLAGS="-G -lCstd" SHLIB_FCLDFLAGS=-G \
+    SAFE_FFLAGS="-O3 -libmil" \
+    FCLIBS="-lfai -lfsu" \
+    LDFLAGS="-m64 -L${iprefix}/lib -L${iprefix}/R/lib \
+          -L/lib/64 -L/usr/lib/64 -L/usr/sfw/lib/64 -L/usr/openwin/lib/64 \
+          -R${iprefix}/lib -R${iprefix}/R/lib -R/lib/64 -R/usr/lib/64 \
+          -R/usr/sfw/lib/64 -R/usr/openwin/lib/64" \
+    ./configure --with-x --prefix=${iprefix}/R >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+else
+    env PATH=${iprefix}/bin:${iprefix}/perl/bin:$PATH \
+    PKG_CONFIG_PATH=/opt/sdr/report/lib/pkgconfig:/usr/lib/pkgconfig \
+    CC=cc CXX="/usr/bin/CC -library=stlport4" \
+    CFLAGS="-m64 -xO3 -KPIC -xc99 -xlibmieee -xlibmil -I${iprefix}/include" \
+    F77="/usr/bin/f95" FC="/usr/bin/f95" \
+    FFLAGS="-m64 -O3 -libmil" \
+    FCFLAGS="-m64 -O3 -libmil" \
+    CXXFLAGS="-m64 -xO3 -KPIC -xlibmil -features=tmplrefstatic \
+          -I${iprefix}/include" \
+    CXXPICFLAGS=-KPIC FCPICFLAGS=-KPIC FPICFLAGS="-m64 -KPIC -O3 -libmil" \
+    SHLIB_LDFLAGS=-shared SHLIB_CXXLDFLAGS="-G -lCstd" SHLIB_FCLDFLAGS=-G \
+    SAFE_FFLAGS="-O3 -libmil" \
+    FCLIBS="-lfai -lfsu" \
+    LDFLAGS="-m64 -L${iprefix}/lib -L${iprefix}/R/lib \
+          -L/lib/64 -L/usr/lib/64 -L/usr/sfw/lib/64 -L/usr/openwin/lib/64 \
+          -R${iprefix}/lib -R${iprefix}/R/lib -R/lib/64 -R/usr/lib/64 \
+          -R/usr/sfw/lib/64 -R/usr/openwin/lib/64" \
+    ./configure --with-x --prefix=${iprefix}/R >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+fi
+
+#./configure --with-x --with-blas='-library=sunperf' --with-lapack --prefix=${iprefix}/R
+
+if (( $? != 0 )); then
+    print "Error: configure $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    exit 3
+else
+    step2=1
+fi  
+
+
+# STEP 3
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 3 - Make $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+make >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if (( $? != 0 )); then
+    print "Error: make $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    exit 3
+else
+    step3=1
+fi 
+
+
+# STEP 4
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 4 - Make install $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+make install >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if (( $? != 0 )); then
+    print "Error: make install perl failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    exit 3
+else
+    step4=1
+fi
+
+# set the sym links
+ln -s ${iprefix}/R/lib/R/lib/libRblas.so ${iprefix}/R/lib/libRblas.so
+ln -s ${iprefix}/R/lib/R/lib/libRlapack.so ${iprefix}/R/lib/libRlapack.so
+
+# set the studio libs for runtime
+if [[ $PT_NAME == "i386" ]]; then
+    cp /opt/sunstudio12.1/prod/lib/amd64/libsunmath.so.1 \
+       /opt/sunstudio12.1/prod/lib/amd64/libfui.so.2     \
+       /opt/sunstudio12.1/prod/lib/amd64/libfai.so.1     \
+       /opt/sunstudio12.1/prod/lib/amd64/libfsu.so.1     \
+       ${iprefix}/R/lib
+else
+    cp  /opt/sunstudio12.1/prod/lib/v9/libfui.so.2     \
+        /opt/sunstudio12.1/prod/lib/v9/libfai.so.3     \
+        /opt/sunstudio12.1/prod/lib/v9/libfai2.so.3    \
+        /opt/sunstudio12.1/prod/lib/v9/libfsumai.so.1  \
+        /opt/sunstudio12.1/prod/lib/v9/libfprodai.so.1 \
+        /opt/sunstudio12.1/prod/lib/v9/libfminlai.so.1 \
+        /opt/sunstudio12.1/prod/lib/v9/libfmaxlai.so.1 \
+        /opt/sunstudio12.1/prod/lib/v9/libfminvai.so.1 \
+        /opt/sunstudio12.1/prod/lib/v9/libfmaxvai.so.1 \
+        /opt/sunstudio12.1/prod/lib/v9/libfsu.so.1     \
+        /opt/sunstudio12.1/prod/lib/v9/libsunmath.so.1 \
+        /opt/sunstudio12.1/prod/lib/v9/../cpu/sparcv9+vis/sparcv9/libfai2_isa.so.3 \
+        ${iprefix}/R/lib
+fi
+
+
+# final check; all 4 steps
+(( rep_rsts_done = step1 + step2 + step3 + step4 ))
+if (( rep_rsts_done == 4 )); then
+   rep_rsts_done=1
+else
+   rep_rsts_done=90
+fi
+
+cd ../..
+
+}
+
+
+
+# ############################################################### #
+# Recording: Scripts                                              #
+# ############################################################### #
+
+# init.nginx-fcgi
+# nginx-fcgi.pl
+# nginx-fcgi.x86.boot
+# htpasswd
+
+build_rep_ws_scripts() {
+
+dir=wsscripts
+step1=0
+step2=0
+
+
+cd $dir/${OS_NAME}
+print "\n#######################################################"
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Submodule: $dir ${OS_NAME}" | tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+# STEP 1
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 1 - Installing nginx wrappers ..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+cp *nginx* htpasswd ${iprefix}/ws/sbin
+if (( $? != 0 )); then
+    print "Error: cannot install nginx scripts !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step1=1
+fi
+
+# set smf directory
+cp -pr smf ${iprefix}/ws
+if (( $? != 0 )); then
+    print "Error: cannot install additional smf scripts !" |\
+      tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step2=1
+fi
+
+
+# final check; all 2 steps
+(( rep_wsscripts_done = step1 + step2 ))
+if (( rep_wsscripts_done == 2 )); then
+   rep_wsscripts_done=1
+else
+   rep_wsscripts_done=90
+fi
+
+
+cd ../..
+
+}
+
+
+# ############################################################### #
+# Recording: Test Scripts                                         #
+# ############################################################### #
+test_rec_scripts() {
+
+dir=tests
+step1=0
+step2=0
+step3=0
+
+
+cd $dir
+print "\n#######################################################"
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Testing SDR" | tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+# STEP 1
+# Check all recorders if they are sane and execute properly
+
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 1 - Check recorders" |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+. /opt/sdr/bin/setenv
+for r in sys cpu net nic hdw zone
+do
+    print "" >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+    print "Executing ${r}rec" | tee -a ${BUILD_PATH}/${BUILD_LOG}
+    if [[ $r == "nic" ]]; then
+        ${SDR_BIN}/${r}rec_x64 >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+    else
+        ${SDR_BIN}/${r}rec >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+    fi
+    
+    if (( $? != 0 )); then
+        print "Error: cannot run ${r}rec !" |\
+         tee -a ${BUILD_PATH}/${BUILD_LOG}
+        rm /var/tmp/build.${module}
+        exit 3
+    else
+        ((step1=step1+1))
+    fi
+done
+
+(( step1 = step1 / 5 ))
+
+# final check; all 4 steps
+(( rep_tests_done = step1 ))
+if (( rep_tests_done == 1 )); then
+   rep_tests_done=1
+else
+   rep_tests_done=90
+fi
+
+cd ..
+
+}
+
+
+
+# ############################################################### #
+# Reporting: PDQ Build Phase                                      #
+# ############################################################### #
+
+build_rep_pdq() {
+dir=pdq
+step1=0
+step2=0
+step3=0
+step4=0
+step5=0
+
+
+cd $dir
+print "\n#######################################################"
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Submodule: $dir" | tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+# STEP 1
+print "Info: Step 1 - Make PDQ lib..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+# clean general
+gmake clean >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+
+
+cd lib
+# cleaning all object files
+gmake -f Makefile.solaris clean >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+
+# build lib
+gmake -f Makefile.solaris >> ${BUILD_PATH}/${BUILD_LOG} 2>&1   
+if (( $? != 0 )); then
+    print "Error: gmake pdq/lib $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step1=1
+fi 
+
+
+# STEP 2
+print "Info: Step 2 - Make PDQ perl5 lib..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+cd ../perl5
+# cleaning all object files
+make clean >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+
+# copy .so and .o
+cp ../lib/*.o .
+cp ../lib/*.so .
+
+${SDRREP_PERLBIN}/perl Makefile.PL >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+
+make >> ${BUILD_PATH}/${BUILD_LOG} 2>&1   
+if (( $? != 0 )); then
+    print "Error: make pdq/perl5 $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step2=1
+fi
+
+
+# STEP 3
+print "Info: Step 3 - Make PDQ perl5 install..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+make install >> ${BUILD_PATH}/${BUILD_LOG} 2>&1   
+if (( $? != 0 )); then
+    print "Error: make install pdq/perl5 $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step3=1
+fi
+
+
+# STEP 4
+print "Info: Step 4 - Make PDQ perl5 test..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+make test >> ${BUILD_PATH}/${BUILD_LOG} 2>&1   
+if (( $? != 0 )); then
+    print "Error: make test pdq/perl5 $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step4=1
+fi
+
+cd ..
+
+# STEP 5
+print "Info: Step 5 - Make PDQ R lib..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+cd R
+cp ../lib/*.[ch] pdq/src
+cp ../lib/P*.[h] pdq/lib/
+
+${iprefix}/R/bin/R CMD INSTALL pdq >> ${BUILD_PATH}/${BUILD_LOG} 2>&1   
+if (( $? != 0 )); then
+    print "Error: make pdq/R $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step5=1
+fi
+
+
+# final check; all 4 steps
+(( rep_pdq_done = step1 + step2 + step3 + step4 + step5 ))
+if (( rep_pdq_done == 5 )); then
+   rep_pdq_done=1
+else
+   rep_pdq_done=90
+fi
+
+cd ../..
+
+}
+
+
+
+# ############################################################### #
+# Reporting: WWW::Curl Phase                                      #
+# ############################################################### #
+build_rep_wcurl() {
+
+dir=WWWCurl
+step1=0
+step2=0
+step3=0
+step4=0
+
+cd $dir
+print "\n#######################################################"
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Submodule: $dir" | tee -a ${BUILD_PATH}/${BUILD_LOG}
+ls *.tar.gz | read archive_file
+# Debug
+# print "Archive: $archive_file"
+# print "Dir: ${archive_file%%.tar*}"
+
+dirarchive=${archive_file%%.tar*}
+
+# STEP 1
+extract_archive "$dir" "$dirarchive"
+if (( $? == 0)); then
+    step1=1
+fi
+
+# STEP 2
+cd ${archive_file%%.tar*}
+
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 2 - Configure $dir ..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+env PATH=${iprefix}/bin:${iprefix}/perl/bin:$PATH \
+    ${SDRREP_PERLBIN}/perl Makefile.PL >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if (( $? != 0 )); then
+    print "Error: configure $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step2=1
+fi
+
+
+
+# STEP 3
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 3 - Make $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+make >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if (( $? != 0 )); then
+    print "Error: make $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step3=1
+fi
+
+
+# STEP 4
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 4 - Make install $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+make install >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if (( $? != 0 )); then
+    print "Error: make install gd failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step4=1
+fi
+
+
+#
+# final check; all 4 steps
+(( rep_wcurl_done = step1 + step2 + step3 + step4 ))
+if (( rep_wcurl_done == 4 )); then
+   rep_wcurl_done=1
+else
+   rep_wcurl_done=90
+fi
+
+cd ../..
+
+
+}
+
+
+# ############################################################### #
+# Reporting: R module: Cairo                                      #
+# ############################################################### #
+build_rep_rcairo() {
+
+dir=rcairo
+step1=0
+step2=0
+step3=0
+step4=0
+
+
+cd $dir
+print "\n#######################################################"
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Submodule: $dir" | tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+ls *.tar.gz | read archive_file    
+
+# STEP 1
+
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 1 - Install $dir ..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+env PKG_CONFIG_PATH=${iprefix}/lib/pkgconfig:/usr/lib/pkgconfig \
+    ${iprefix}/R/bin/R CMD INSTALL $archive_file >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+
+if (( $? != 0 )); then
+    print "Error: configure $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step1=1
+fi
+
+
+#
+# final check; 1 step
+(( rep_rcairo_done = step1 ))
+if (( rep_rcairo_done == 1 )); then
+   rep_rcairo_done=1
+else
+   rep_rcairo_done=90
+fi
+
+cd ..
+
+}
+
+
+# ############################################################### #
+# Reporting: R module: ggplot2                                    #
+# ############################################################### #
+build_rep_rggplot2() {
+dir=rggplot2
+step1=0
+step2=0
+step3=0
+step4=0
+step5=0
+step6=0
+step7=0
+step8=0
+step9=0
+
+# we build here ggplot2 for R
+# RColorBrewer_1.0-2.tar.gz  ggplot2_0.8.9.tar.gz       plyr_1.4.tar.gz
+# colorspace_1.0-1.tar.gz    iterators_1.0.3.tar.gz     proto_0.3-9.1.tar.gz
+# digest_0.4.2.tar.gz        itertools_0.1-1.tar.gz     reshape_0.8.4.tar.gz
+
+# order: 
+# iterators, itertools, plyr, reshape, RColorBrewer, digest, colorspace, proto, ggplot2
+
+
+cd $dir
+print "\n#######################################################"
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Submodule: $dir" | tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+# STEP 1
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 1 - Install iterators $dir ..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+ls iterator*.tar.gz | read archive_file
+env PKG_CONFIG_PATH=${iprefix}/lib/pkgconfig:/usr/lib/pkgconfig \
+    ${iprefix}/R/bin/R CMD INSTALL $archive_file >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+
+if (( $? != 0 )); then
+    print "Error: configure $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step1=1
+fi
+
+
+
+# STEP 2
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 2 - Install itertools $dir ..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+ls itertool*.tar.gz | read archive_file
+env PKG_CONFIG_PATH=${iprefix}/lib/pkgconfig:/usr/lib/pkgconfig \
+    ${iprefix}/R/bin/R CMD INSTALL $archive_file >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+
+if (( $? != 0 )); then
+    print "Error: configure $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step2=1
+fi
+
+
+
+# STEP 3
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 3 - Install plyr $dir ..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+ls plyr*.tar.gz | read archive_file
+env PKG_CONFIG_PATH=${iprefix}/lib/pkgconfig:/usr/lib/pkgconfig \
+    ${iprefix}/R/bin/R CMD INSTALL $archive_file >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+
+if (( $? != 0 )); then
+    print "Error: configure $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step3=1
+fi
+
+
+
+# STEP 4
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 4 - Install reshape $dir ..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+ls reshape*.tar.gz | read archive_file
+env PKG_CONFIG_PATH=${iprefix}/lib/pkgconfig:/usr/lib/pkgconfig \
+    ${iprefix}/R/bin/R CMD INSTALL $archive_file >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+
+if (( $? != 0 )); then
+    print "Error: configure $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step4=1
+fi
+
+
+
+# STEP 5
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 5 - Install RColorBrewer $dir ..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+ls RColorBrewer*.tar.gz | read archive_file
+env PKG_CONFIG_PATH=${iprefix}/lib/pkgconfig:/usr/lib/pkgconfig \
+    ${iprefix}/R/bin/R CMD INSTALL $archive_file >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+
+if (( $? != 0 )); then
+    print "Error: configure $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step5=1
+fi
+
+
+
+# STEP 6
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 6 - Install digest $dir ..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+ls digest*.tar.gz | read archive_file
+env PKG_CONFIG_PATH=${iprefix}/lib/pkgconfig:/usr/lib/pkgconfig \
+    ${iprefix}/R/bin/R CMD INSTALL $archive_file >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+
+if (( $? != 0 )); then
+    print "Error: configure $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step6=1
+fi
+
+
+
+# STEP 7
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 7 - Install colorspace $dir ..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+ls colorspace*.tar.gz | read archive_file
+env PKG_CONFIG_PATH=${iprefix}/lib/pkgconfig:/usr/lib/pkgconfig \
+    ${iprefix}/R/bin/R CMD INSTALL $archive_file >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+
+if (( $? != 0 )); then
+    print "Error: configure $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step7=1
+fi
+
+
+# STEP 8
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 8 - Install proto $dir ..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+ls proto*.tar.gz | read archive_file
+env PKG_CONFIG_PATH=${iprefix}/lib/pkgconfig:/usr/lib/pkgconfig \
+    ${iprefix}/R/bin/R CMD INSTALL $archive_file >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+
+if (( $? != 0 )); then
+    print "Error: configure $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step8=1
+fi
+
+
+# STEP 9
+print "" >> ${BUILD_PATH}/${BUILD_LOG}
+print "Info: Step 9 - Install ggplot2 $dir ..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+ls ggplot*.tar.gz | read archive_file
+env PKG_CONFIG_PATH=${iprefix}/lib/pkgconfig:/usr/lib/pkgconfig \
+    ${iprefix}/R/bin/R CMD INSTALL $archive_file >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+
+if (( $? != 0 )); then
+    print "Error: configure $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step9=1
+fi
+
+
+#
+# final check; 1 step
+(( rep_rggplot2_done = step1 + step2 + step3 + step4 + step5 + step6 + step7 + step8 + step9 ))
+if (( rep_rggplot2_done == 9 )); then
+   rep_rggplot2_done=1
+else
+   rep_rggplot2_done=90
+fi
+
+cd ..
+
+}

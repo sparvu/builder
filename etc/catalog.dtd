@@ -1,0 +1,19 @@
+<!ELEMENT catalog   (recording|reporting)+>
+
+<!ELEMENT recording (pkg)+>
+<!ATTLIST recording id CDATA #REQUIRED>
+
+<!ELEMENT pkg       EMPTY>
+<!ATTLIST pkg name CDATA  #REQUIRED>
+<!ATTLIST pkg ver  CDATA  #REQUIRED>
+<!ATTLIST pkg site CDATA  #REQUIRED>
+
+
+<!ELEMENT reporting (pkg)+>
+<!ATTLIST reporting id CDATA #REQUIRED>
+
+<!ATTLIST pkg
+          name CDATA  #REQUIRED
+          ver  CDATA  #REQUIRED
+          site CDATA  #REQUIRED>
+

@@ -1,0 +1,129 @@
+=head1 NAME
+
+Builder - SDR Development Tools 
+
+=head1 CONTEXT
+
+These are the tools required to build, compile and package SDR 
+software. The package requires perl. You should have access to all 
+SDR Builder libraries used by SDR, available separately.
+
+=head1 COMPONENTS
+
+=head2 builder
+
+Main builder script, handles all template engines. This will be the main
+script to be called. 
+
+=head2 engine.rec.linux.version
+
+Linux Recording Engine - describes what software components will
+be unpacked and compiled for SDR Recording Linux package. 
+This handles 32 and 64bit platforms.
+
+=head2 engine.rec.solaris.version
+
+Solaris Recording Engine - describes what software components will
+be unpacked and compiled for SDR Recording Solaris package.
+This handles 64bit platforms only.
+
+=head2 engine.rec.freebsd.version
+
+FreeBSD Recording Engine - describes what software components will
+be unpacked and compiled for SDR Recording FreeBSD package.
+This handles 64bit platforms only.
+
+
+=head2 engine.auth.freebsd.version
+
+FreeBSD Analytics Auth Engine - describes what software components will
+be unpacked and compiled for SDR Analytics Authentication FreeBSD package. 
+This handles 32 and 64bit platforms.
+
+=head2 engine.kernel.freebsd.version
+
+FreeBSD Analytics Kernel Engine - describes what software components will
+be unpacked and compiled for SDR Analytics Kernel FreeBSD package. 
+This handles 32 and 64bit platforms.
+
+=head2 engine.rec.linux.version
+
+Linux Recording Engine - describes what software components will
+be unpacked and compiled for SDR Recording Linux module. 
+This handles 32 and 64bit platforms.
+
+
+=head2 engine.rec.solaris.version
+
+Solaris Recording Engine - describes what software components will
+be unpacked and compiled for SDR Recording Solaris module.
+This handles 64bit platforms only.
+
+=head2 fetcher
+
+Software update utility - checks all software used by SDR and their latest
+revisions from their main web sites. Uses catalog.conf, the main configuration
+file as the software configuration. 
+
+=head2 etc
+
+catalog.conf - the main configuration file for all software 
+used by SDR software. This is a XML based configuration which keeps 
+tracks of all libraries and softare modoules used by SDR and their 
+revision number. This file is used by fetcher.
+
+Config.pm - CPAN configuration file. Will use the local CPAN
+distribution.
+
+=head2 sfw
+
+sfw - main configuration file for all software 
+used by SDR software. This is a XML based configuration which keeps 
+tracks of all libraries and softare modoules used by SDR and their 
+revision number. This file is used by fetcher.
+
+=head1 EXECUTION
+
+Building SDR software requires that you have a software
+
+
+=head3 Recording Linux Package
+
+/opt/sdrbuilder/bin/builder rec 1.0.0
+
+
+=head3 MaaS Analytics Auth Package
+
+/opt/sdrbuilder/bin/builder -b05 -a maas auth 1.0.0
+
+
+=head1 FREE SOFTWARE LICENSE
+
+Copyright (c) 2014 SystemDataRecorder
+
+ This program is free software; you can redistribute it and/or
+ modify it under the terms of the GNU General Public License
+ as published by the Free Software Foundation; either version 2
+ of the License, or (at your option) any later version.
+
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+
+ You should have received a copy of the GNU General Public License
+ along with this program; if not, write to the Free Software Foundation,
+ Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+
+ (http://www.gnu.org/copyleft/gpl.html)
+
+=head1 NOTE
+
+This document will be updated at the same time with SDR project.
+
+=head1 AUTHOR
+
+Stefan Parvu, sparvu@systemdatarecorder.org
+
+=cut
+

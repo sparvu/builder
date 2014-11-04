@@ -1,0 +1,946 @@
+#!/opt/sdr/report/perl/bin/perl -w
+#
+#  SDR Development tools, fetcher manages SDR catalogue
+#
+#  Copyright (c) 2014 Stefan Parvu (www.systemdatarecorder.org).
+#
+#  This program is free software; you can redistribute it and/or
+#  modify it under the terms of the GNU General Public License
+#  as published by the Free Software Foundation; either version 2
+#  of the License, or (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this program; if not, write to the Free Software Foundation,
+#  Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+#
+#  (http://www.gnu.org/copyleft/gpl.html)
+
+use warnings;
+use strict;
+use Getopt::Std;
+use LWP::Simple qw($ua get);
+use List::Util qw(max reduce maxstr);
+use Time::HiRes qw(gettimeofday);
+use XML::LibXML;
+use XML::LibXML::XPathContext;
+use SemVer;
+use 5.010;
+
+#use diagnostics;
+
+#
+# Command line arguments
+#
+usage() if defined $ARGV[0] and $ARGV[0] eq "--help";
+getopts('m:dfhvVq') or usage();
+usage() if defined $main::opt_h;
+revision() if defined $main::opt_V;
+usage() if (($#ARGV+1) > 26);
+my $download_flag = defined $main::opt_d ? $main::opt_d : 0;
+my $force_flag = defined $main::opt_f ? $main::opt_f : 0;
+my $verbose_flag = defined $main::opt_v ? $main::opt_v : 0;
+my $quiet_flag = defined $main::opt_q ? $main::opt_q : 0;
+
+
+#
+# globals variables
+#
+$main::opt_h = 0;
+$main::opt_V = 0;
+
+my ($seconds, $dbname, $time, $year);
+my ($step, $hb, $min, $max, $slots);
+
+my $osname = $^O;
+my $xmlcnf = 'catalog.conf';
+my $wget   = 'wget';
+my $conf;
+my $stat = 0;
+my $mod_flag = 0;
+my @modpath;
+
+local $| = 1;            # autoflush
+# MAIN BODY #
+
+# check modules
+my $pkg_flag = 0;
+$pkg_flag = 1 if (($#ARGV+1) > 0);
+    
+#start counting here
+my $tstart = gettimeofday();
+
+usage() if (! defined $ENV{'BUILDER_PATH'});
+
+#if (defined $ENV{'BUILDER_PATH'}) {
+#    eval "use lib qw($ENV{'BUILDER_PATH'}/bin)";
+#    eval { require qw(parsedb.pl); }
+#} else {
+#    usage();
+#}
+
+# check for module:id list
+if (defined $main::opt_m) {
+    # check for separator
+    usage() if $main::opt_m !~ /(recording:[a-z]*[0-9]*$)|(reporting:[a-z]*[0-9]*$)/i;
+    $mod_flag = 1;
+    @modpath = split (/:/,$main::opt_m);
+} else {
+    # 2 fetch all nodes from config
+    $mod_flag=2;
+}
+
+usage() if (($#modpath+1) > 2);
+
+# validate and open configuration xml
+$conf = open_conf($xmlcnf);
+
+my $sfwcat = $ENV{'BUILDER_PATH'} . "/sfw";
+die "Cannot find BUILDER Sfw Catalog" if ( ! -d $sfwcat );
+
+# get the tree values as an array of hashes
+my @cat;
+if ($mod_flag == 2) {
+    # open all catalog childs
+    @cat = get_values($conf, "/catalog/");
+} else {
+    @cat = get_values($conf, "/catalog/$modpath[0]", "$modpath[1]");
+}
+
+
+if ($verbose_flag && $force_flag) {
+    print "Options: verbose on;  force on\n";
+} elsif ($verbose_flag) {
+    print "Option: verbose on\n";
+} elsif ($force_flag) {
+    print "Option: force on\n";
+}
+
+
+my ($modname, $idname, $comp, $ver);
+ 
+# get the array values
+
+for my $i ( 0 .. $#cat ) {
+    for my $key ( keys %{ $cat[$i] } ) {
+
+        my ($comp, $ver) = split /:/, $key;
+
+        #print "$key -> $cat[$i]{$key}\n";
+         
+        if ($pkg_flag) {
+            # we have input we process these... 
+            # filter input arguments
+            for my $k ( 0 .. $#ARGV ) {
+                next if ($ARGV[$k] ne $comp);
+                process_pkg ($ARGV[$k], $ver, $cat[$i]{$key});
+            }
+        } else {
+            process_pkg ($comp, $ver, $cat[$i]{$key});
+        }
+    }
+}
+
+# Mark End of Time
+my $tend = gettimeofday();
+my $elapsed = $tend - $tstart;
+my $len = length(int($elapsed));
+
+if ($quiet_flag == 0) {
+    if ($len > 2) {
+        # we are working in minutes
+        $elapsed = $elapsed / 60;
+        printf "%s %4.2f %s", "All jobs done. Elapsed time:", $elapsed, "minutes\n";
+    } else {
+        printf "%s %4.2f %s", "All jobs done. Elapsed time:", $elapsed, "seconds\n";
+    }
+}
+
+
+# SUBROUTINES #
+
+sub revision {
+        print STDERR <<END;
+fetcher 0.7.1, 2012-01-14
+END
+    exit 0;
+}
+
+
+sub usage {
+        print STDERR <<END;
+USAGE: fetcher [-dfqhv] [-m module:id] [pkg...]
+Options:
+  -d download mode
+  -f force download mode
+  -m module:id recording:sdr071
+  -q quiet mode
+  -h version and usage help
+  -v verbose
+  -V revision
+ 
+Note: Make sure you have correctly exported the following
+environment variables: BUILDER_PATH
+END
+    exit 0;
+}
+
+
+
+sub process_pkg {
+# $_[0] - component
+# $_[1] - config ver
+# $_[2] - config link
+
+    my ($comp, $config_ver, $config_link) = @_;
+
+    if($quiet_flag == 0) {
+        print "Package: $comp, catalog ver: $config_ver. Latest update: ";
+    }
+
+    # LWP Call
+
+    #
+    # print "link: $config_link \n";
+
+    $ua->timeout(30);
+    $ua->agent('SDR Fetcher/1.0');
+
+    my $content = get $config_link;
+
+    if (! defined $content) {
+        print "timed out\n";
+        return;
+    }
+ 
+    given($comp) {
+
+        #  Perl Content
+        when('perl') { 
+            # obtain the latest version
+            # perl filter mode
+
+            my $catver = SemVer->new($config_ver);
+            my $version = $catver;
+
+            while ($content =~ /"perl\-(\d+)\.(\d+)\.(\d+)\.tar\.gz\".*"/g) {
+                my $sitever = SemVer->new("$1\.$2\.$3");
+                next if ($2 % 2 == 1);
+                if ($catver < $sitever) {
+                    $version = $sitever;
+                }
+
+            }
+
+            execute_target ($config_link,$comp,$config_ver,"$version","perl-");
+        }
+
+
+        when('openssl') {
+        # obtain the latest version
+        # openssl filter mode
+            if ($content =~ /openssl\-(.*?)\.tar.*LATEST/) {
+                execute_target ($config_link,$comp,$config_ver,$1,"openssl-");
+            } else { 
+                print "error(latest)\n"; 
+            }
+        }
+
+
+        # Libssh2 Content
+        when('libssh2') { 
+            # obtain the latest version
+            # libssh2 filter mode
+            if ($content =~ /release.*libssh2\s(.*?).{4}\s.*/) {
+                execute_target ($config_link,$comp,$config_ver,$1,"download/libssh2-");
+            } else { 
+                print "error(latest)\n"; 
+            }
+        }
+
+
+        # Curl Content
+        when('curl') { 
+            # obtain the latest version
+            # curl filter mode
+            if ($content =~ /.{4}curl\s+(.*?).{4}\,\sReleased.*/) {
+                execute_target ($config_link,$comp,$config_ver,$1,"http://curl.haxx.se/download/curl-");
+            } else { print "error(latest)\n"; }
+        }
+
+
+        #  Idn Content
+        when('idn') { 
+            # obtain the latest version
+            # idn filter mode
+
+            my $catver = SemVer->parse($config_ver);
+            my $version = $catver;
+
+            while ($content =~ /"libidn\-(\d)\.(\d+)\.tar\.gz.{4}.*"/g) {
+                my $sitever = SemVer->parse("$1\.$2");
+                if ($catver <= $sitever) {
+                    $version = $sitever;
+                }
+            }
+
+            execute_target ($config_link,$comp,$config_ver,"$version","libidn-");
+        }
+
+
+        # Iconv Content
+        when('iconv') { 
+            # obtain the latest version
+            # iconv filter mode
+            if ($content =~ /libiconv\-(\d\.\d+)\.tar\.gz.{4}/) {
+                execute_target ($config_link,$comp,$config_ver,$1,"http://ftp.gnu.org/pub/gnu/libiconv/libiconv-");
+            } else { print "error(latest)\n"; }
+        }
+
+
+        #  libxml2 Content
+        when('libxml2') {
+            # obtain the latest version
+            # libxml2 filter mode
+
+            my $catver = SemVer->new($config_ver);
+            my $version = $catver;
+
+            while ($content =~ /"libxml2\-(\d+)\.(\d+)\.(\d+)\.tar\.gz\".*"/g) {
+                my $sitever = SemVer->new("$1\.$2\.$3");
+                if ($catver < $sitever) {
+                    $version = $sitever;
+                }
+            }
+
+            execute_target ($config_link,$comp,$config_ver,"$version","libxml2-");
+        }
+
+
+        #  XML-LibXML Content
+        when('XML-LibXML') { 
+            # obtain the latest version
+            # XML-LibXML filter mode
+
+            my $catver = SemVer->parse($config_ver);
+            my $version = $catver;
+
+            while ($content =~ /"XML\-LibXML\-(\d)\.(\d+)\.tar\.gz.*"/g) {
+                my $sitever = SemVer->parse("$1\.$2");
+                if ($catver < $sitever) {
+                    $version = $sitever;
+                }
+            }
+
+            execute_target ($config_link,$comp,$config_ver,"$version","XML-LibXML-");
+        }
+
+
+        # Sysstat Content
+        when('sysstat') { 
+            # obtain the latest version
+            # sys filter mode
+            if ($content =~ /version\sis\s(.*?)\s.*/) {
+                execute_target ($config_link,$comp,$config_ver,$1,"http://pagesperso-orange.fr/sebastien.godard/sysstat-");
+            } else { print "error(latest)\n"; }
+        }
+
+
+        #  WWW-Curl Content
+        when('WWW-Curl') { 
+            # obtain the latest version
+            # wwwcurl filter mode
+
+            my $catver = SemVer->parse($config_ver);
+            my $version = $catver;
+
+            while ($content =~ /"WWW\-Curl\-(\d)\.(\d+)\.tar\.gz.{4}.*"/g) {
+                my $sitever = SemVer->parse("$1\.$2");
+                if ($catver < $sitever) {
+                    $version = $sitever;
+                }
+            }
+
+            execute_target ($config_link,$comp,$config_ver,"$version","WWW-Curl-");
+        }
+
+
+        # Net-SSH2 Content
+        when('Net-SSH2') { 
+            # obtain the latest version
+            # Net-SSH2 filter mode
+
+            my $catver = SemVer->parse($config_ver);
+            my $version = $catver;
+
+            while ($content =~ /"Net\-SSH2\-(\d)\.(\d+)\.tar\.gz.{4}.*"/g) {
+                my $sitever = SemVer->parse("$1\.$2");
+                if ($catver < $sitever) {
+                    $version = $sitever;
+                }
+            }
+
+            execute_target ($config_link,$comp,$config_ver,"$version","Net-SSH2-");
+        }
+
+
+        # gettext Content
+        when('gettext') { 
+            # obtain the latest version
+            # gettext filter mode
+            if ($content =~ /gettext\-(.*?)\.tar\.gz.{4}/) {
+                execute_target ($config_link,$comp,$config_ver,$1,"http://ftp.gnu.org/pub/gnu/gettext/gettext-");
+            } else { print "error(latest)\n"; }
+        }
+
+
+        # readline Content
+        when('readline') { 
+            # obtain the latest version
+            # readline filter mode
+            if ($content =~ /readline\-(.*?)\.tar\.gz.*/) {
+                execute_target ($config_link,$comp,$config_ver,$1,"ftp://ftp.cwru.edu/pub/bash/readline-");
+            } else { print "error(latest)\n"; }
+        }
+
+
+        # libpng Content
+        when('libpng') { 
+            # obtain the latest version
+            # libpng filter mod
+            #if ($content =~ /libpng\s(.*?).{4}\sand\slibpng\.*/) {
+            if ($content =~ /releases\,\s.{3}libpng\s(\d+\.\d+\.\d+).{4}\sand\.*/) {
+                execute_target ($config_link,$comp,$config_ver,$1,"ftp://ftp.simplesystems.org/pub/libpng/png/src/libpng-");
+            } else { print "error(latest)\n"; }
+        }
+
+
+        #  pkg-config Content
+        when('pkg-config') { 
+            # obtain the latest version
+            # pkg-config filter mode
+
+            my $catver = SemVer->parse($config_ver);
+            my $version = $catver;
+
+            while ($content =~ /"pkg\-config\-(\d+)\.(\d+)\.tar\.gz.{4}.*"/g) {
+                my $sitever = SemVer->parse("$1\.$2");
+                if ($catver < $sitever) {
+                    $version = $sitever;
+                }
+            }
+
+            execute_target ($config_link,$comp,$config_ver,"$version","pkg\-config-");
+        }
+
+
+        #  pixman Content
+        when('pixman') {
+            # obtain the latest version
+            # pixman filter mode
+
+            my $catver = SemVer->new($config_ver);
+            my $version = $catver;
+
+            while ($content =~ /"pixman\-(\d+)\.(\d+)\.(\d+)\.tar\.gz\".*"/g) {
+                my $sitever = SemVer->new("$1\.$2\.$3");
+                if ($catver < $sitever) {
+                    $version = $sitever;
+                }
+                #if ($catver < $sitever) {
+                #    if ($version <= $sitever) {
+                #        $version = $sitever;
+                #    }
+                #} else {
+                #    $version = $sitever;
+                #}
+            }
+
+            execute_target ($config_link,$comp,$config_ver,"$version","pixman-");
+        }
+
+
+        #  freetype Content
+        when('freetype') {
+            # obtain the latest version
+            # freetype filter mode
+
+            my $catver = SemVer->new($config_ver);
+            my $version = $catver;
+
+            while ($content =~ /"freetype\-(\d+)\.(\d+)\.(\d+)\.tar\.gz\".*"/g) {
+                my $sitever = SemVer->new("$1\.$2\.$3");
+                if ($catver < $sitever) {
+                    $version = $sitever;
+                }
+                #if ($catver < $sitever) {
+                #   if ($version <= $sitever) {
+                #       $version = $sitever;
+                #   }
+                # else {
+                #   $version = $sitever;
+                #
+            }
+
+            execute_target ($config_link,$comp,$config_ver,"$version","freetype-");
+        }
+
+
+        #  fontconfig Content
+        when('fontconfig') {
+            # obtain the latest version
+            # fontconfig filter mode
+
+            my $catver = SemVer->new($config_ver);
+            my $version = $catver;
+
+            while ($content =~ /"fontconfig\-(\d+)\.(\d+)\.(\d+)\.tar\.gz\".*"/g) {
+                my $sitever = SemVer->new("$1\.$2\.$3");
+                if ($catver < $sitever) {
+                    $version = $sitever;
+                }
+                #if ($catver < $sitever) {
+                #    if ($version <= $sitever) {
+                #        $version = $sitever;
+                #    }
+                #} else {
+                #    $version = $sitever;
+                #}
+            }
+
+            execute_target ($config_link,$comp,$config_ver,"$version","fontconfig-");
+        }
+
+
+        # pcre Content
+        when('pcre') { 
+            # obtain the latest version
+            # pcre filter mode
+            if ($content =~ /The latest release of the PCRE library is (\d+\.\d+)\..*/) {
+                execute_target ($config_link,$comp,$config_ver,$1,"ftp://ftp.csx.cam.ac.uk/pub/software/programming/pcre/pcre-");
+            } else { print "error(latest)\n"; }
+        }
+
+
+        #  GLib Content
+        when('glib') {
+            # obtain the latest version
+            # glib filter mode
+            
+            my $catver = SemVer->parse($config_ver);
+            my $version = $catver;
+            my $dirver=0;
+
+            while ($content =~ /"(\d)\.(\d+).*"/g) {
+                my $sitever = SemVer->new("$1\.$2\.0");
+                $dirver = max $sitever;
+            }
+
+            $dirver =~ s/\.0$//;
+
+            # we call another get for dir fetching within version
+            my $glib_content = get $config_link . "$dirver/";
+            die "Couldn't get $config_link" unless defined $glib_content;
+
+            while ($glib_content =~ /"glib\-(\d)\.(\d+)\.(\d)\.tar\.xz\.*"/g) {
+                my $sitever = SemVer->new("$1\.$2\.$3");
+                if ($catver < $sitever) {
+                    $version = $sitever;
+                }
+            }
+
+            execute_target ($config_link,$comp,$config_ver,"$version","$dirver/glib-");
+        }
+
+
+        #  cairo Content
+        when('cairo') {
+            # obtain the latest version
+            # cairo filter mode
+
+            my $catver = SemVer->new($config_ver);
+            my $version = $catver;
+
+            while ($content =~ /"cairo\-(\d+)\.(\d+)\.(\d+)\.tar\.gz\".*"/g) {
+                my $sitever = SemVer->new("$1\.$2\.$3");
+                if ($catver < $sitever) {
+                    $version = $sitever;
+                }
+            }
+
+            execute_target ($config_link,$comp,$config_ver,"$version","cairo-");
+        }
+
+
+        #  Pango Content
+        when('pango') {
+            # obtain the latest version
+            # pango filter mode
+           
+            my $catver = SemVer->parse($config_ver);
+            my $version = $catver;
+            my $dirver;
+
+            while ($content =~ /"(\d)\.(\d+).*"/g) {
+                my $sitever = SemVer->new("$1\.$2\.0");
+                $dirver = max $sitever;
+            }
+
+            $dirver =~ s/\.0$//;
+
+            # we call another get for dir fetching within version
+            my $pango_content = get $config_link . "$dirver/";
+            die "Couldn't get $config_link" unless defined $pango_content;
+
+            while ($pango_content =~ /"pango\-(\d+)\.(\d+)\.(\d+)\.tar\.xz*"/g) {
+
+                my $sitever = SemVer->new("$1\.$2\.$3");
+                if ($catver < $sitever) {
+                    $version = $sitever;
+                }
+            }
+
+            execute_target ($config_link,$comp,$config_ver,"$version","$dirver/pango-");
+        }
+
+
+        #  fcgi Content
+        when('fcgi') {
+            # obtain the latest version
+            # fcgi filter mode
+
+            my $catver = SemVer->new($config_ver);
+            my $version = $catver;
+
+            while ($content =~ /"fcgi\-(\d+)\.(\d+)\.(\d+)\.tar\.gz.*"/g) {
+                my $sitever = SemVer->new("$1\.$2\.$3");
+                if ($catver < $sitever) {
+                    $version = $sitever;
+                    last;
+                }
+            }
+
+            execute_target ($config_link,$comp,$config_ver,"$version","fcgi-");
+        }
+
+
+        # nginx Content
+        when('nginx') { 
+            # obtain the latest version
+            # nginx filter mode
+            if ($content =~ /Stable version.*nginx\-(\d+)\.(\d+)\.(\d+)\.tar\.gz\"\>.*Legacy/) {
+                execute_target ($config_link,$comp,$config_ver,"$1\.$2\.$3","http://nginx.org/download/nginx-");
+            } else { print "error(latest)\n"; }
+        }
+
+
+        #  rrdtool Content
+        when('rrdtool') {
+            # obtain the latest version
+            # rrdtool filter mode
+
+            my $catver = SemVer->new($config_ver);
+            my $version = $catver;
+
+            while ($content =~ /"rrdtool\-(\d+)\.(\d+)\.(\d+)\.tar\.gz\.*"/g) {
+                my $sitever = SemVer->new("$1\.$2\.$3");
+                if ($catver < $sitever) {
+                    $version = $sitever;
+                    last;
+                } 
+            }
+            
+            execute_target ($config_link,$comp,$config_ver,"$version","http://oss.oetiker.ch/rrdtool/pub/rrdtool-");
+        }
+
+
+        #  rstat Content
+        when('R') {
+            # obtain the latest version
+            # rstat filter mode
+
+            my $catver = SemVer->new($config_ver);
+            my $version = $catver;
+
+            while ($content =~ /"R\-(\d+)\.(\d+)\.(\d+)\.tar\.gz\.*"/g) {
+                my $sitever = SemVer->new("$1\.$2\.$3");
+                if ($catver < $sitever) {
+                    $version = $sitever;
+                }
+            }
+
+            execute_target ($config_link,$comp,$config_ver,"$version","R-");
+        }
+
+
+        # PDQ Content
+        when('pdq') { 
+            # obtain the latest version
+            # pdq filter mode
+            if ($content =~ /Version\:.*(\d+)\.(\d+)\.(\d+).{4}/) {
+                execute_target ($config_link,$comp,$config_ver,"$1\.$2\.$3","http://sourceforge.net/projects/pdq-qnm-pkg/files/latest/download");
+            } else { print "error(latest)\n"; }
+        }
+
+
+        # RCairo Content
+        when('rcairo') {
+            # obtain the latest version
+            # rcairo filter mode
+            if ($content =~ /Package source\:.*Cairo\_(\d+)\.(\d+)\-(\d+)\.tar\.gz.{4}/) {
+                execute_target ($config_link,$comp,$config_ver,"$1\.$2\.$3","http://cran.r-project.org/src/contrib/Cairo_");
+            } else { print "error(latest)\n"; }
+        }
+
+
+        # Rggplot2 Content
+        when('rggplot2') {
+            # obtain the latest version
+            # ggplot2 filter mode
+            if ($content =~ /Package source\:.*ggplot2\_(\d+)\.(\d+)\.(\d+)\.tar\.gz.{4}/) {
+                execute_target ($config_link,$comp,$config_ver,"$1\.$2\.$3","http://cran.r-project.org/src/contrib/ggplot2_");
+            } else { print "error(latest)\n"; }
+        }
+
+    }
+    return;
+}
+
+
+
+# execute_target
+sub execute_target {
+    # $_[0] - the link
+    # $_[1] - component
+    # $_[2] - config ver
+    # $_[3] - target version
+    # $_[4] - prefix
+
+    my ($conflink, $confmod, $cver, $tver, $pref) = @_;
+    my $link;
+
+
+    # rcairo exceptions
+    my @rtemp;
+    my $rcairo_tver;
+    my $pkg;
+
+
+    # debug
+    # print "conflink: $conflink \n";
+    # print "confmod: $confmod \n";
+    # print "cver: $cver \n";
+    # print "tver: $tver \n";
+    # print "pref: $pref \n";
+
+
+
+    # exceptions links
+    if ($confmod eq "iconv") {
+        $link = $pref . $tver . ".tar.gz";
+        $pkg = "lib" . $confmod . "-"  . $tver . ".tar.gz";
+
+    # curl
+    } elsif ($confmod eq "curl") {
+        $link = $pref . $tver . ".tar.gz";
+        $pkg = "curl-" . $tver . ".tar.gz";
+
+    # sysstat
+    } elsif ($confmod eq "sysstat") {
+        $link = $pref . $tver . ".tar.gz";
+        $pkg = "sysstat-" . $tver . ".tar.gz";
+
+    # gettext
+    } elsif ($confmod eq "gettext") {
+        $link = $pref . $tver . ".tar.gz";
+
+    # idn
+    } elsif ($confmod eq "idn") {
+        $link = $conflink . $pref . $tver . ".tar.gz";
+        $pkg  = $pref . $tver . ".tar.gz";
+
+    # readline
+    } elsif ($confmod eq "readline") {
+        $link = $pref . $tver . ".tar.gz";
+
+    # libpng
+    } elsif ($confmod eq "libpng") {
+        $link = $pref . $tver . ".tar.gz";
+        $pkg  = $confmod ."-" . $tver . ".tar.gz";
+
+    # pcre
+    } elsif ($confmod eq "pcre") {
+        $link = $pref . $tver . ".tar.gz";
+        $pkg  = $confmod ."-" . $tver . ".tar.gz";
+
+    # nginx
+    } elsif ($confmod eq "nginx") {
+        $link = $pref . $tver . ".tar.gz";
+        $pkg  = $confmod ."-" . $tver . ".tar.gz";
+
+    # glib and pango
+    } elsif ($confmod eq "glib" or 
+             $confmod eq "pango"    ) {
+        $link = $conflink . $pref . $tver . ".tar.xz";
+        $pkg  = $confmod ."-" . $tver . ".tar.xz";
+
+    # rrdtool
+    } elsif ($confmod eq "rrdtool") {
+        $link = $pref . $tver . ".tar.gz";
+        $pkg  = $confmod ."-" . $tver . ".tar.gz";
+
+    # pdq
+    } elsif ($confmod eq "pdq") {
+        $link = $pref;
+
+    # rcairo
+    } elsif ($confmod eq "rcairo") {
+        @rtemp = split /\./, $tver;
+        $rcairo_tver = $rtemp[0] . "." . $rtemp[1] . "-" . $rtemp[2];
+        $link = $pref . $rcairo_tver . ".tar.gz";
+        $pkg = "Cairo_" . $rcairo_tver . ".tar.gz";
+
+    # rrgplot2
+    } elsif ($confmod eq "rggplot2") {
+        $link = $pref . $tver . ".tar.gz";
+        $pkg = "ggplot2_" . $tver . ".tar.gz";
+
+    # otherwise
+    } else {
+        # Debug
+        # print "link: $link \n";
+        # print "pkg: $pkg \n";
+        $link = $conflink . $pref . $tver . ".tar.gz";
+        $pkg  = $confmod ."-" . $tver . ".tar.gz";
+    }
+
+    my $path = $ENV{'BUILDER_PATH'} . "/sfw/$confmod";
+
+    if ( $tver ne $cver) {
+        if ($quiet_flag == 0) {
+            print "$tver\n";
+        } else {
+            print "Package: $confmod. Latest update: $tver \n";
+        } 
+
+        if ($quiet_flag == 0) {
+            if ($verbose_flag) {
+                print " info: catalog HTTP link $conflink \n";
+                print " info: target HTTP package $link \n";
+                print " info: catalog SFW package $path/$pkg \n";
+            }
+        }
+        # do download if -d is passed
+        if ($download_flag) {
+
+            #print "Link=$link Path=$path Pkg=$pkg \n";
+            my $spkg = $path . "/" . $pkg;
+
+            if (! -f $spkg ) {
+                `(cd $path && $wget $link >/dev/null 2>&1)`
+
+            } else {
+                if ($force_flag) {
+                    if ($quiet_flag == 0) {
+                        print " info: downloading $link ...\n"; 
+                    }
+                    `(cd $path && $wget $link >/dev/null 2>&1)`
+                } else {
+                    if ($quiet_flag == 0) {
+                        print " warning: catalog package found: $pkg, check catalog\n";
+                    }
+                }
+            }
+        }
+    } else {
+        if ($quiet_flag==0) {
+            print "n/a\n";
+            if ($verbose_flag) {
+                print " info: Catalog HTTP Link $conflink \n";
+                print " info: Target HTTP Package $link \n";
+                print " info: Catalog SFW Package $path/$pkg \n";
+            }
+        }
+    }
+
+    return;
+}
+
+
+
+# Open XML configuration file
+sub open_conf {
+
+    my ($conf) =@_;
+    my $tree;
+
+    my $parser = XML::LibXML->new();
+    $parser -> keep_blanks(0);
+    $parser->validation(1);
+
+    # we will parse now the file
+    if (-e "$ENV{'BUILDER_PATH'}/etc/$conf") {
+        $tree = $parser->parse_file("$ENV{'BUILDER_PATH'}/etc/$conf");
+    } else {
+        print "Error: $! $ENV{'BUILDER_PATH'}/etc/$conf \n";
+        usage();
+    }
+
+    # return the tree configuration
+    return $tree;
+}
+
+
+
+# return an array of hashes
+sub get_values {
+    # $_[0] - configuration file
+    my ($conf, $path, $id) = @_;
+
+    my $expr;
+    my @result;
+    my $look_all = 0;
+
+    if (defined $id) {
+        $expr = $path . "[\@id=\"" . $id . "\"]/*";
+    } else {
+        # fallback to all distinct childs
+        $expr = $path . "*[not(name(.)=name(following-sibling::*))]";
+        $look_all = 1;
+    }
+
+    if ($look_all == 0) {
+
+        #XPath Walking
+        my @childs =
+            $conf -> findnodes ($expr);
+        foreach my $node (@childs) {
+            push @result, {
+                      $node->getAttribute('name') .
+                      ":" .
+                      $node->getAttribute('ver') ,
+                      $node->getAttribute('site') };
+        }
+    # check all childs and its values
+    } else {
+        my @uchilds = 
+            $conf -> findnodes($expr);
+
+        foreach my $node (@uchilds) {
+             
+            my $xpath = $path . $node->nodeName()  . "//pkg";
+            foreach my $tnode ($conf -> findnodes($xpath)) {
+                push @result, {
+                       $tnode->getAttribute('name') .
+                       ":" .
+                       $tnode->getAttribute('ver') ,
+                       $tnode->getAttribute('site') };
+            }
+        }
+    }
+    return @result;
+}
