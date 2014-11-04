@@ -28,7 +28,7 @@ cat << END
 Usage: $0 [-hA] [-b buildno] [-d db] [-m module] 
           [-p prefix] [-a appliance] pkg version
 Package:
-   rec, auth, kernel, nginx
+   recording, auth, kernel, nginx
 
 Options:
   -a appliance type: entreprise, rbpi
@@ -42,7 +42,7 @@ Options:
              scripts, nginx, nginxfin memcached, mariadb, pgsql, php, 
              ngxfin
 
-  eg, builder rec 0.73                  # build recording 0.73
+  eg, builder recording 0.73                  # build recording 0.73
       builder auth 1.0.0                # build analytics auth 1.0.0
       builder -a meteo auth 1.0.0       # build meteo analytics auth 1.0.0
       builder kernel 1.0.0              # build analytics kernel 1.0.0
@@ -530,6 +530,9 @@ if [ ! -d ${WORKSPACE} ]; then
     echo "Error: Invalid workspace structure: build"
     exit 1
 fi
+
+cd ${WORKSPACE}/${module}
+
 
 if [ "$OS_NAME" = "sunos" ]; then
     start=`nawk 'BEGIN{print srand()}'`
