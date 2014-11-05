@@ -448,7 +448,7 @@ echo "" >> ${BUILD_PATH}/${BUILD_LOG}
 echo "Info: Step 1 - Installing nginx wrappers ..." |\
  tee -a ${BUILD_PATH}/${BUILD_LOG}
 
-if [ $entreprise_sem -eq 1 ]; then
+if [ $enterprise_sem -eq 1 ]; then
     cp nginx.conf.maas ${iprefix}/nginx/conf/nginx.conf
 elif [ $rbpi_sem -eq 1 ]; then
     cp nginx.conf.rbpi ${iprefix}/nginx/conf/nginx.conf
@@ -572,7 +572,7 @@ echo "Info: Step 2 - Installing sdrauth startup services ..." |\
  tee -a ${BUILD_PATH}/${BUILD_LOG}
 
 cp auth* ${iprefix}/etc/
-if [ $entreprise_sem -eq 1 ]; then
+if [ $enterprise_sem -eq 1 ]; then
     cp redis.conf.maas ${iprefix}/etc/redis.conf
 elif [ $rbpi_sem -eq 1 ]; then
     cp redis.conf.rbpi ${iprefix}/etc/redis.conf

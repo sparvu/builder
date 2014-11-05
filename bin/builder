@@ -25,30 +25,26 @@
 usage() {
 
 cat << END
-Usage: $0 [-hA] [-b buildno] [-d db] [-m module] 
-          [-p prefix] [-a appliance] pkg version
-Package:
-   recording, auth, kernel, nginx
+Usage: $0 [-ht] [-p prefix_path]
+          [-b build_number] [-m module_name] 
+          [-a appliance_name] pkg version
+pkg:
+   recording, auth, kernel
+version:
+   1.0.0
 
-Options:
-  -a appliance type: entreprise, rbpi
+OPTIONS
+  -a appliance_name: enterprise, rbpi
+  -b build_number: 01, 10, 102
+  -m module_name: perl, openssl, idn, curl,  wcurl, sysstat, scripts
+  -p prefix_path: /opt/kronometrix
+  -t test_mode
   -h help
-  -b buildno
-  -d db: mariadb | pgsql
-  -A all: php, pecl, memcached, libmcrypt
-  -p prefix
-  -t test mode
-  -m module: perl, openssl, idn, curl,  wcurl, sysstat, nrec, webrec
-             scripts, nginx, nginxfin memcached, mariadb, pgsql, php, 
-             ngxfin
 
-  eg, builder recording 0.73                  # build recording 0.73
-      builder auth 1.0.0                # build analytics auth 1.0.0
-      builder -a meteo auth 1.0.0       # build meteo analytics auth 1.0.0
-      builder kernel 1.0.0              # build analytics kernel 1.0.0
-      builder nginx 0.8.54              # build nginx 0.8.54
-      builder -p /opt/www nginx 1.2.6   # build nginx 0.8.54
-      builder -a -d mariadb nginx 1.4.5
+  eg, builder recording 1.0.0        # build recording 0.73
+      builder auth 1.0.0             # build analytics auth 1.0.0
+      builder -a rbpi auth 1.0.0     # build rbpi analytics auth 1.0.0
+      builder kernel 1.0.0           # build analytics kernel 1.0.0
 
 Notes:
    Make sure you have defined WORKSPACE_PREFIX variable before running
@@ -62,7 +58,8 @@ exit 1
 # MAIN BODY #
 # ######### #
 
-## modules
+## pkg_sem
+pkg_sem=0
 
 ## recording
 perl_sem=0
@@ -87,12 +84,10 @@ nrec_done=0
 tests_done=0
 wwwcurl_done=0
 sysstat_done=0
-rec_ssh2_done=0
-rec_perlssh2_done=0
 ##
 
 ##appliance
-entreprise_sem=0
+enterprise_sem=0
 rbpi_sem=0
 ##
 
@@ -125,7 +120,7 @@ kernel_config_done=0
 PWD=`dirname $0`
 . ${PWD}/setenv
 
-while getopts ":a:b:d:m:p:Aht" arg
+while getopts ":a:b:m:p:ht" arg
 do
     case "${arg}" in
 
@@ -133,8 +128,8 @@ do
         appliance=$OPTARG
 
         case "$appliance" in
-            entreprise)
-                entreprise_sem=1
+            enterprise)
+                enterprise_sem=1
             ;;
 
             rbpi)
@@ -148,31 +143,8 @@ do
         esac
     ;;
 
-    A)
-        nginxall_sem=1
-    ;;
-
     b)
         build_num=$OPTARG
-    ;;
-
-    d)
-        dbtype=$OPTARG
-
-        case "$dbtype" in
-            mariadb)
-                mariadb_sem=1
-            ;;
-
-            pgsql)
-                pgsql_sem=1
-            ;;
-
-            *)
-                echo "Not supported db module!"
-                usage
-            ;;
-        esac
     ;;
 
     h)
@@ -387,8 +359,8 @@ case "$OS_NAME" in
 
              # default appliance
              if [ -z "$appliance" ]; then
-                 appliance="entreprise"
-                 entreprise_sem=1
+                 appliance="enterprise"
+                 enterprise_sem=1
              fi
 
              iprefix=${iprefix:-/opt/kronometrix/auth}
@@ -412,8 +384,8 @@ case "$OS_NAME" in
 
              # default appliance
              if [ -z "$appliance" ]; then
-                 appliance="entreprise"
-                 entreprise_sem=1
+                 appliance="enterprise"
+                 enterprise_sem=1
              fi
       
              iprefix=${iprefix:-/opt/kronometrix/kernel}
@@ -466,8 +438,8 @@ case "$OS_NAME" in
 
              # default appliance
              if [ -z "$appliance" ]; then
-                 appliance="entreprise"
-                 entreprise_sem=1
+                 appliance="enterprise"
+                 enterprise_sem=1
              fi
       
              iprefix=${iprefix:-/opt/kronometrix/auth}
@@ -491,8 +463,8 @@ case "$OS_NAME" in
 
              # default appliance
              if [ -z "$appliance" ]; then
-                 appliance="entreprise"
-                 entreprise_sem=1
+                 appliance="enterprise"
+                 enterprise_sem=1
              fi
       
              iprefix=${iprefix:-/opt/kronometrix/kernel}
