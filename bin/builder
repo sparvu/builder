@@ -121,7 +121,7 @@ kernel_config_done=0
 PWD=`dirname $0`
 . ${PWD}/setenv
 
-while getopts ":a:b:m:p:ht" arg
+while getopts ":a:b:m:p:cht" arg
 do
     case "${arg}" in
 
@@ -147,6 +147,12 @@ do
     b)
         build_num=$OPTARG
     ;;
+
+
+    c)
+        pkg_sem=1
+    ;;
+
 
     h)
         usage
