@@ -219,9 +219,22 @@ else
 fi
 
 for lib in Digest::SHA Proc::Daemon Proc::PID::File File::Tail \
-           JSON HTTP::Response Data::UUID
+           JSON::XS JSON HTTP::Response Data::UUID
 do
-    ${iprefix}/perl/bin/perl -MCPAN -e 'install "'$lib'"' >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+    if  [ "$lib" = "JSON::XS" ]; then
+        env PERL_MM_USE_DEFAULT=1 \
+        ${iprefix}/perl/bin/perl -MCPAN -e 'install "'$lib'"' >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+        if (( $? != 0 )); then
+            echo "Error: $lib installation failed !" |\
+                tee -a ${BUILD_LOG}/${module}.${version}.log
+            rm /var/tmp/build.${module}
+            exit 3
+        else
+            step6=`expr $step6 + 1`
+            continue
+        fi
+    fi
+
     if [ $? -ne 0 ]; then
         echo "Error: $lib installation failed !" |\
          tee -a ${BUILD_PATH}/${BUILD_LOG}
@@ -233,7 +246,7 @@ do
 done
 
 # there are 8 perl modules install calls 
-step6=`expr $step6 / 8`
+step6=`expr $step6 / 9`
 
 # final check; all 6 steps
 perl_done=`expr $step1 + $step2 + $step3 + $step4 + $step5 + $step6`

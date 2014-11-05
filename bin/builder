@@ -570,9 +570,9 @@ case "$module" in
          build_rec_sysstat
      fi
   
-     if [ "$PT_NAME" != "armv6l" ]; then 
-         build_rec_webrec
-     fi
+     #if [ "$PT_NAME" != "armv6l" ]; then 
+     #    build_rec_webrec
+     #fi
      build_rec_scripts
         
      if [ "$OS_NAME" != "freebsd" ]; then 
