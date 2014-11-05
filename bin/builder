@@ -545,7 +545,7 @@ case "$module" in
      build_rec_idn
      build_rec_curl
      build_rec_wcurl
-     if [ "${OS_NAME}" = "linux" ]; then
+     if [ "$OS_NAME" = "linux" ]; then
          build_rec_sysstat
      fi
   
@@ -557,6 +557,12 @@ case "$module" in
      if [ "$OS_NAME" != "freebsd" ]; then 
          test_rec_scripts
      fi
+
+     # currently we support Linux deb, rpm
+     if [ "$OS_NAME" = "linux" ]; then
+         buid_rec_pkg
+     fi
+
  ;;
 
 
