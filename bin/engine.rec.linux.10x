@@ -1135,14 +1135,14 @@ echo "Info: Step 2 - Installing recorders ..." |\
  tee -a ${BUILD_PATH}/${BUILD_LOG}
 
 
-nrecs=`ls *rec | wc -l`
+#nrecs=`ls *rec | wc -l`
 
-if [ "$nrecs" -ne 10 ]; then
-    echo "Error: wrong no. of recorders, check workspace !" |\
-     tee -a ${BUILD_PATH}/${BUILD_LOG}
-    rm /var/tmp/build.${module}
-    exit 3
-else
+#if [ "$nrecs" -ne 10 ]; then
+#    echo "Error: wrong no. of recorders, check workspace !" |\
+#     tee -a ${BUILD_PATH}/${BUILD_LOG}
+#    rm /var/tmp/build.${module}
+#    exit 3
+#else
     if [ "$PT_NAME" != "armv6l" ]; then
         cp *rec ${iprefix}/bin
         if [ $? -ne 0 ]; then
@@ -1165,7 +1165,7 @@ else
         fi
 
     fi
-fi
+#fi
 
 # set the other bins
 cp sender ${iprefix}/bin
