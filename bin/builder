@@ -85,6 +85,9 @@ nrec_done=0
 tests_done=0
 wwwcurl_done=0
 sysstat_done=0
+tar_pkg_done=
+deb_pkg_done=
+rpm_pkg_done=
 ##
 
 ##appliance
@@ -708,11 +711,21 @@ case "$module" in
         fi
     fi
 
+
     if [ $tests_done -eq 1 ]; then
         echo "# TESTS: ok"
     else
         if [ $tests_done -eq 90 ]; then
             echo "# TESTS: failed"
+        fi
+    fi
+
+
+    if [ $tar_pkg_done -eq 1 ]; then
+        echo "# TAR PACKAGE: ok"
+    else
+        if [ $tar_pkg_done -eq 90 ]; then
+            echo "# TAR PACKAGE: failed"
         fi
     fi
 

@@ -1359,3 +1359,137 @@ fi
 cd ..
 
 }
+
+## package management
+build_rec_tar_pkg {
+
+step1=0
+
+krmxver=$version
+
+# export iprefix
+export iprefix=${iprefix}
+
+if [ ! -z "$build_num" ]; then
+   buildno="$build_num"
+else
+   buildno=0
+fi
+
+
+cd ${iprefix}/..
+
+if [ "$buildno" -ne 0 ]; then
+    tar cf /var/tmp/kronometrix-${krmxver}b${buildno}-${DIST_ID}.${PT_NAME}.tar kronometrix/
+    if [ -f /var/tmp/kronometrix-${krmxver}b${buildno}-${DIST_ID}.${PT_NAME}.tari.bz2 ]; then
+        rm /var/tmp/kronometrix-${krmxver}b${buildno}-${DIST_ID}.${PT_NAME}.tar.bz2
+    fi
+    bzip2 /var/tmp/kronometrix-${krmxver}b${buildno}-${DIST_ID}.${PT_NAME}.tar
+    if [ $? -ne 0 ]; then
+        echo "Error: cannot create kronometrix data recording package !" |\
+         tee -a ${BUILD_PATH}/${BUILD_LOG}
+        rm /var/tmp/build.${module}
+        exit 3
+    else
+        step1=1
+    fi
+else
+    # GA General Release
+    tar cf /var/tmp/kronometrix-${krmxver}-${DIST_ID}.${PT_NAME}.tar kronometrix/
+    if [ -f /var/tmp/kronometrix-${krmxver}-${DIST_ID}.${PT_NAME}.tar.bz2 ]; then
+        rm /var/tmp/kronometrix-${krmxver}-${DIST_ID}.${PT_NAME}.tar.bz2
+    fi
+    bzip2 /var/tmp/kronometrix-${krmxver}-${DIST_ID}.${PT_NAME}.tar
+    if [ $? -ne 0 ]; then
+        echo "Error: cannot create kronometrix data recording package !" |\
+         tee -a ${BUILD_PATH}/${BUILD_LOG}
+        rm /var/tmp/build.${module}
+        exit 3
+    else
+        step1=1
+    fi
+fi
+
+# final check; 1 step
+tar_pkg_done=$step1
+if [ "$tar_pkg_done" -eq 1 ]; then
+   tar_pkg_done=1
+else
+   tar_pkg_done=90
+fi
+
+cd ..
+
+
+}
+
+
+
+
+build_rec_deb_pkg {
+}
+
+
+
+
+build_rec_rpm_pkg {
+}
+
+
+build_rec_pkg() {
+
+dir=pkg
+step1=0
+step2=0
+
+cd $dir
+echo "\n############################################################"
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Creating Kronometrix recording package" | tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+# STEP 1
+# tar package must be created
+
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 1 - Kronometrix tar package" |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+build_rec_tar_pkg
+
+
+# STEP 2
+# Check all shared libs if they are build correctly
+
+# echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+# echo "Info: Step 2 - Check libs" |\
+ # tee -a ${BUILD_PATH}/${BUILD_LOG}
+# 
+# noErrors=0
+# for lib in `ls ${iprefix}/lib/*.so`
+# do
+#     noErrors=`ldd $lib | grep 'not found' | wc -l`
+#     if [ "$noErrors" -ne 0 ]; then
+#         echo "LIB ERROR: $lib" |\
+#          tee -a ${BUILD_PATH}/${BUILD_LOG}
+#         noErrors=`expr $noErrors + 1`
+#     fi
+# done
+
+# if [ "$noErrors" -eq 0 ]; then
+#     step2=1
+# fi
+
+
+# final check; all 4 steps
+# pkg_done=`expr $step1 + $step2` 
+# if [ "$pkg_done" -eq 2 ]; then
+#    pkg_done=1
+# else
+#    pkg_done=90
+# fi
+
+# cd ..
+
+}
+
+
