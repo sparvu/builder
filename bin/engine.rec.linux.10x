@@ -1361,7 +1361,7 @@ cd ..
 }
 
 ## package management
-build_rec_tar_pkg {
+build_rec_tar_pkg() {
 
 step1=0
 
@@ -1424,15 +1424,11 @@ cd ..
 }
 
 
-
-
-build_rec_deb_pkg {
+build_rec_deb_pkg() {
 }
 
 
-
-
-build_rec_rpm_pkg {
+build_rec_rpm_pkg() {
 }
 
 
