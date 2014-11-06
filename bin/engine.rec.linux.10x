@@ -1424,14 +1424,6 @@ cd ..
 }
 
 
-build_rec_deb_pkg() {
-}
-
-
-build_rec_rpm_pkg() {
-}
-
-
 build_rec_pkg() {
 
 dir=pkg
