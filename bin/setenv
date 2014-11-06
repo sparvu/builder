@@ -46,7 +46,14 @@ case "$OS_NAME" in
         elif [ -f /etc/system-release ]; then
             DIST_ID=`sed 's/ release.*$//' /etc/system-release | tr '[A-Z]' '[a-z]'`
         elif [ -f /etc/redhat-release ]; then
-            DIST_ID=`sed 's/ release.*$//' /etc/redhat-release | tr '[A-Z]' '[a-z]'`
+            DIST_TEMP=`sed 's/ release.*$//' /etc/redhat-release | tr '[A-Z]' '[a-z]'`
+            echo $DIST_TEMP | grep '^red hat' >/dev/null
+            if [ $? -eq 0 ]; then
+                DIST_ID="rhel"
+            else
+                DIST_ID=$DIST_TEMP
+            fi
+            
         fi
     ;;
 

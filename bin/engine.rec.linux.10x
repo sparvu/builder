@@ -1442,7 +1442,26 @@ echo "" >> ${BUILD_PATH}/${BUILD_LOG}
 echo "Info: Step 1 - Kronometrix tar package" |\
  tee -a ${BUILD_PATH}/${BUILD_LOG}
 
+# default we make tar package for everyone
 build_rec_tar_pkg
+
+
+case "$DIST_ID" in
+    centos|)
+
+        iprefix=${iprefix:-/opt/kronometrix}
+        iuser=krmx
+
+        WORKSPACE="${WORKSPACE_PREFIX}/kronometrix"
+    ;;
+               
+
+    *)
+        usage
+    ;;
+
+esac
+
 
 
 # STEP 2
