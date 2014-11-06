@@ -85,9 +85,9 @@ nrec_done=0
 tests_done=0
 wwwcurl_done=0
 sysstat_done=0
-tar_pkg_done=
-deb_pkg_done=
-rpm_pkg_done=
+tar_pkg_done=0
+deb_pkg_done=0
+rpm_pkg_done=0
 ##
 
 ##appliance
@@ -563,7 +563,7 @@ case "$module" in
 
      # currently we support Linux deb, rpm
      if [ "$OS_NAME" = "linux" ]; then
-         buid_rec_pkg
+         build_rec_pkg
      fi
 
  ;;
