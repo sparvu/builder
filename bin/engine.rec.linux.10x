@@ -1295,9 +1295,9 @@ step2=0
 
 
 cd $dir
-echo "\n############################################################"
+echo "############################################################"
 echo "" >> ${BUILD_PATH}/${BUILD_LOG}
-echo "Testing Kronometrix" | tee -a ${BUILD_PATH}/${BUILD_LOG}
+echo "Submodule: $dir ${OS_NAME}" | tee -a ${BUILD_PATH}/${BUILD_LOG}
 
 # STEP 1
 # Check all recorders if they are sane and execute properly
@@ -1430,10 +1430,10 @@ dir=pkg
 step1=0
 step2=0
 
-cd $dir
-echo "\n############################################################"
+
+echo "############################################################"
 echo "" >> ${BUILD_PATH}/${BUILD_LOG}
-echo "Creating Kronometrix recording package" | tee -a ${BUILD_PATH}/${BUILD_LOG}
+echo "Submodule: $dir ${OS_NAME}" | tee -a ${BUILD_PATH}/${BUILD_LOG}
 
 # STEP 1
 # tar package must be created
