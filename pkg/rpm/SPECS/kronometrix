@@ -21,11 +21,11 @@
 %endif
 
 
-Summary: Performance Analysis and Capacity Planning
+Summary: Kronometrix Linux Data Recorder
 Name: kronometrix
 Version: 1.0.0
 Release: 1
-Group: Applications/System
+Group: System/Monitoring/Tools
 License: GPL
 URL: http://www.systemdatarecorder.org/
 Source: %{name}-%{version}-%{_arch}.tar.bz2
