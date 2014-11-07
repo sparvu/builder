@@ -1420,7 +1420,6 @@ fi
 
 cd ..
 
-
 }
 
 
@@ -1447,55 +1446,19 @@ build_rec_tar_pkg
 
 
 case "$DIST_ID" in
-    centos|)
+    centos|rhel)
+        build_rec_rpm_pkg
+    ;;
 
-        iprefix=${iprefix:-/opt/kronometrix}
-        iuser=krmx
-
-        WORKSPACE="${WORKSPACE_PREFIX}/kronometrix"
+    debian|ubuntu)
+        build_rec_deb_pkg
     ;;
                
-
     *)
         usage
     ;;
-
 esac
 
-
-
-# STEP 2
-# Check all shared libs if they are build correctly
-
-# echo "" >> ${BUILD_PATH}/${BUILD_LOG}
-# echo "Info: Step 2 - Check libs" |\
- # tee -a ${BUILD_PATH}/${BUILD_LOG}
-# 
-# noErrors=0
-# for lib in `ls ${iprefix}/lib/*.so`
-# do
-#     noErrors=`ldd $lib | grep 'not found' | wc -l`
-#     if [ "$noErrors" -ne 0 ]; then
-#         echo "LIB ERROR: $lib" |\
-#          tee -a ${BUILD_PATH}/${BUILD_LOG}
-#         noErrors=`expr $noErrors + 1`
-#     fi
-# done
-
-# if [ "$noErrors" -eq 0 ]; then
-#     step2=1
-# fi
-
-
-# final check; all 4 steps
-# pkg_done=`expr $step1 + $step2` 
-# if [ "$pkg_done" -eq 2 ]; then
-#    pkg_done=1
-# else
-#    pkg_done=90
-# fi
-
-# cd ..
 
 }
 
