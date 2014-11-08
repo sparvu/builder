@@ -522,9 +522,11 @@ case "$module" in
              test_rec_scripts
          fi
 
-         # currently we support Linux deb, rpm
-         if [ "$OS_NAME" = "linux" ]; then
-             build_rec_pkg
+         if [ $pkg_sem -eq 1 ]; then
+             # currently we support Linux deb, rpm
+             if [ "$OS_NAME" = "linux" ]; then
+                 build_rec_pkg
+             fi
          fi
     fi
  ;;
