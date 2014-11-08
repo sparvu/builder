@@ -1418,8 +1418,6 @@ else
    tar_pkg_done=90
 fi
 
-cd ..
-
 }
 
 
@@ -1556,7 +1554,7 @@ else
    rpm_pkg_done=90
 fi
 
-cd ..
+cd ../..
 
 }
 
