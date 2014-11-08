@@ -24,7 +24,7 @@
 Summary: Kronometrix Linux Data Recorder
 Name: kronometrix
 Version: 1.0.0
-Release: 1
+Release: b10
 Group: System/Monitoring/Tools
 License: GPL
 URL: http://www.systemdatarecorder.org/
@@ -43,7 +43,7 @@ and capacity planning in today's challenging business environments.
 
 
 %prep
-%setup -n sdr
+%setup -n kronometrix
 # In the prep section the tar.gz file gets unpacked to a directory.
 # the directory is
 
@@ -129,7 +129,7 @@ elif [ $1 -eq 2 ]; then
     fi
 
 fi
-# echo sdr123|passwd --stdin sdr
+# echo krmx123|passwd --stdin krmx
 
 
 # after install
@@ -142,12 +142,12 @@ if [ $1 -eq 1 ]; then
     fi
 
     if [ ! -f /etc/init.d/kronometrix.transport ]; then
-        ln -s /opt/sdr/etc/kronometrix.transport /etc/init.d/kronometrix.transport || :
+        ln -s /opt/kronometrix/etc/kronometrix.transport /etc/init.d/kronometrix.transport || :
     fi
     chkconfig --add kronometrix || :
     chkconfig --add kronometrix.transport || :
     /etc/init.d/kronometrix start || :
-    # /etc/init.d/sdr.transport start || :
+    # /etc/init.d/kronometrix.transport start || :
     chown -R krmx:krmx /opt/kronometrix/log || :
 
     # cronjobs
@@ -160,7 +160,7 @@ elif [ $1 -eq 2 ]; then
     # upgrade
     chown -R krmx:krmx /opt/kronometrix || :
     /etc/init.d/kronometrix start || :
-    # /etc/init.d/sdr.transport start || :
+    # /etc/init.d/kronometrix.transport start || :
     chown -R krmx:krmx /opt/kronometrix || :
 fi
 
@@ -191,7 +191,7 @@ if [ $1 -eq 0 ]; then
         rm -f /etc/init.d/kronometrix.transport || :
     fi
 
-    # wipeout sdr crontab
+    # wipeout krmx crontab
     crontab -u krmx -r  2>/dev/null || :
 fi
 
