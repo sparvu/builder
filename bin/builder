@@ -74,6 +74,7 @@ nrec_sem=0
 ossl_sem=0
 syss_sem=0
 rec1_sem=0
+rpm_sem=0
 
 idn_done=0
 perl_done=0
@@ -189,10 +190,6 @@ do
                 lcrl_sem=1
             ;;
  
-            gd)
-                lgd_sem=1
-            ;;
-
             wcurl)
                 lwcl_sem=1
             ;;
@@ -221,52 +218,12 @@ do
 		rec1_sem=1
             ;;
 
-            nginx)
-                nginx_sem=1
-            ;;
-
-            fcgiwrap)
-                fcgiwrap_sem=1
-            ;;
-
-            libjpeg)
-                jpeg_sem=1
-            ;;
-
-            rserve)
-                rserve_sem=1
-            ;;
-
-            ranalysis)
-                ranalysis_sem=1
+            rpm)
+                rpm_sem=1
             ;;
 
             pdq)
                 pdq_sem=1
-            ;;
-
-            ngxfin)
-                nginxfin_sem=1
-            ;;
-                   
-            php)
-                php_sem=1
-            ;;
-
-            mariadb)
-                mariadb_sem=1
-            ;;
-
-            pgsql)
-                pgsql_sem=1
-            ;;
-
-            memcached)
-                mcd_sem=1
-            ;;
-
-            cache_mcd_fast)
-                cache_mcd_fast_sem=1
             ;;
 
             *)
@@ -543,29 +500,33 @@ echo "#################################################################"
 case "$module" in
  recording)
      echo "" > ${BUILD_PATH}/${BUILD_LOG}
-     build_rec_perl
-     build_rec_ossl
-     build_rec_idn
-     build_rec_curl
-     build_rec_wcurl
-     if [ "$OS_NAME" = "linux" ]; then
-         build_rec_sysstat
-     fi
-  
-     #if [ "$PT_NAME" != "armv6l" ]; then 
-     #    build_rec_webrec
-     #fi
-     build_rec_scripts
-        
-     if [ "$OS_NAME" != "freebsd" ]; then 
-         test_rec_scripts
-     fi
 
-     # currently we support Linux deb, rpm
-     if [ "$OS_NAME" = "linux" ]; then
+     if [ "$rpm_sem" -eq 0 ]; then
          build_rec_pkg
-     fi
+     else 
+         build_rec_perl
+         build_rec_ossl
+         build_rec_idn
+         build_rec_curl
+         build_rec_wcurl
+             if [ "$OS_NAME" = "linux" ]; then
+                 build_rec_sysstat
+             fi
+  
+             #if [ "$PT_NAME" != "armv6l" ]; then 
+                 #    build_rec_webrec
+             #fi
+         build_rec_scripts
+        
+         if [ "$OS_NAME" != "freebsd" ]; then 
+             test_rec_scripts
+         fi
 
+         # currently we support Linux deb, rpm
+         if [ "$OS_NAME" = "linux" ]; then
+             build_rec_pkg
+         fi
+    fi
  ;;
 
 
@@ -726,6 +687,14 @@ case "$module" in
     else
         if [ $tar_pkg_done -eq 90 ]; then
             echo "# TAR PACKAGE: failed"
+        fi
+    fi
+
+    if [ $rpm_pkg_done -eq 1 ]; then
+        echo "# RPM PACKAGE: ok"
+    else
+        if [ $rpm_pkg_done -eq 90 ]; then
+            echo "# RPM PACKAGE: failed"
         fi
     fi
 
