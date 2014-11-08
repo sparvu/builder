@@ -174,7 +174,7 @@ if [ $1 -eq 0 ]; then
 
     # check for old installs
     if [ -f /etc/init.d/kronometrix.transport ]; then
-        /etc/init.d/kronometrix.transport stop 2>/dev/null || :
+        /etc/init.d/kronometrix.transport stop >/dev/null 2>&1 || :
         chkconfig kronometrix.transport off || :
         chkconfig --del kronometrix.transport || :
         rm -f /etc/init.d/kronometrix.transport || :
@@ -182,12 +182,12 @@ if [ $1 -eq 0 ]; then
 
     # uinstall
     if [ -f /etc/init.d/kronometrix ]; then
-        /etc/init.d/kronometrix stop 2>/dev/null || :
+        /etc/init.d/kronometrix stop >/dev/null 2>&1 || :
         rm -f /etc/init.d/kronometrix || :
     fi
 
     if [ -f /etc/init.d/kronometrix.transport ]; then
-        /etc/init.d/kronometrix.transport stop 2>/dev/null || :
+        /etc/init.d/kronometrix.transport stop >/dev/null 2>&1 || :
         rm -f /etc/init.d/kronometrix.transport || :
     fi
 
