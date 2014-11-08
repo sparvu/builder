@@ -1360,7 +1360,7 @@ cd ..
 
 }
 
-## package management
+## tar package
 build_rec_tar_pkg() {
 
 step1=0
@@ -1421,6 +1421,146 @@ fi
 cd ..
 
 }
+
+
+## rpm package
+build_rec_rpm_pkg() {
+
+dir='pkg/rpm'
+step1=0
+step2=0
+step3=0
+
+krmxver=$version
+
+# export iprefix
+export iprefix=${iprefix}
+
+if [ ! -z "$build_num" ]; then
+   buildno="$build_num"
+else
+   buildno=0
+fi
+
+
+cd $dir
+echo "############################################################"
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Submodule: rpm package ${OS_NAME}" | tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+
+# STEP 1
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 1 - Prepare SOURCE stage directory" |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+
+if [ ! -d SPECS ]; then
+    echo "Error: cannot find SPECS directory, missing spec file !" |\
+        tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+fi
+
+if [ ! -d SOURCES ]; then
+    mkdir SOURCES
+fi
+
+if [ ! -d SRPMS ]; then
+    mkdir SRPMS
+fi
+
+if [ ! -d BUILD ]; then
+    mkdir BUILD
+fi
+
+if [ ! -d RPMS ]; then
+    mkdir RPMS
+fi
+
+if [ ! -d tmp ]; then
+    mkdir tmp
+fi
+
+# prepare SOURCES
+if [ ! -d "SOURCES/kronometrix-${krmxver}" ]; then
+    mkdir "SOURCES/kronometrix-${krmxver}"
+fi
+
+if [ "$buildno" -ne 0 ]; then
+    if [ -f /var/tmp/kronometrix-${krmxver}b${buildno}-${DIST_ID}.${PT_NAME}.tar.bz2 ]; then
+        cp /var/tmp/kronometrix-${krmxver}b${buildno}-${DIST_ID}.${PT_NAME}.tar.bz2 \
+           SOURCES/kronometrix-${krmxver}/kronometrix-${krmxver}-${PT_NAME}.tar.bz2
+        if [ $? -ne 0 ]; then
+            echo "Error: cannot copy tar archive to SOURCE directory !" |\
+              tee -a ${BUILD_PATH}/${BUILD_LOG}
+            rm /var/tmp/build.${module}
+            exit 3
+        else
+            step1=1
+        fi
+    fi
+else
+    if [ -f /var/tmp/kronometrix-${krmxver}-${DIST_ID}.${PT_NAME}.tar.bz2 ]; then
+        cp /var/tmp/kronometrix-${krmxver}-${DIST_ID}.${PT_NAME}.tar.bz2 \
+            SOURCES/kronometrix-${krmxver}/kronometrix-${krmxver}-${PT_NAME}.tar.bz2
+        if [ $? -ne 0 ]; then
+            echo "Error: cannot copy tar archive to SOURCE directory !" |\
+              tee -a ${BUILD_PATH}/${BUILD_LOG}
+            rm /var/tmp/build.${module}
+            exit 3
+        else
+            step1=1
+        fi
+    fi
+fi
+
+
+# STEP 2
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 2 - Build rpm package" |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+if [ -f SPECS/kronometrix ]; then
+    rpmbuild -bb SPECS/kronometrix >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+    if [ $? -ne 0 ]; then
+        echo "Error: cannot build rpm, rpmbuild error !" |\
+            tee -a ${BUILD_PATH}/${BUILD_LOG}
+        rm /var/tmp/build.${module}
+        exit 3
+    else
+        step2=1
+    fi
+fi
+
+
+# STEP 3
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 3 - Cleanup rpm stage directories" |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+if [ -f RPMS/kronometrix-${krmxver}-${PT_NAME}.rpm ]; then
+   cp RPMS/kronometrix-${krmxver}-${PT_NAME}.rpm /var/tmp
+   # cleanup
+   if [ $? -eq 0 ]; then 
+       rm -rf RPMS SOURCES SRPMS BUILD tmp
+   fi
+fi
+
+
+# final check; 3 steps
+rpm_pkg_done=`expr $step1 + $step2 + $step3`
+if [ "$rpm_pkg_done" -eq 1 ]; then
+   rpm_pkg_done=1
+else
+   rpm_pkg_done=90
+fi
+
+cd ..
+
+}
+
+
 
 
 build_rec_pkg() {
