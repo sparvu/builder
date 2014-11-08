@@ -103,7 +103,7 @@ if [ $1 -eq 1 ]; then
     fi
 
     if [ ! -d /opt/kronometrix ]; then
-        mkdir /opt/kronometrix || :
+        mkdir -p /opt/kronometrix || :
     fi
 elif [ $1 -eq 2 ]; then
     # upgrade
@@ -137,11 +137,11 @@ fi
 if [ $1 -eq 1 ]; then
     # initial installation, after tasks
     chown -R krmx:krmx /opt/kronometrix || :
-    if [ ! -f /etc/init.d/kronometrix ]; then
+    if [ ! -L /etc/init.d/kronometrix ]; then
         ln -s /opt/kronometrix/etc/kronometrix /etc/init.d/kronometrix || :
     fi
 
-    if [ ! -f /etc/init.d/kronometrix.transport ]; then
+    if [ ! -L /etc/init.d/kronometrix.transport ]; then
         ln -s /opt/kronometrix/etc/kronometrix.transport /etc/init.d/kronometrix.transport || :
     fi
     chkconfig --add kronometrix || :
@@ -174,24 +174,23 @@ if [ $1 -eq 0 ]; then
 
     # check for old installs
     if [ -f /etc/init.d/kronometrix.transport ]; then
-        /etc/init.d/kronometrix.transport stop || :
+        /etc/init.d/kronometrix.transport stop 2>/dev/null || :
         chkconfig kronometrix.transport off || :
-        chkconfig --del kornometrix.transport || :
+        chkconfig --del kronometrix.transport || :
         rm -f /etc/init.d/kronometrix.transport || :
     fi
 
     # uinstall
     if [ -f /etc/init.d/kronometrix ]; then
-        /etc/init.d/kronometrix stop || :
+        /etc/init.d/kronometrix stop 2>/dev/null || :
         rm -f /etc/init.d/kronometrix || :
     fi
 
     if [ -f /etc/init.d/kronometrix.transport ]; then
-        /etc/init.d/kronometrix.transport stop || :
+        /etc/init.d/kronometrix.transport stop 2>/dev/null || :
         rm -f /etc/init.d/kronometrix.transport || :
     fi
 
     # wipeout krmx crontab
     crontab -u krmx -r  2>/dev/null || :
 fi
-
