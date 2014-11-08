@@ -1360,6 +1360,24 @@ cd ..
 
 }
 
+make_rpmmacro() {
+
+cat > ~/.rpmmacros << "EOF"
+%packager       Support Kronometrix
+%vendor         Kronometrix
+
+%_topdir        %(echo $HOME)/workspace/kronometrix/recording/pkg/rpm
+%_tmppath       %{_topdir}/tmp
+%_sourcedir     %{_topdir}/SOURCES/%{name}-%{version}
+%_rpmfilename   %{name}-%{version}-%{arch}.rpm
+%_specdir       %{_topdir}/SPECS
+%_builddir      %{_topdir}/BUILD
+%_rpmdir        %{_topdir}/RPMS
+EOF
+
+}
+
+
 ## tar package
 build_rec_tar_pkg() {
 
@@ -1375,7 +1393,6 @@ if [ ! -z "$build_num" ]; then
 else
    buildno=0
 fi
-
 
 cd ${iprefix}/..
 
@@ -1418,6 +1435,8 @@ else
    tar_pkg_done=90
 fi
 
+cd ${WORKSPACE}/${module}
+
 }
 
 
@@ -1439,7 +1458,6 @@ if [ ! -z "$build_num" ]; then
 else
    buildno=0
 fi
-
 
 cd $dir
 echo "############################################################"
@@ -1519,8 +1537,18 @@ echo "" >> ${BUILD_PATH}/${BUILD_LOG}
 echo "Info: Step 2 - Build rpm package" |\
  tee -a ${BUILD_PATH}/${BUILD_LOG}
 
+if [ -f $HOME/.rpmmacros ]; then
+    STAMP=`date +"%Y%m%d_%H%M%S"`
+    mv $HOME/.rpmmacros $HOME/.rpmmacros.${STAMP}
+    make_rpmmacro
+else
+    make_rpmmacro
+fi
+
+
 if [ -f SPECS/kronometrix ]; then
-    rpmbuild -bb SPECS/kronometrix >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+
+    rpmbuild -bb ./SPECS/kronometrix >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
     if [ $? -ne 0 ]; then
         echo "Error: cannot build rpm, rpmbuild error !" |\
             tee -a ${BUILD_PATH}/${BUILD_LOG}
@@ -1542,13 +1570,15 @@ if [ -f RPMS/kronometrix-${krmxver}-${PT_NAME}.rpm ]; then
    # cleanup
    if [ $? -eq 0 ]; then 
        rm -rf RPMS SOURCES SRPMS BUILD tmp
+       rm $HOME/.rpmmacros
+       step3=1
    fi
 fi
 
 
 # final check; 3 steps
 rpm_pkg_done=`expr $step1 + $step2 + $step3`
-if [ "$rpm_pkg_done" -eq 1 ]; then
+if [ "$rpm_pkg_done" -eq 3 ]; then
    rpm_pkg_done=1
 else
    rpm_pkg_done=90
@@ -1570,7 +1600,7 @@ step2=0
 
 echo "############################################################"
 echo "" >> ${BUILD_PATH}/${BUILD_LOG}
-echo "Submodule: $dir ${OS_NAME}" | tee -a ${BUILD_PATH}/${BUILD_LOG}
+echo "Submodule: tar package ${OS_NAME}" | tee -a ${BUILD_PATH}/${BUILD_LOG}
 
 # STEP 1
 # tar package must be created
