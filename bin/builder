@@ -501,7 +501,7 @@ case "$module" in
  recording)
      echo "" > ${BUILD_PATH}/${BUILD_LOG}
 
-     if [ "$rpm_sem" -eq 0 ]; then
+     if [ $rpm_sem -eq 1 ]; then
          build_rec_pkg
      else 
          build_rec_perl
