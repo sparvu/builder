@@ -594,107 +594,96 @@ case "$module" in
  recording)
 
     if [ $perl_done -eq 1 ]; then
-        echo "# PERL SUBSYSTEM: built and integrated"
+        echo "# PERL      : ok"
     else
         if [ $perl_done -eq 90 ]; then
-            echo "# PERL SUBSYSTEM: not integrated"
+            echo "# PERL      : failed"
         fi
     fi
 
     if [ $ossl_done -eq 1 ]; then
-        echo "# OPENSSL SUBSYSTEM: built and integrated"
+        echo "# OPENSSL   : ok"
     else
         if [ $ossl_done -eq 90 ]; then
-            echo "# OPENSSL SUBSYSTEM: not integrated"
+            echo "# OPENSSL   : failed"
         fi
     fi
 
     if [ $idn_done -eq 1 ]; then
-        echo "# IDN SUBSYSTEM: built and integrated"
+        echo "# IDN       : ok"
     else
         if [ $idn_done -eq 90 ]; then
-            echo "# IDN SUBSYSTEM: not integrated"
+            echo "# IDN       : failed"
         fi
     fi
 
     if [ $curl_done -eq 1 ]; then
-        echo "# CURL SUBSYSTEM: built and integrated"
+        echo "# CURL      : ok"
     else
         if [ $curl_done -eq 90 ]; then
-            echo "# CURL SUBSYSTEM: not integrated"
+            echo "# CURL      : failed"
         fi
     fi
 
     if [ "$OS_NAME" = "linux" ]; then
         if [ $sysstat_done -eq 1 ]; then
-            echo "# SYSSTAT SUBSYSTEM: built and integrated"
+            echo "# SYSSTAT   : ok"
         else
             if [ $sysstat_done -eq 90 ]; then
-                echo "# SYSSTAT SUBSYSTEM: not integrated"
+                echo "# SYSSTAT   : failed"
             fi
         fi
     fi
 
     if [ $wwwcurl_done -eq 1 ]; then
-        echo "# WCURL SUBSYSTEM: built and integrated"
+        echo "# WCURL     : ok"
     else
         if [ $wwwcurl_done -eq 90 ]; then
-            echo "# WCURL SUBSYSTEM: not integrated"
-        fi
-    fi
-
-
-    if [ "$OS_NAME" = "linux" ]; then
-        if [ $nrec_done -eq 1 ]; then
-            echo "# NICREC SUBSYSTEM: built and integrated"
-        else
-            if [ $nrec_done -eq 90 ]; then
-                echo "# NICREC SUBSYSTEM: not integrated"
-            fi
+            echo "# WCURL     : failed"
         fi
     fi
 
 
     if [ $wrec_done -eq 1 ]; then
-        echo "# WEBREC SUBSYSTEM: built and integrated"
+        echo "# WEBREC    : ok"
     else
         if [ $wrec_done -eq 90 ]; then
-            echo "# WEBREC SUBSYSTEM: not integrated"
+            echo "# WEBREC    : failed"
         fi
     fi
 
 
     if [ $recs_done -eq 1 ]; then
-        echo "# RECORDERS: built and integrated"
+        echo "# RECORDERS : ok"
     else
         if [ $recs_done -eq 90 ]; then
-            echo "# RECORDERS: not integrated"
+            echo "# RECORDERS : failed"
         fi
     fi
 
 
     if [ $tests_done -eq 1 ]; then
-        echo "# TESTS: ok"
+        echo "# TESTS     : ok"
     else
         if [ $tests_done -eq 90 ]; then
-            echo "# TESTS: failed"
+            echo "# TESTS     : failed"
         fi
     fi
 
 
     if [ $tar_pkg_done -eq 1 ]; then
-        echo "# TAR PACKAGE: ok"
+        echo "# TAR PKG   : ok"
     else
         if [ $tar_pkg_done -eq 90 ]; then
-            echo "# TAR PACKAGE: failed"
+            echo "# TAR PKG   : failed"
         fi
     fi
 
     if [ $rpm_pkg_done -eq 1 ]; then
-        echo "# RPM PACKAGE: ok"
+        echo "# RPM PKG   : ok"
     else
         if [ $rpm_pkg_done -eq 90 ]; then
-            echo "# RPM PACKAGE: failed"
+            echo "# RPM PKG   : failed"
         fi
     fi
 
