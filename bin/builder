@@ -594,7 +594,7 @@ case "$module" in
  recording)
 
     if [ $perl_done -eq 1 ]; then
-        echo "# PERL      : ok"
+        echo "# PERL      :     ok"
     else
         if [ $perl_done -eq 90 ]; then
             echo "# PERL      : failed"
@@ -602,7 +602,7 @@ case "$module" in
     fi
 
     if [ $ossl_done -eq 1 ]; then
-        echo "# OPENSSL   : ok"
+        echo "# OPENSSL   :     ok"
     else
         if [ $ossl_done -eq 90 ]; then
             echo "# OPENSSL   : failed"
@@ -610,7 +610,7 @@ case "$module" in
     fi
 
     if [ $idn_done -eq 1 ]; then
-        echo "# IDN       : ok"
+        echo "# IDN       :     ok"
     else
         if [ $idn_done -eq 90 ]; then
             echo "# IDN       : failed"
@@ -618,7 +618,7 @@ case "$module" in
     fi
 
     if [ $curl_done -eq 1 ]; then
-        echo "# CURL      : ok"
+        echo "# CURL      :     ok"
     else
         if [ $curl_done -eq 90 ]; then
             echo "# CURL      : failed"
@@ -627,7 +627,7 @@ case "$module" in
 
     if [ "$OS_NAME" = "linux" ]; then
         if [ $sysstat_done -eq 1 ]; then
-            echo "# SYSSTAT   : ok"
+            echo "# SYSSTAT   :     ok"
         else
             if [ $sysstat_done -eq 90 ]; then
                 echo "# SYSSTAT   : failed"
@@ -636,7 +636,7 @@ case "$module" in
     fi
 
     if [ $wwwcurl_done -eq 1 ]; then
-        echo "# WCURL     : ok"
+        echo "# WCURL     :     ok"
     else
         if [ $wwwcurl_done -eq 90 ]; then
             echo "# WCURL     : failed"
@@ -645,7 +645,7 @@ case "$module" in
 
 
     if [ $wrec_done -eq 1 ]; then
-        echo "# WEBREC    : ok"
+        echo "# WEBREC    :     ok"
     else
         if [ $wrec_done -eq 90 ]; then
             echo "# WEBREC    : failed"
@@ -654,7 +654,7 @@ case "$module" in
 
 
     if [ $recs_done -eq 1 ]; then
-        echo "# RECORDERS : ok"
+        echo "# RECORDERS :     ok"
     else
         if [ $recs_done -eq 90 ]; then
             echo "# RECORDERS : failed"
@@ -663,7 +663,7 @@ case "$module" in
 
 
     if [ $tests_done -eq 1 ]; then
-        echo "# TESTS     : ok"
+        echo "# TESTS     :     ok"
     else
         if [ $tests_done -eq 90 ]; then
             echo "# TESTS     : failed"
@@ -672,7 +672,7 @@ case "$module" in
 
 
     if [ $tar_pkg_done -eq 1 ]; then
-        echo "# TAR PKG   : ok"
+        echo "# TAR PKG   :     ok"
     else
         if [ $tar_pkg_done -eq 90 ]; then
             echo "# TAR PKG   : failed"
@@ -680,7 +680,7 @@ case "$module" in
     fi
 
     if [ $rpm_pkg_done -eq 1 ]; then
-        echo "# RPM PKG   : ok"
+        echo "# RPM PKG   :     ok"
     else
         if [ $rpm_pkg_done -eq 90 ]; then
             echo "# RPM PKG   : failed"
