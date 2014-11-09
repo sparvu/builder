@@ -1398,7 +1398,7 @@ cd ${iprefix}/..
 
 if [ "$buildno" -ne 0 ]; then
     tar cf /var/tmp/kronometrix-${krmxver}b${buildno}-${DIST_ID}.${PT_NAME}.tar kronometrix/
-    if [ -f /var/tmp/kronometrix-${krmxver}b${buildno}-${DIST_ID}.${PT_NAME}.tari.bz2 ]; then
+    if [ -f /var/tmp/kronometrix-${krmxver}b${buildno}-${DIST_ID}.${PT_NAME}.tar.bz2 ]; then
         rm /var/tmp/kronometrix-${krmxver}b${buildno}-${DIST_ID}.${PT_NAME}.tar.bz2
     fi
     bzip2 /var/tmp/kronometrix-${krmxver}b${buildno}-${DIST_ID}.${PT_NAME}.tar
@@ -1612,20 +1612,23 @@ echo "Info: Step 1 - Kronometrix tar package" |\
 # default we make tar package for everyone
 build_rec_tar_pkg
 
+if [ $pkg_sem -eq 1 ]; then
+    # currently we support Linux deb, rpm
 
-case "$DIST_ID" in
-    centos|rhel)
-        build_rec_rpm_pkg
-    ;;
+    case "$DIST_ID" in
+        centos|rhel)
+            build_rec_rpm_pkg
+        ;;
 
-    debian|ubuntu)
-        build_rec_deb_pkg
-    ;;
+        debian|ubuntu)
+            build_rec_deb_pkg
+        ;;
                
-    *)
-        usage
-    ;;
-esac
+        *)
+            usage
+        ;;
+    esac
+fi
 
 
 }

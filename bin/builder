@@ -498,38 +498,36 @@ echo "# Version: $version"
 echo "#################################################################"
 
 case "$module" in
- recording)
-     echo "" > ${BUILD_PATH}/${BUILD_LOG}
+    recording)
+    echo "" > ${BUILD_PATH}/${BUILD_LOG}
 
-     if [ $rpm_sem -eq 1 ]; then
-         build_rec_pkg
-     else 
-         build_rec_perl
-         build_rec_ossl
-         build_rec_idn
-         build_rec_curl
-         build_rec_wcurl
-             if [ "$OS_NAME" = "linux" ]; then
-                 build_rec_sysstat
-             fi
+    if [ $rpm_sem -eq 1 ]; then
+        build_rec_pkg
+    else 
+        build_rec_perl
+        build_rec_ossl
+        build_rec_idn
+        build_rec_curl
+        build_rec_wcurl
+            if [ "$OS_NAME" = "linux" ]; then
+                build_rec_sysstat
+            fi
   
-             #if [ "$PT_NAME" != "armv6l" ]; then 
-                 #    build_rec_webrec
-             #fi
-         build_rec_scripts
+            #if [ "$PT_NAME" != "armv6l" ]; then 
+                #    build_rec_webrec
+            #fi
+        build_rec_scripts
         
-         if [ "$OS_NAME" != "freebsd" ]; then 
-             test_rec_scripts
-         fi
+        if [ "$OS_NAME" != "freebsd" ]; then 
+            test_rec_scripts
+        fi
 
-         if [ $pkg_sem -eq 1 ]; then
-             # currently we support Linux deb, rpm
-             if [ "$OS_NAME" = "linux" ]; then
-                 build_rec_pkg
-             fi
-         fi
+        # currently we support Linux deb, rpm
+        if [ "$OS_NAME" = "linux" ]; then
+            build_rec_pkg
+        fi
     fi
- ;;
+    ;;
 
 
  auth)
