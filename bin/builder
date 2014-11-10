@@ -25,7 +25,7 @@
 usage() {
 
 cat << END
-Usage: $0 [-cht] [-p prefix_path]
+Usage: $0 [-ht] [-p prefix_path]
           [-b build_number] [-m module_name] 
           [-a appliance_name] pkg version
 pkg:
@@ -36,7 +36,6 @@ version:
 OPTIONS
   -a appliance_name: enterprise, rbpi
   -b build_number: 01, 10, 102
-  -c create distribution package: rpm, deb, pkg
   -m module_name: perl, openssl, idn, curl,  wcurl, sysstat, scripts
   -p prefix_path: /opt/kronometrix
   -t test_mode
@@ -126,7 +125,7 @@ kernel_config_done=0
 PWD=`dirname $0`
 . ${PWD}/setenv
 
-while getopts ":a:b:m:p:cht" arg
+while getopts ":a:b:m:p:ht" ar
 do
     case "${arg}" in
 
@@ -151,11 +150,6 @@ do
 
     b)
         build_num=$OPTARG
-    ;;
-
-
-    c)
-        pkg_sem=1
     ;;
 
 

@@ -1751,26 +1751,31 @@ echo "" >> ${BUILD_PATH}/${BUILD_LOG}
 echo "Info: Step 1 - Kronometrix tar package" |\
  tee -a ${BUILD_PATH}/${BUILD_LOG}
 
-# default we make tar package for everyone
-build_rec_tar_pkg
 
-if [ $pkg_sem -eq 1 ]; then
-    # currently we support Linux deb, rpm
+case "$DIST_ID" in
+    centos|rhel)
+        if [ $deb_sem -eq 1 ]; then
+            echo "Error: not a Debian installation, cannot build deb pkg"
+            exit 3
+        fi
+            
+        build_rec_tar_pkg
+        build_rec_rpm_pkg
+    ;;
 
-    case "$DIST_ID" in
-        centos|rhel)
-            build_rec_rpm_pkg
-        ;;
-
-        debian|ubuntu)
-            build_rec_deb_pkg
-        ;;
+    debian|ubuntu)
+        if [ $rpm_sem -eq 1 ]; then
+            echo "Error: not a RPM Linux based distribution, cannot build rpm pkg"
+            exit 3
+        fi
+        build_rec_tar_pkg
+        build_rec_deb_pkg
+    ;;
                
-        *)
-            usage
-        ;;
-    esac
-fi
+    *)
+        usage 
+    ;;
+esac
 
 
 }
