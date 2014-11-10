@@ -1506,6 +1506,15 @@ if [ ! -d "SOURCES/kronometrix-${krmxver}" ]; then
 fi
 
 if [ "$buildno" -ne 0 ]; then
+    # Version: 1.0.0
+    # Release: b10
+    # get control file fixed correct build and version
+    sed "s/^Version.*/Version: ${krmxver}/" SPECS/kronometrix > SPECS/kronometrix.tmp
+    mv SPECS/kronometrix.tmp SPECS/kronometrix
+    sed "s/^Release.*/Release: b${buildno}/" SPECS/kronometrix > SPECS/kronometrix.tmp
+    mv SPECS/kronometrix.tmp SPECS/kronometrix
+
+
     if [ -f /var/tmp/kronometrix-${krmxver}b${buildno}-${DIST_ID}.${PT_NAME}.tar.bz2 ]; then
         cp /var/tmp/kronometrix-${krmxver}b${buildno}-${DIST_ID}.${PT_NAME}.tar.bz2 \
            SOURCES/kronometrix-${krmxver}/kronometrix-${krmxver}-${PT_NAME}.tar.bz2
@@ -1519,6 +1528,12 @@ if [ "$buildno" -ne 0 ]; then
         fi
     fi
 else
+
+    sed "s/^Version.*/Version: ${krmxver}/" SPECS/kronometrix > SPECS/kronometrix.tmp
+    mv SPECS/kronometrix.tmp SPECS/kronometrix
+    sed "s/^Release.*/Release: 0/" SPECS/kronometrix > SPECS/kronometrix.tmp
+    mv SPECS/kronometrix.tmp SPECS/kronometrix
+
     if [ -f /var/tmp/kronometrix-${krmxver}-${DIST_ID}.${PT_NAME}.tar.bz2 ]; then
         cp /var/tmp/kronometrix-${krmxver}-${DIST_ID}.${PT_NAME}.tar.bz2 \
             SOURCES/kronometrix-${krmxver}/kronometrix-${krmxver}-${PT_NAME}.tar.bz2
