@@ -1657,11 +1657,11 @@ fi
 
 
 # tar package
-cd $stagedir/opt
+cd ${stagedir}/opt
 
 if [ "$buildno" -ne 0 ]; then
     if [ -f /var/tmp/kronometrix-${krmxver}b${buildno}-${DIST_ID}.${PT_NAME}.tar.bz2 ]; then
-        bzcat /var/tmp/kronometrix-${krmxver}b${buildno}-${DIST_ID}.${PT_NAME}.tar.bz2 | tar xf - >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+        bzcat /var/tmp/kronometrix-${krmxver}b${buildno}-${DIST_ID}.${PT_NAME}.tar.bz2 | tar xf -
         if [ $? -ne 0 ]; then
             echo "Error: cannot untar archive !" |\
               tee -a ${BUILD_PATH}/${BUILD_LOG}
@@ -1673,7 +1673,7 @@ if [ "$buildno" -ne 0 ]; then
     fi
 else
     if [ -f /var/tmp/kronometrix-${krmxver}-${DIST_ID}.${PT_NAME}.tar.bz2 ]; then
-        bzcat /var/tmp/kronometrix-${krmxver}-${DIST_ID}.${PT_NAME}.tar.bz2 | tar xf - >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+        bzcat /var/tmp/kronometrix-${krmxver}-${DIST_ID}.${PT_NAME}.tar.bz2 | tar xf -
         if [ $? -ne 0 ]; then
             echo "Error: cannot untar archive !"" |\
               tee -a ${BUILD_PATH}/${BUILD_LOG}
@@ -1689,14 +1689,15 @@ cd ../..
 
 /usr/bin/dpkg-deb --build $stagedir >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
 if [ $? -ne 0 ]; then
-    echo "Error: cannot build rpm, rpmbuild error !" |\
+    echo "Error: cannot build deb, dpkg-deb error !" |\
         tee -a ${BUILD_PATH}/${BUILD_LOG}
     rm /var/tmp/build.${module}
     exit 3
 else
-    step2=1
+    step2=`expr $step2 + 1`
 fi
 
+step2=`expr $step2 / 2`
 
 
 # STEP 3
@@ -1718,7 +1719,7 @@ fi
 
 
 # final check; 3 steps
-rpm_pkg_done=`expr $step1 + $step2 + $step3`
+deb_pkg_done=`expr $step1 + $step2 + $step3`
 if [ "$deb_pkg_done" -eq 3 ]; then
    deb_pkg_done=1
 else
