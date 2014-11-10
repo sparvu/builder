@@ -1660,6 +1660,11 @@ fi
 cd ${pkgname}/opt
 
 if [ "$buildno" -ne 0 ]; then
+
+    # get control file fixed correct build and version
+    sed "s/^Version.*/Version:${krmxver}-b${buildno}/" ../../$pkgname/DEBIAN/control > ../../$pkgname/DEBIAN/control.tmp
+    mv ../../${pkgname}/DEBIAN/control.tmp ../../${pkgname}/DEBIAN/control
+
     if [ -f /var/tmp/kronometrix-${krmxver}b${buildno}-${DIST_ID}.${PT_NAME}.tar.bz2 ]; then
         bzcat /var/tmp/kronometrix-${krmxver}b${buildno}-${DIST_ID}.${PT_NAME}.tar.bz2 | tar xf -
         if [ $? -ne 0 ]; then
@@ -1672,6 +1677,11 @@ if [ "$buildno" -ne 0 ]; then
         fi
     fi
 else
+
+    # get control file fixed correct version
+    sed "s/^Version.*/Version:${krmxver}/" ../../$pkgname/DEBIAN/control > ../../$pkgname/DEBIAN/control.tmp
+    mv ../../${pkgname}/DEBIAN/control.tmp ../../${pkgname}/DEBIAN/control
+
     if [ -f /var/tmp/kronometrix-${krmxver}-${DIST_ID}.${PT_NAME}.tar.bz2 ]; then
         bzcat /var/tmp/kronometrix-${krmxver}-${DIST_ID}.${PT_NAME}.tar.bz2 | tar xf -
         if [ $? -ne 0 ]; then
