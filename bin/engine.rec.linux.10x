@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/sh -x
 #
 #  Kronometrix Development tools, Linux recording engine 
 #
