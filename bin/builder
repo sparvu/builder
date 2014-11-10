@@ -501,6 +501,7 @@ case "$module" in
             build_rec_pkg
         else
             echo "Error: not a RPM installation, cannot build rpm pkg"
+            rm /var/tmp/${STATFILE}
             exit 3
         fi
     elif [ $deb_sem -eq 1 ]; then
@@ -508,6 +509,7 @@ case "$module" in
             build_rec_pkg
         else
             echo "Error: not a RPM installation, cannot build deb pkg"
+            rm /var/tmp/${STATFILE}
             exit 3
         fi
     else 
@@ -693,6 +695,15 @@ case "$module" in
             echo "# RPM PKG   : failed"
         fi
     fi
+
+    if [ $deb_pkg_done -eq 1 ]; then
+        echo "# DEB PKG   :     ok"
+    else
+        if [ $deb_pkg_done -eq 90 ]; then
+            echo "# DEB PKG   : failed"
+        fi
+    fi
+
 
  ;;
 
