@@ -1675,7 +1675,7 @@ else
     if [ -f /var/tmp/kronometrix-${krmxver}-${DIST_ID}.${PT_NAME}.tar.bz2 ]; then
         bzcat /var/tmp/kronometrix-${krmxver}-${DIST_ID}.${PT_NAME}.tar.bz2 | tar xf -
         if [ $? -ne 0 ]; then
-            echo "Error: cannot untar archive !"" |\
+            echo "Error: cannot untar archive !" |\
               tee -a ${BUILD_PATH}/${BUILD_LOG}
             rm /var/tmp/build.${module}
             exit 3
