@@ -75,6 +75,7 @@ ossl_sem=0
 syss_sem=0
 rec1_sem=0
 rpm_sem=0
+deb_sem=0
 
 idn_done=0
 perl_done=0
@@ -506,6 +507,8 @@ case "$module" in
     echo "" > ${BUILD_PATH}/${BUILD_LOG}
 
     if [ $rpm_sem -eq 1 ]; then
+        build_rec_pkg
+    elif [ $deb_sem -eq 1 ]; then
         build_rec_pkg
     else 
         build_rec_perl
