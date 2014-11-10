@@ -1622,7 +1622,7 @@ echo "" >> ${BUILD_PATH}/${BUILD_LOG}
 echo "Info: Step 1 - Create stage directory" |\
  tee -a ${BUILD_PATH}/${BUILD_LOG}
 
-if [ "$PT_NAME" = "x86_64" ]; thenq
+if [ "$PT_NAME" = "x86_64" ]; then
     stagedir="kronometrix-${krmxver}-amd64"
 else
     stagedir="kronometrix-${krmxver}-${PT_NAME}"
