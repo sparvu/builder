@@ -1754,20 +1754,11 @@ echo "Info: Step 1 - Kronometrix tar package" |\
 
 case "$DIST_ID" in
     centos|rhel)
-        if [ $deb_sem -eq 1 ]; then
-            echo "Error: not a Debian installation, cannot build deb pkg"
-            exit 3
-        fi
-            
         build_rec_tar_pkg
         build_rec_rpm_pkg
     ;;
 
     debian|ubuntu)
-        if [ $rpm_sem -eq 1 ]; then
-            echo "Error: not a RPM Linux based distribution, cannot build rpm pkg"
-            exit 3
-        fi
         build_rec_tar_pkg
         build_rec_deb_pkg
     ;;
