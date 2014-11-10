@@ -220,10 +220,12 @@ do
             ;;
 
             rpm)
+                pkg_sem=1
                 rpm_sem=1
             ;;
 
             deb)
+                pkg_sem=1
                 deb_sem=1
             ;;
 
