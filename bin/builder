@@ -222,6 +222,10 @@ do
                 rpm_sem=1
             ;;
 
+            deb)
+                deb_sem=1
+            ;;
+
             pdq)
                 pdq_sem=1
             ;;

@@ -245,7 +245,7 @@ do
     fi
 done
 
-# there are 8 perl modules install calls 
+# there are 10 perl modules install calls 
 step6=`expr $step6 / 10`
 
 # final check; all 6 steps
@@ -1360,6 +1360,8 @@ cd ..
 
 }
 
+
+### rpm macro configuration file
 make_rpmmacro() {
 
 cat > ~/.rpmmacros << "EOF"
@@ -1378,7 +1380,7 @@ EOF
 }
 
 
-## tar package
+### tar package
 build_rec_tar_pkg() {
 
 step1=0
@@ -1440,7 +1442,7 @@ cd ${WORKSPACE}/${module}
 }
 
 
-## rpm package
+### rpm package
 build_rec_rpm_pkg() {
 
 dir='pkg/rpm'
@@ -1589,6 +1591,143 @@ cd ../..
 }
 
 
+### deb package
+build_rec_deb_pkg() {
+
+dir='pkg/deb'
+step1=0
+step2=0
+step3=0
+
+krmxver=$version
+
+# export iprefix
+export iprefix=${iprefix}
+
+if [ ! -z "$build_num" ]; then
+   buildno="$build_num"
+else
+   buildno=0
+fi
+
+cd $dir
+
+echo "############################################################"
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Submodule: deb package ${OS_NAME}" | tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+
+# STEP 1
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 1 - Create stage directory" |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+if [ "$PT_NAME" = "x86_64" ]; thenq
+    stagedir="kronometrix-${krmxver}-amd64"
+else
+    stagedir="kronometrix-${krmxver}-${PT_NAME}"
+fi
+
+if [ ! -d $stagedir ]; then
+    mkdir -p "$stagedir/opt"
+    mkdir -p "$stagedir/DEBIAN"
+    if [ $? -ne 0 ]; then
+        echo "Error: cannot copy tar archive to SOURCE directory !" |\
+            tee -a ${BUILD_PATH}/${BUILD_LOG}
+        rm /var/tmp/build.${module}
+        exit 3
+    else
+        step1=1
+    fi
+fi
+
+
+# STEP 2
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 2 - Prepare stage directory" |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+# copy config files
+cp changelog prerm copyright preinst postinst $stagedir/DEBIAN
+if [ "$PT_NAME" = "x86_64" ]; thenq
+    cp control.amd64 $stagedir/DEBIAN/control
+else
+    cp control.i386 $stagedir/DEBIAN/control
+fi
+
+
+# tar package
+cd $stagedir/opt
+
+if [ "$buildno" -ne 0 ]; then
+    if [ -f /var/tmp/kronometrix-${krmxver}b${buildno}-${DIST_ID}.${PT_NAME}.tar.bz2 ]; then
+        bzcat /var/tmp/kronometrix-${krmxver}b${buildno}-${DIST_ID}.${PT_NAME}.tar.bz2 | tar xf - >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+        if [ $? -ne 0 ]; then
+            echo "Error: cannot untar archive !" |\
+              tee -a ${BUILD_PATH}/${BUILD_LOG}
+            rm /var/tmp/build.${module}
+            exit 3
+        else
+            step2=1
+        fi
+    fi
+else
+    if [ -f /var/tmp/kronometrix-${krmxver}-${DIST_ID}.${PT_NAME}.tar.bz2 ]; then
+        bzcat /var/tmp/kronometrix-${krmxver}-${DIST_ID}.${PT_NAME}.tar.bz2 | tar xf - >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+        if [ $? -ne 0 ]; then
+            echo "Error: cannot untar archive !"" |\
+              tee -a ${BUILD_PATH}/${BUILD_LOG}
+            rm /var/tmp/build.${module}
+            exit 3
+        else
+            step2=1
+        fi
+    fi
+fi
+
+cd ../..
+
+/usr/bin/dpkg-deb --build $stagedir >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if [ $? -ne 0 ]; then
+    echo "Error: cannot build rpm, rpmbuild error !" |\
+        tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step2=1
+fi
+
+
+
+# STEP 3
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 3 - Cleanup stage directory" |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+if [ -d $stagedir ]; then
+    rm -rf $stagedir
+    if [ $? -ne 0 ]; then
+        echo "Error: cannot clean stage directory !" |\
+          tee -a ${BUILD_PATH}/${BUILD_LOG}
+        rm /var/tmp/build.${module}
+        exit 3
+    else
+        step3=1
+    fi
+fi
+
+
+# final check; 3 steps
+rpm_pkg_done=`expr $step1 + $step2 + $step3`
+if [ "$deb_pkg_done" -eq 3 ]; then
+   deb_pkg_done=1
+else
+   deb_pkg_done=90
+fi
+
+cd ../..
+
+}
 
 
 build_rec_pkg() {
