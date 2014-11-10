@@ -1623,14 +1623,14 @@ echo "Info: Step 1 - Create stage directory" |\
  tee -a ${BUILD_PATH}/${BUILD_LOG}
 
 if [ "$PT_NAME" = "x86_64" ]; then
-    stagedir="kronometrix-${krmxver}-amd64"
+    pkgname="kronometrix-${krmxver}-amd64"
 else
-    stagedir="kronometrix-${krmxver}-${PT_NAME}"
+    pkgname="kronometrix-${krmxver}-${PT_NAME}"
 fi
 
-if [ ! -d $stagedir ]; then
-    mkdir -p "$stagedir/opt"
-    mkdir -p "$stagedir/DEBIAN"
+if [ ! -d $pkgname ]; then
+    mkdir -p "$pkgname/opt"
+    mkdir -p "$pkgname/DEBIAN"
     if [ $? -ne 0 ]; then
         echo "Error: cannot copy tar archive to SOURCE directory !" |\
             tee -a ${BUILD_PATH}/${BUILD_LOG}
@@ -1648,16 +1648,16 @@ echo "Info: Step 2 - Prepare stage directory" |\
  tee -a ${BUILD_PATH}/${BUILD_LOG}
 
 # copy config files
-cp changelog prerm copyright preinst postinst $stagedir/DEBIAN
+cp changelog prerm copyright preinst postinst $pkgname/DEBIAN
 if [ "$PT_NAME" = "x86_64" ]; then
-    cp control.amd64 $stagedir/DEBIAN/control
+    cp control.amd64 $pkgname/DEBIAN/control
 else
-    cp control.i386 $stagedir/DEBIAN/control
+    cp control.i386 $pkgname/DEBIAN/control
 fi
 
 
 # tar package
-cd ${stagedir}/opt
+cd ${pkgname}/opt
 
 if [ "$buildno" -ne 0 ]; then
     if [ -f /var/tmp/kronometrix-${krmxver}b${buildno}-${DIST_ID}.${PT_NAME}.tar.bz2 ]; then
@@ -1687,7 +1687,7 @@ fi
 
 cd ../..
 
-/usr/bin/dpkg-deb --build $stagedir >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+/usr/bin/dpkg-deb --build $pkgname >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
 if [ $? -ne 0 ]; then
     echo "Error: cannot build deb, dpkg-deb error !" |\
         tee -a ${BUILD_PATH}/${BUILD_LOG}
@@ -1705,8 +1705,8 @@ echo "" >> ${BUILD_PATH}/${BUILD_LOG}
 echo "Info: Step 3 - Cleanup stage directory" |\
  tee -a ${BUILD_PATH}/${BUILD_LOG}
 
-if [ -d $stagedir ]; then
-    rm -rf $stagedir
+if [ -d $pkgname ]; then
+    rm -rf $pkgname
     if [ $? -ne 0 ]; then
         echo "Error: cannot clean stage directory !" |\
           tee -a ${BUILD_PATH}/${BUILD_LOG}
@@ -1716,6 +1716,8 @@ if [ -d $stagedir ]; then
         step3=1
     fi
 fi
+
+mv ${pkgname}.deb /var/tmp
 
 
 # final check; 3 steps
