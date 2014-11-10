@@ -1649,7 +1649,7 @@ echo "Info: Step 2 - Prepare stage directory" |\
 
 # copy config files
 cp changelog prerm copyright preinst postinst $stagedir/DEBIAN
-if [ "$PT_NAME" = "x86_64" ]; thenq
+if [ "$PT_NAME" = "x86_64" ]; then
     cp control.amd64 $stagedir/DEBIAN/control
 else
     cp control.i386 $stagedir/DEBIAN/control
