@@ -738,7 +738,7 @@ else
    buildno=0
 fi
 
-cd ${iprefix}/..
+cd ${iprefix}/../..
 
 if [ "$buildno" -ne 0 ]; then
     tar cf /var/tmp/kronometrix-auth-${krmxver}b${buildno}-${DIST_ID}.${PT_NAME}.tar kronometrix/
