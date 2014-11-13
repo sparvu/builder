@@ -233,15 +233,17 @@ do
             step6=`expr $step6 + 1`
             continue
         fi
-    fi
-
-    if [ $? -ne 0 ]; then
-        echo "Error: $lib installation failed !" |\
-         tee -a ${BUILD_PATH}/${BUILD_LOG}
-        rm /var/tmp/build.${module}
-        exit 3
     else
-        step6=`expr $step6 + 1`
+        ${iprefix}/perl/bin/perl -MCPAN -e 'install "'$lib'"' >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+        if [ $? -ne 0 ]; then
+            echo "Error: $lib installation failed !" |\
+                tee -a ${BUILD_LOG}/${module}.${version}.log
+            rm /var/tmp/build.${module}
+            exit 3
+        else
+            step6=`expr $step6 + 1`
+            continue
+        fi
     fi
 done
 
