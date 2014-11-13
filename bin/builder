@@ -102,6 +102,9 @@ auth_libluarouter_done=0
 auth_libluasmtp_done=0
 auth_fin_done=0
 auth_config_done=0
+auth_tar_pkg_done=0
+auth_deb_pkg_done=0
+auth_rpm_pkg_done=0
 ##
 
 ##kernel
@@ -543,19 +546,47 @@ case "$module" in
 
  auth)
     echo "" > ${BUILD_PATH}/${BUILD_LOG}
-    build_auth_openresty
-    build_auth_libluatemplate
-    build_auth_libluarouter
-    build_auth_libluasmtp
 
-    if [ ! -z "$build_num" ]; then
-        build_auth_libluainspect
+    if [ $rpm_sem -eq 1 ]; then
+        if [ "x${DIST_ID}" = "xrhel" -o "x${DIST_ID}" = "xcentos" ]; then
+            build_auth_pkg
+        else
+            echo "Error: not a RPM installation, cannot build rpm pkg"
+            rm /var/tmp/${STATFILE}
+            exit 3
+        fi
+    elif [ $deb_sem -eq 1 ]; then
+        if [ "x${DIST_ID}" = "xdebian" -o \
+             "x${DIST_ID}" = "xubuntu" -o \
+             "x${DIST_ID}" = "xraspbian" ]; then
+            build_auth_pkg
+        else
+            echo "Error: not a DEB installation, cannot build deb pkg"
+            rm /var/tmp/${STATFILE}
+            exit 3
+        fi
+    else 
+        build_auth_openresty
+        build_auth_libluatemplate
+        build_auth_libluarouter
+        build_auth_libluasmtp
+
+        if [ ! -z "$build_num" ]; then
+            build_auth_libluainspect
+        fi
+
+        build_auth_redis
+        build_auth_config
+        build_auth_fin
+
+
+        # currently we support Linux deb, rpm
+        if [ "$OS_NAME" = "linux" ]; then
+            build_auth_pkg
+        fi
+
     fi
-
-    build_auth_redis
-    build_auth_config
-    build_auth_fin
- ;;
+    ;;
 
 
  kernel)
