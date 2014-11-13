@@ -497,7 +497,7 @@ case "$module" in
     echo "" > ${BUILD_PATH}/${BUILD_LOG}
 
     if [ $rpm_sem -eq 1 ]; then
-        if [ "x$DIST_ID" = "xrhel" -o "x$DIST_ID" = "xcentos" ]; then
+        if [ "x${DIST_ID}" = "xrhel" -o "x${DIST_ID}" = "xcentos" ]; then
             build_rec_pkg
         else
             echo "Error: not a RPM installation, cannot build rpm pkg"
@@ -505,10 +505,12 @@ case "$module" in
             exit 3
         fi
     elif [ $deb_sem -eq 1 ]; then
-        if [ "x$DIST_ID" = "xdebian" -o "x$DIST_ID" = "xubuntu" ]; then
+        if [ "x${DIST_ID}" = "xdebian" -o \
+             "x${DIST_ID}" = "xubuntu" -o \
+             "x${DIST_ID}" = "xraspbian" ]; then
             build_rec_pkg
         else
-            echo "Error: not a RPM installation, cannot build deb pkg"
+            echo "Error: not a DEB installation, cannot build deb pkg"
             rm /var/tmp/${STATFILE}
             exit 3
         fi
