@@ -21,10 +21,10 @@
 #
 #  (http://www.gnu.org/copyleft/gpl.html)
 
-# VERSION: 1.3
+# VERSION: 2
 
 # ############################################################### #
-# SDR Engine: Analytics Authentication Linux                      #
+# Analytics Authentication Linux                                  #
 # ############################################################### #
 
 
@@ -654,10 +654,10 @@ step1=`expr $step1 / 4`
 
 # STEP 2
 echo "" >> ${BUILD_PATH}/${BUILD_LOG}
-echo "Info: Step 2 - Installing sdrauth startup services..." |\
+echo "Info: Step 2 - Installing startup services..." |\
  tee -a ${BUILD_PATH}/${BUILD_LOG}
 
-cp auth* ${iprefix}/etc/
+cp krono* ${iprefix}/etc/
 if [ $enterprise_sem -eq 1 ]; then
     cp redis.conf.maas ${iprefix}/etc/redis.conf
 elif [ $rbpi_sem -eq 1 ]; then
@@ -1121,13 +1121,13 @@ echo "Info: Step 1 - Kronometrix tar package" |\
 
 case "$DIST_ID" in
     centos|rhel)
-        build_rec_tar_pkg
-        build_rec_rpm_pkg
+        build_auth_tar_pkg
+        build_auth_rpm_pkg
     ;;
 
     debian|ubuntu|raspbian)
-        build_rec_tar_pkg
-        build_rec_deb_pkg
+        build_auth_tar_pkg
+        build_auth_deb_pkg
     ;;
                
     *)
