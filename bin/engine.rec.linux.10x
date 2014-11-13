@@ -1783,13 +1783,14 @@ case "$DIST_ID" in
         build_rec_rpm_pkg
     ;;
 
-    debian|ubuntu)
+    debian|ubuntu|raspbian)
         build_rec_tar_pkg
         build_rec_deb_pkg
     ;;
                
     *)
-        usage 
+        echo "Not supported Linux distro, check builder"
+        exit 3
     ;;
 esac
 
