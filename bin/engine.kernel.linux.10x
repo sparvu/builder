@@ -593,8 +593,6 @@ step2=0
 step3=0
 step4=0
 
-sdrver=$version
-
 # export iprefix
 export iprefix=${iprefix}
 
@@ -693,7 +691,7 @@ echo "" >> ${BUILD_PATH}/${BUILD_LOG}
 echo "Info: Step 2 - Installing sdrkernel startup services ..." |\
  tee -a ${BUILD_PATH}/${BUILD_LOG}
 
-cp kernel* ${iprefix}/etc/
+cp krono* ${iprefix}/etc/
 if [ $enterprise_sem -eq 1 ]; then
     cp redis.conf.maas ${iprefix}/etc/redis.conf
 elif [ $rbpi_sem -eq 1 ]; then

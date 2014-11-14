@@ -571,8 +571,6 @@ step2=0
 step3=0
 step4=0
 
-sdrver=$version
-
 # export iprefix
 export iprefix=${iprefix}
 
