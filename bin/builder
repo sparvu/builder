@@ -118,6 +118,9 @@ kernel_libdate_done=0
 kernel_redis_done=0
 kernel_fin_done=0
 kernel_config_done=0
+kernel_tar_pkg_done=0
+kernel_deb_pkg_done=0
+kernel_rpm_pkg_done=0
 ##
 
 
@@ -611,7 +614,6 @@ case "$module" in
             exit 3
         fi
     else 
-
         build_kernel_openresty
         build_kernel_libluafs
         build_kernel_libluatemplate
@@ -626,6 +628,11 @@ case "$module" in
         build_kernel_redis
         build_kernel_config
         build_kernel_fin
+
+        # currently we support Linux deb, rpm
+        if [ "$OS_NAME" = "linux" ]; then
+            build_kernel_pkg
+        fi
     fi
     ;;
 
