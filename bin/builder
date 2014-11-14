@@ -626,6 +626,7 @@ case "$module" in
         build_kernel_redis
         build_kernel_config
         build_kernel_fin
+    fi
     ;;
 
  *) 
