@@ -591,21 +591,42 @@ case "$module" in
 
  kernel)
     echo "" > ${BUILD_PATH}/${BUILD_LOG}
-    build_kernel_openresty
-    build_kernel_libluafs
-    build_kernel_libluatemplate
-    build_kernel_libluasession
-    build_kernel_libluarouter
-    build_kernel_libdate
 
-    if [ ! -z "$build_num" ]; then
-        build_kernel_libluainspect
-    fi
+    if [ $rpm_sem -eq 1 ]; then
+        if [ "x${DIST_ID}" = "xrhel" -o "x${DIST_ID}" = "xcentos" ]; then
+            build_kernel_pkg
+        else
+            echo "Error: not a RPM installation, cannot build rpm pkg"
+            rm /var/tmp/${STATFILE}
+            exit 3
+        fi
+    elif [ $deb_sem -eq 1 ]; then
+        if [ "x${DIST_ID}" = "xdebian" -o \
+             "x${DIST_ID}" = "xubuntu" -o \
+             "x${DIST_ID}" = "xraspbian" ]; then
+            build_kernel_pkg
+        else
+            echo "Error: not a DEB installation, cannot build deb pkg"
+            rm /var/tmp/${STATFILE}
+            exit 3
+        fi
+    else 
 
-    build_kernel_redis
-    build_kernel_config
-    build_kernel_fin
- ;;
+        build_kernel_openresty
+        build_kernel_libluafs
+        build_kernel_libluatemplate
+        build_kernel_libluasession
+        build_kernel_libluarouter
+        build_kernel_libdate
+
+        if [ ! -z "$build_num" ]; then
+            build_kernel_libluainspect
+        fi
+
+        build_kernel_redis
+        build_kernel_config
+        build_kernel_fin
+    ;;
 
  *) 
     usage
@@ -825,6 +846,30 @@ case "$module" in
         fi
     fi
 
+    if [ $auth_tar_pkg_done -eq 1 ]; then
+        echo "# TAR PKG   :     ok"
+    else
+        if [ $auth_tar_pkg_done -eq 90 ]; then
+            echo "# TAR PKG   : failed"
+        fi
+    fi
+
+    if [ $auth_rpm_pkg_done -eq 1 ]; then
+        echo "# RPM PKG   :     ok"
+    else
+        if [ $auth_rpm_pkg_done -eq 90 ]; then
+            echo "# RPM PKG   : failed"
+        fi
+    fi
+
+    if [ $auth_deb_pkg_done -eq 1 ]; then
+        echo "# DEB PKG   :     ok"
+    else
+        if [ $auth_deb_pkg_done -eq 90 ]; then
+            echo "# DEB PKG   : failed"
+        fi
+    fi
+
  ;;
 
 
@@ -929,6 +974,30 @@ case "$module" in
             if [ $kernel_fin_done -eq 90 ]; then
                 echo  "# FINALIZE: not done"
             fi
+        fi
+    fi
+
+    if [ $kernel_tar_pkg_done -eq 1 ]; then
+        echo "# TAR PKG   :     ok"
+    else
+        if [ $kernel_tar_pkg_done -eq 90 ]; then
+            echo "# TAR PKG   : failed"
+        fi
+    fi
+
+    if [ $kernel_rpm_pkg_done -eq 1 ]; then
+        echo "# RPM PKG   :     ok"
+    else
+        if [ $kernel_rpm_pkg_done -eq 90 ]; then
+            echo "# RPM PKG   : failed"
+        fi
+    fi
+
+    if [ $kernel_deb_pkg_done -eq 1 ]; then
+        echo "# DEB PKG   :     ok"
+    else
+        if [ $kernel_deb_pkg_done -eq 90 ]; then
+            echo "# DEB PKG   : failed"
         fi
     fi
 
