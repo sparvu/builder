@@ -773,7 +773,7 @@ fi
 
 # final check; 1 step
 auth_tar_pkg_done=$step1
-if [ "$tar_pkg_done" -eq 1 ]; then
+if [ "$auth_tar_pkg_done" -eq 1 ]; then
    auth_tar_pkg_done=1
 else
    auth_tar_pkg_done=90

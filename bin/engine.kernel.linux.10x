@@ -1,7 +1,7 @@
 #/bin/sh
 #
-#  SDR Development tools
-#  Linux SDR Analytics Kernel Engine
+#  Kronometrix Development tools
+#  Linux Kernel Engine
 #
 #  Copyright (c) 2014 Stefan Parvu (www.systemdatarecorder.org).
 #
@@ -21,10 +21,10 @@
 #
 #  (http://www.gnu.org/copyleft/gpl.html)
 
-# VERSION: 1.3
+# VERSION: 2
 
 # ############################################################### #
-# SDR Engine: Analytics Kernel Linux                              #
+# Kernel Linux                                                    #
 # ############################################################### #
 
 
@@ -726,45 +726,8 @@ else
 fi
 
 
-# STEP 4
-echo "" >> ${BUILD_PATH}/${BUILD_LOG}
-echo "Info: Step 4 - Creating sdranalytics-kernel package ..." |\
- tee -a ${BUILD_PATH}/${BUILD_LOG}
-
-cd ${iprefix}/../../..
-if [ "$buildno" -ne 0 ]; then
-    tar cf /var/tmp/sdranalytics-kernel-${sdrver}b${buildno}-${DIST_ID}.${PT_NAME}.tar sdr/analytics/kernel
-    if [ -f /var/tmp/sdranalytics-kernel-${sdrver}b${buildno}-${DIST_ID}.${PT_NAME}.tar.bz2 ]; then
-        rm /var/tmp/sdranalytics-kernel-${sdrver}b${buildno}-${DIST_ID}.${PT_NAME}.tar.bz2
-    fi
-    bzip2 /var/tmp/sdranalytics-kernel-${sdrver}b${buildno}-${DIST_ID}.${PT_NAME}.tar
-    if [ $? -ne 0 ]; then
-        echo "Error: cannot create sdranalytics-kernel package !" |\
-         tee -a ${BUILD_PATH}/${BUILD_LOG}
-        rm /var/tmp/build.${module}
-        exit 3
-    else
-        step4=1
-    fi
-else
-    # GA General Release
-    tar cf /var/tmp/sdranalytics-kernel-${sdrver}-${DIST_ID}.${PT_NAME}.tar sdr/analytics/kernel
-    if [ -f /var/tmp/sdranalytics-kernel-${sdrver}-${DIST_ID}.${PT_NAME}.tar.bz2 ]; then
-        rm /var/tmp/sdranalytics-kernel-${sdrver}-${DIST_ID}.${PT_NAME}.tar.bz2
-    fi
-    bzip2 /var/tmp/sdranalytics-kernel-${sdrver}-${DIST_ID}.${PT_NAME}.tar
-    if [ $? -ne 0 ]; then
-        echo "Error: cannot create sdranalytics-kernel package !" |\
-         tee -a ${BUILD_PATH}/${BUILD_LOG}
-        rm /var/tmp/build.${module}
-        exit 3
-    else
-        step4=1
-    fi
-fi
-
-# final check; all 4 steps
-kernel_fin_done=`expr $step1 + $step2 + $step3 + $step4`
+# final check; all 3 steps
+kernel_fin_done=`expr $step1 + $step2 + $step3`
 if [ "$kernel_fin_done" -eq 4 ]; then
    kernel_fin_done=1
 else
@@ -774,3 +737,443 @@ fi
 cd ..
 
 }
+
+
+
+## rpm macro configuration file
+make_rpmmacro() {
+
+cat > ~/.rpmmacros << "EOF"
+%packager       Support Kronometrix
+%vendor         Kronometrix
+
+%_topdir        %(echo $HOME)/workspace/kronometrix/kernel/pkg/rpm
+%_tmppath       %{_topdir}/tmp
+%_sourcedir     %{_topdir}/SOURCES/%{name}-%{version}
+%_rpmfilename   %{name}-%{version}-%{arch}.rpm
+%_specdir       %{_topdir}/SPECS
+%_builddir      %{_topdir}/BUILD
+%_rpmdir        %{_topdir}/RPMS
+EOF
+
+}
+
+
+### tar package
+build_kernel_tar_pkg() {
+
+step1=0
+
+krmxver=$version
+
+# export iprefix
+export iprefix=${iprefix}
+
+if [ ! -z "$build_num" ]; then
+   buildno="$build_num"
+else
+   buildno=0
+fi
+
+cd ${iprefix}/../..
+
+if [ "$buildno" -ne 0 ]; then
+    tar cf /var/tmp/kronometrix-kernel-${krmxver}b${buildno}-${DIST_ID}.${PT_NAME}.tar kronometrix/
+    if [ -f /var/tmp/kronometrix-kernel-${krmxver}b${buildno}-${DIST_ID}.${PT_NAME}.tar.bz2 ]; then
+        rm /var/tmp/kronometrix-kernel-${krmxver}b${buildno}-${DIST_ID}.${PT_NAME}.tar.bz2
+    fi
+    bzip2 /var/tmp/kronometrix-kernel-${krmxver}b${buildno}-${DIST_ID}.${PT_NAME}.tar
+    if [ $? -ne 0 ]; then
+        echo "Error: cannot create kronometrix kernel data recording package !" |\
+         tee -a ${BUILD_PATH}/${BUILD_LOG}
+        rm /var/tmp/build.${module}
+        exit 3
+    else
+        step1=1
+    fi
+else
+    # GA General Release
+    tar cf /var/tmp/kronometrix-kernel-${krmxver}-${DIST_ID}.${PT_NAME}.tar kronometrix/
+    if [ -f /var/tmp/kronometrix-kernel-${krmxver}-${DIST_ID}.${PT_NAME}.tar.bz2 ]; then
+        rm /var/tmp/kronometrix-kernel-${krmxver}-${DIST_ID}.${PT_NAME}.tar.bz2
+    fi
+    bzip2 /var/tmp/kronometrix-kernel-${krmxver}-${DIST_ID}.${PT_NAME}.tar
+    if [ $? -ne 0 ]; then
+        echo "Error: cannot create kronometrix kernel data recording package !" |\
+         tee -a ${BUILD_PATH}/${BUILD_LOG}
+        rm /var/tmp/build.${module}
+        exit 3
+    else
+        step1=1
+    fi
+fi
+
+# final check; 1 step
+kernel_tar_pkg_done=$step1
+if [ "$kernel_tar_pkg_done" -eq 1 ]; then
+   kernel_tar_pkg_done=1
+else
+   kernel_tar_pkg_done=90
+fi
+
+cd ${WORKSPACE}/${module}
+
+}
+
+
+### rpm package
+build_kernel_rpm_pkg() {
+
+dir='pkg/rpm'
+step1=0
+step2=0
+step3=0
+
+krmxver=$version
+
+# export iprefix
+export iprefix=${iprefix}
+
+if [ ! -z "$build_num" ]; then
+   buildno="$build_num"
+else
+   buildno=0
+fi
+
+cd $dir
+echo "############################################################"
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Submodule: rpm package ${OS_NAME}" | tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+
+# STEP 1
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 1 - Prepare SOURCE stage directory" |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+
+if [ ! -d SPECS ]; then
+    echo "Error: cannot find SPECS directory, missing spec file !" |\
+        tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+fi
+
+if [ ! -d SOURCES ]; then
+    mkdir SOURCES
+fi
+
+if [ ! -d SRPMS ]; then
+    mkdir SRPMS
+fi
+
+if [ ! -d BUILD ]; then
+    mkdir BUILD
+fi
+
+if [ ! -d RPMS ]; then
+    mkdir RPMS
+fi
+
+if [ ! -d tmp ]; then
+    mkdir tmp
+fi
+
+# prepare SOURCES
+if [ ! -d "SOURCES/kronometrix-${krmxver}" ]; then
+    mkdir "SOURCES/kronometrix-${krmxver}"
+fi
+
+if [ "$buildno" -ne 0 ]; then
+    # Version: 1.0.0
+    # Release: b10
+    # get control file fixed correct build and version
+    sed "s/^Version.*/Version: ${krmxver}/" SPECS/kronometrix > SPECS/kronometrix.tmp
+    mv SPECS/kronometrix.tmp SPECS/kronometrix
+    sed "s/^Release.*/Release: b${buildno}/" SPECS/kronometrix > SPECS/kronometrix.tmp
+    mv SPECS/kronometrix.tmp SPECS/kronometrix
+
+
+    if [ -f /var/tmp/kronometrix-kernel-${krmxver}b${buildno}-${DIST_ID}.${PT_NAME}.tar.bz2 ]; then
+        cp /var/tmp/kronometrix-kernel-${krmxver}b${buildno}-${DIST_ID}.${PT_NAME}.tar.bz2 \
+           SOURCES/kronometrix-kernel-${krmxver}/kronometrix-${krmxver}-${PT_NAME}.tar.bz2
+        if [ $? -ne 0 ]; then
+            echo "Error: cannot copy tar archive to SOURCE directory !" |\
+              tee -a ${BUILD_PATH}/${BUILD_LOG}
+            rm /var/tmp/build.${module}
+            exit 3
+        else
+            step1=1
+        fi
+    fi
+else
+
+    sed "s/^Version.*/Version: ${krmxver}/" SPECS/kronometrix > SPECS/kronometrix.tmp
+    mv SPECS/kronometrix.tmp SPECS/kronometrix
+    sed "s/^Release.*/Release: 0/" SPECS/kronometrix > SPECS/kronometrix.tmp
+    mv SPECS/kronometrix.tmp SPECS/kronometrix
+
+    if [ -f /var/tmp/kronometrix-kernel-${krmxver}-${DIST_ID}.${PT_NAME}.tar.bz2 ]; then
+        cp /var/tmp/kronometrix-kernel-${krmxver}-${DIST_ID}.${PT_NAME}.tar.bz2 \
+            SOURCES/kronometrix-kernel-${krmxver}/kronometrix-${krmxver}-${PT_NAME}.tar.bz2
+        if [ $? -ne 0 ]; then
+            echo "Error: cannot copy tar archive to SOURCE directory !" |\
+              tee -a ${BUILD_PATH}/${BUILD_LOG}
+            rm /var/tmp/build.${module}
+            exit 3
+        else
+            step1=1
+        fi
+    fi
+fi
+
+
+# STEP 2
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 2 - Build rpm package" |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+if [ -f $HOME/.rpmmacros ]; then
+    STAMP=`date +"%Y%m%d_%H%M%S"`
+    mv $HOME/.rpmmacros $HOME/.rpmmacros.${STAMP}
+    make_rpmmacro
+else
+    make_rpmmacro
+fi
+
+
+if [ -f SPECS/kronometrix ]; then
+
+    rpmbuild -bb ./SPECS/kronometrix >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+    if [ $? -ne 0 ]; then
+        echo "Error: cannot build rpm, rpmbuild error !" |\
+            tee -a ${BUILD_PATH}/${BUILD_LOG}
+        rm /var/tmp/build.${module}
+        exit 3
+    else
+        step2=1
+    fi
+fi
+
+
+# STEP 3
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 3 - Cleanup rpm stage directories" |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+if [ -f RPMS/kronometrix-kernel-${krmxver}-${PT_NAME}.rpm ]; then
+   cp RPMS/kronometrix-kernel-${krmxver}-${PT_NAME}.rpm /var/tmp
+   # cleanup
+   if [ $? -eq 0 ]; then 
+       rm -rf RPMS SOURCES SRPMS BUILD tmp
+       rm $HOME/.rpmmacros
+       step3=1
+   fi
+fi
+
+
+# final check; 3 steps
+kernel_rpm_pkg_done=`expr $step1 + $step2 + $step3`
+if [ "$kernel_rpm_pkg_done" -eq 3 ]; then
+   kernel_rpm_pkg_done=1
+else
+   kernel_rpm_pkg_done=90
+fi
+
+cd ../..
+
+}
+
+
+### deb package
+build_kernel_deb_pkg() {
+
+dir='pkg/deb'
+step1=0
+step2=0
+step3=0
+
+krmxver=$version
+
+# export iprefix
+export iprefix=${iprefix}
+
+if [ ! -z "$build_num" ]; then
+   buildno="$build_num"
+else
+   buildno=0
+fi
+
+cd $dir
+
+echo "############################################################"
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Submodule: deb package ${OS_NAME}" | tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+
+# STEP 1
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 1 - Create stage directory" |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+if [ "$PT_NAME" = "x86_64" ]; then
+    pkgname="kronometrix-kernel-${krmxver}-amd64"
+else
+    pkgname="kronometrix-kernel-${krmxver}-${PT_NAME}"
+fi
+
+if [ ! -d $pkgname ]; then
+    mkdir -p "$pkgname/opt"
+    mkdir -p "$pkgname/DEBIAN"
+    if [ $? -ne 0 ]; then
+        echo "Error: cannot copy tar archive to SOURCE directory !" |\
+            tee -a ${BUILD_PATH}/${BUILD_LOG}
+        rm /var/tmp/build.${module}
+        exit 3
+    else
+        step1=1
+    fi
+fi
+
+
+# STEP 2
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 2 - Prepare stage directory" |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+# copy config files
+cp changelog prerm copyright preinst postinst $pkgname/DEBIAN
+if [ "$PT_NAME" = "x86_64" ]; then
+    cp control.amd64 $pkgname/DEBIAN/control
+else
+    cp control.i386 $pkgname/DEBIAN/control
+fi
+
+
+# tar package
+cd ${pkgname}/opt
+
+if [ "$buildno" -ne 0 ]; then
+
+    # get control file fixed correct build and version
+    sed "s/^Version.*/Version:${krmxver}-b${buildno}/" ../../$pkgname/DEBIAN/control > ../../$pkgname/DEBIAN/control.tmp
+    mv ../../${pkgname}/DEBIAN/control.tmp ../../${pkgname}/DEBIAN/control
+
+    if [ -f /var/tmp/kronometrix-kernel-${krmxver}b${buildno}-${DIST_ID}.${PT_NAME}.tar.bz2 ]; then
+        bzcat /var/tmp/kronometrix-kernel-${krmxver}b${buildno}-${DIST_ID}.${PT_NAME}.tar.bz2 | tar xf -
+        if [ $? -ne 0 ]; then
+            echo "Error: cannot untar archive !" |\
+              tee -a ${BUILD_PATH}/${BUILD_LOG}
+            rm /var/tmp/build.${module}
+            exit 3
+        else
+            step2=1
+        fi
+    fi
+else
+
+    # get control file fixed correct version
+    sed "s/^Version.*/Version:${krmxver}/" ../../$pkgname/DEBIAN/control > ../../$pkgname/DEBIAN/control.tmp
+    mv ../../${pkgname}/DEBIAN/control.tmp ../../${pkgname}/DEBIAN/control
+
+    if [ -f /var/tmp/kronometrix-kernel-${krmxver}-${DIST_ID}.${PT_NAME}.tar.bz2 ]; then
+        bzcat /var/tmp/kronometrix-kernel-${krmxver}-${DIST_ID}.${PT_NAME}.tar.bz2 | tar xf -
+        if [ $? -ne 0 ]; then
+            echo "Error: cannot untar archive !" |\
+              tee -a ${BUILD_PATH}/${BUILD_LOG}
+            rm /var/tmp/build.${module}
+            exit 3
+        else
+            step2=1
+        fi
+    fi
+fi
+
+cd ../..
+
+/usr/bin/dpkg-deb --build $pkgname >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if [ $? -ne 0 ]; then
+    echo "Error: cannot build deb, dpkg-deb error !" |\
+        tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step2=`expr $step2 + 1`
+fi
+
+step2=`expr $step2 / 2`
+
+
+# STEP 3
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 3 - Cleanup stage directory" |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+if [ -d $pkgname ]; then
+    rm -rf $pkgname
+    if [ $? -ne 0 ]; then
+        echo "Error: cannot clean stage directory !" |\
+          tee -a ${BUILD_PATH}/${BUILD_LOG}
+        rm /var/tmp/build.${module}
+        exit 3
+    else
+        step3=1
+    fi
+fi
+
+mv ${pkgname}.deb /var/tmp
+
+
+# final check; 3 steps
+kernel_deb_pkg_done=`expr $step1 + $step2 + $step3`
+if [ "$kernel_deb_pkg_done" -eq 3 ]; then
+   kernel_deb_pkg_done=1
+else
+   kernel_deb_pkg_done=90
+fi
+
+cd ../..
+
+}
+
+
+build_kernel_pkg() {
+
+dir=pkg
+step1=0
+step2=0
+
+
+echo "############################################################"
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Submodule: tar package ${OS_NAME}" | tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+# STEP 1
+# tar package must be created
+
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 1 - Kronometrix tar package" |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+
+case "$DIST_ID" in
+    centos|rhel)
+        build_kernel_tar_pkg
+        build_kernel_rpm_pkg
+    ;;
+
+    debian|ubuntu|raspbian)
+        build_kernel_tar_pkg
+        build_kernel_deb_pkg
+    ;;
+               
+    *)
+        echo "Not supported Linux distro, check builder"
+        exit 3
+    ;;
+esac
+
+
+}
+
+
