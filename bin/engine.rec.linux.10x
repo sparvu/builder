@@ -1668,7 +1668,9 @@ echo "Info: Step 2 - Prepare stage directory" |\
 cp changelog prerm copyright preinst postinst $pkgname/DEBIAN
 if [ "$PT_NAME" = "x86_64" ]; then
     cp control.amd64 $pkgname/DEBIAN/control
-else
+elif [ "$PT_NAME" = "arm6l" ]; then
+    cp control.arm6l $pkgname/DEBIAN/control
+elif [ "$PT_NAME" = "i386" ]; then
     cp control.i386 $pkgname/DEBIAN/control
 fi
 
