@@ -644,7 +644,7 @@ env CFLAGS="-O3" \
     LDFLAGS="-L${iprefix}/lib -Wl,-rpath -Wl,${iprefix}/lib" \
     ./configure --with-ssl=${iprefix} --with-libidn=${iprefix} \
      --prefix=${iprefix} --enable-cookies --enable-nonblocking \
-     --disable-ldap --disable-ldaps >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+     --without-libssh2 --disable-ldap --disable-ldaps >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
 if [ $? -ne 0 ]; then
     echo "Error: configure $dir failed !" |\
      tee -a ${BUILD_PATH}/${BUILD_LOG}
