@@ -549,8 +549,10 @@ echo "" >> ${BUILD_PATH}/${BUILD_LOG}
 echo "Info: Step 2 - Configure $dir ..." |\
  tee -a ${BUILD_PATH}/${BUILD_LOG}
 
-env LIBUSB_INCDIR=${iprefix}/include LIBUSB_LIBDIR=${iprefix}/lib \
-    ${iprefix}/perl/bin/perl Makefile.PL LDDLFLAGS="-L${iprefix}/lib -Wl,-rpath -Wl,${iprefix}/lib" >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+export LIBUSB_INCDIR=${iprefix}/include
+export LIBUSB_LIBDIR=${iprefix}/lib
+
+${iprefix}/perl/bin/perl Makefile.PL LDDLFLAGS="-L${iprefix}/lib -Wl,-rpath -Wl,${iprefix}/lib" >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
 
 if [ $? -ne 0 ]; then
     echo "Error: configure $dir failed !" |\
