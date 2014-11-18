@@ -69,6 +69,7 @@ test_sem=0
 nrec_sem=0
 ossl_sem=0
 syss_sem=0
+libusb_sem=0
 rec1_sem=0
 rpm_sem=0
 deb_sem=0
@@ -225,8 +226,8 @@ do
                 deb_sem=1
             ;;
 
-            pdq)
-                pdq_sem=1
+            libusb)
+                libusb_sem=1
             ;;
 
             *)
@@ -504,7 +505,10 @@ case "$module" in
     recording)
     echo "" > ${BUILD_PATH}/${BUILD_LOG}
 
-    if [ $rpm_sem -eq 1 ]; then
+    if [ $libusb_sem -eq 1 ]; then
+        build_rec_libusb
+        build_rec_deviceusb
+    elif [ $rpm_sem -eq 1 ]; then
         if [ "x${DIST_ID}" = "xrhel" -o "x${DIST_ID}" = "xcentos" ]; then
             build_rec_pkg
         else
