@@ -515,7 +515,7 @@ else
 fi
 
 # final check; all 4 steps
-lubusb_done=`expr $step1 + $step2 + $step3 + $step4`
+libusb_done=`expr $step1 + $step2 + $step3 + $step4`
 if [ "$libusb_done" -eq 4 ]; then
    libusb_done=1
 else
