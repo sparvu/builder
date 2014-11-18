@@ -74,6 +74,7 @@ rpm_sem=0
 deb_sem=0
 
 idn_done=0
+libusb_done=0
 perl_done=0
 ossl_done=0
 curl_done=0
@@ -82,6 +83,7 @@ recs_done=0
 nrec_done=0
 tests_done=0
 wwwcurl_done=0
+deviceusb_done=0
 sysstat_done=0
 tar_pkg_done=0
 deb_pkg_done=0
@@ -524,6 +526,8 @@ case "$module" in
         build_rec_perl
         build_rec_ossl
         build_rec_idn
+        build_rec_libusb
+        build_rec_deviceusb
         build_rec_curl
         build_rec_wcurl
             if [ "$OS_NAME" = "linux" ]; then
@@ -685,6 +689,22 @@ case "$module" in
     else
         if [ $idn_done -eq 90 ]; then
             echo "# IDN       : failed"
+        fi
+    fi
+
+    if [ $libusb_done -eq 1 ]; then
+        echo "# LIBUSB    :     ok"
+    else
+        if [ $libusb_done -eq 90 ]; then
+            echo "# LIBUSB    : failed"
+        fi
+    fi
+
+    if [ $deviceusb_done -eq 1 ]; then
+        echo "# DeviceUSB :     ok"
+    else
+        if [ $deviceusb_done -eq 90 ]; then
+            echo "# DeviceUSB : failed"
         fi
     fi
 
