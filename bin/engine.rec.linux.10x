@@ -944,6 +944,7 @@ echo "Info: Step 2 - Installing recorders ..." |\
 #else
     if [ "$PT_NAME" != "armv6l" ]; then
         cp *rec ${iprefix}/bin
+        cp ../wsrec ${iprefix}/bin
         if [ $? -ne 0 ]; then
             echo "Error: cannot install rec scripts !" |\
              tee -a ${BUILD_PATH}/${BUILD_LOG}
@@ -954,6 +955,7 @@ echo "Info: Step 2 - Installing recorders ..." |\
         fi
     else
         cp sysrec cpurec diskrec nicrec hdwrec ${iprefix}/bin
+        cp ../wsrec ${iprefix}/bin
         if [ $? -ne 0 ]; then
             echo "Error: cannot install rec scripts !" |\
              tee -a ${BUILD_PATH}/${BUILD_LOG}
