@@ -219,9 +219,9 @@ else
 fi
 
 for lib in Digest::SHA Proc::Daemon Proc::PID::File File::Tail \
-           JSON::XS JSON HTTP::Response Data::UUID Device::USB
+           JSON::XS JSON HTTP::Response Data::UUID Carp::Assert
 do
-    if  [ "$lib" = "JSON::XS" -o "$lib" = "Device::USB" ]; then
+    if  [ "$lib" = "JSON::XS" ]; then
         env PERL_MM_USE_DEFAULT=1 \
         ${iprefix}/perl/bin/perl -MCPAN -e 'install "'$lib'"' >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
         if [ $? -ne 0 ]; then
@@ -452,9 +452,9 @@ cd ..
 }
 
 
-### libxml2
-build_rec_libxml2() {
-dir=libxml2
+### libusb
+build_rec_libusb() {
+dir=libusb
 step1=0
 step2=0
 step3=0
@@ -469,13 +469,10 @@ fi
 echo "" >> ${BUILD_PATH}/${BUILD_LOG}
 echo "Info: Step 2 - Configure $dir ..." |\
  tee -a ${BUILD_PATH}/${BUILD_LOG}
-
-env PATH=${iprefix}/bin:${iprefix}/perl/bin:$PATH CC=cc \
-    CFLAGS="-O3 -I${iprefix}/include" \
-    LDFLAGS="-L${iprefix}/lib -Wl,-rpath -Wl,${iprefix}/lib \
-    -L/lib64 -L/usr/lib64" ./configure --with-python=no \
-    --prefix=${iprefix} >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
-
+ 
+env CC=cc CFLAGS="-O3 -I${iprefix}/include" \
+    LDFLAGS="-L${iprefix}/lib -Wl,-rpath -Wl,${iprefix}/lib" \
+    ./configure --prefix=${iprefix} >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
 if [ $? -ne 0 ]; then
     echo "Error: configure $dir failed !" |\
      tee -a ${BUILD_PATH}/${BUILD_LOG}
@@ -483,7 +480,9 @@ if [ $? -ne 0 ]; then
     exit 3
 else
     step2=1
-fi
+fi  
+
+
 # STEP 3
 echo "" >> ${BUILD_PATH}/${BUILD_LOG}
 echo "Info: Step 3 - Make $dir..." |\
@@ -496,17 +495,17 @@ if [ $? -ne 0 ]; then
     exit 3
 else
     step3=1
-fi
+fi 
+
 
 # STEP 4
 echo "" >> ${BUILD_PATH}/${BUILD_LOG}
 echo "Info: Step 4 - Make install $dir..." |\
  tee -a ${BUILD_PATH}/${BUILD_LOG}
 
-
 make install >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
 if [ $? -ne 0 ]; then
-    echo "Error: make install gd failed !" |\
+    echo "Error: make install libusb failed !" |\
      tee -a ${BUILD_PATH}/${BUILD_LOG}
     rm /var/tmp/build.${module}
     exit 3
@@ -514,23 +513,12 @@ else
     step4=1
 fi
 
-
-# clean docbook, html
-if [ -d ${iprefix}/share/gtk\-doc ]; then
-    rm -rf ${iprefix}/share/gtk\-doc
-fi
-
-if [ -d ${iprefix}/share/doc ]; then
-    rm -rf ${iprefix}/share/doc
-fi
-
-
 # final check; all 4 steps
-rec_libxml2_done=`expr $step1 + $step2 + $step3 + $step4`
-if [ "$rec_libxml2_done" -eq 4 ]; then
-   rec_libxml2_done=1
+lubusb_done=`expr $step1 + $step2 + $step3 + $step4`
+if [ "$libusb_done" -eq 4 ]; then
+   libusb_done=1
 else
-   rec_libxml2_done=90
+   libusb_done=90
 fi
 
 clean_module
@@ -541,15 +529,14 @@ cd ..
 }
 
 
-### perl XML::LibXML
-build_rec_xmllibxml() {
+### perl Device::USB
+build_rec_deviceusb() {
 
-dir=XML-LibXML
+dir=Device-USB
 step1=0
 step2=0
 step3=0
 step4=0
-step5=0
 
 cd lib
 init_module "$dir"
@@ -561,7 +548,8 @@ echo "" >> ${BUILD_PATH}/${BUILD_LOG}
 echo "Info: Step 2 - Configure $dir ..." |\
  tee -a ${BUILD_PATH}/${BUILD_LOG}
 
-env ${iprefix}/perl/bin/perl Makefile.PL XMLPREFIX=${iprefix} >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+env LIBUSB_INCDIR=${iprefix}/include LIBUSB_LIBDIR=${iprefix}/lib \
+    ${iprefix}/perl/bin/perl Makefile.PL LDDLFLAGS="-L${iprefix}/lib -Wl,-rpath -Wl,${iprefix}/lib" >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
 
 if [ $? -ne 0 ]; then
     echo "Error: configure $dir failed !" |\
@@ -570,7 +558,7 @@ if [ $? -ne 0 ]; then
     exit 3
 else
     step2=1
-fi
+fi  
 
 
 # STEP 3
@@ -585,7 +573,7 @@ if [ $? -ne 0 ]; then
     exit 3
 else
     step3=1
-fi
+fi 
 
 
 # STEP 4
@@ -603,13 +591,12 @@ else
     step4=1
 fi
 
-#
-# final check; all 4 steps
-rec_perllxml_done=`expr $step1 + $step2 + $step3 + $step4`
-if [ "$rec_perllxml_done" -eq 4 ]; then
-   rec_perllxml_done=1
+## final check; all 4 steps
+deviceusb_done=`expr $step1 + $step2 + $step3 + $step4`
+if [ "$deviceusb_done" -eq 4 ]; then
+   deviceusb_done=1
 else
-   rec_perllxml_done=90
+   deviceusb_done=90
 fi
 
 clean_module
@@ -811,199 +798,6 @@ fi
 clean_module
 
 # back to root
-cd ..
-
-}
-
-
-### nicrec
-build_rec_nrec() {
-
-dir=nicrec
-step1=0
-step2=0
-step3=0
-step4=0
-
-init_module "$dir"
-if [ $? -eq 0 ]; then
-    step1=1
-fi
-
-echo "" >> ${BUILD_PATH}/${BUILD_LOG}
-echo "Info: Step 2 - Configure $dir ..." |\
- tee -a ${BUILD_PATH}/${BUILD_LOG}
-
-cp Makefile.${OS_NAME} Makefile
-if [ $? -ne 0 ]; then
-    echo "Error: configure $dir failed !" |\
-     tee -a ${BUILD_PATH}/${BUILD_LOG}
-    rm /var/tmp/build.${module}
-    exit 3
-else
-    step2=1
-fi
-
-
-# STEP 3
-echo "" >> ${BUILD_PATH}/${BUILD_LOG}
-echo "Info: Step 3 - Make $dir..." |\
- tee -a ${BUILD_PATH}/${BUILD_LOG}
-make >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
-if [ $? -ne 0 ]; then
-    echo "Error: make $dir failed !" |\
-     tee -a ${BUILD_PATH}/${BUILD_LOG}
-    rm /var/tmp/build.${module}
-    exit 3
-else
-    [step3 = step3 + 1]
-fi
-
-
-# STEP 4
-echo "" >> ${BUILD_PATH}/${BUILD_LOG}
-echo "Info: Step 4 - Make install $dir..." |\
- tee -a ${BUILD_PATH}/${BUILD_LOG}
- 
-if [ -f ${iprefix}/bin/nicrec ]; then
-    echo "Warning: nicrec binary found, cleaning it..." |\
-     tee -a ${BUILD_PATH}/${BUILD_LOG}
-    rm -f ${iprefix}/bin/nicrec
-    if [ $? -ne 0 ]; then
-        echo "Error: cleaning nicrec binary failed !" |\
-         tee -a ${BUILD_PATH}/${BUILD_LOG}
-        rm /var/tmp/build.${module}
-        exit 3
-    fi
-fi
-
-
-if [ -f ${iprefix}/bin/enicstat ]; then
-    echo "Warning: enicstat found, cleaning it..." |\
-     tee -a ${BUILD_PATH}/${BUILD_LOG}
-    rm -f ${iprefix}/bin/enicstat
-    if [ $? -ne 0 ]; then
-        echo "Error: cleaning enicstat failed !" |\
-         tee -a ${BUILD_PATH}/${BUILD_LOG}
-        rm /var/tmp/build.${module}
-        exit 3
-    fi
-fi
-
-if [ ! -d $iprefix}/man ]; then
-    mkdir -p ${iprefix}/man/man1
-fi
-
-make install >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
-if [ $? -ne 0 ]; then
-    echo "Error: make install perl failed !" |\
-     tee -a ${BUILD_PATH}/${BUILD_LOG}
-    rm /var/tmp/build.${module}
-    exit 3
-else
-    step4=1
-fi
-
-mv -f ${iprefix}/bin/nicrec ${iprefix}/bin/nicrec_x64
-mv -f ${iprefix}/man/man1/nicrec.1 ${iprefix}/man/man1/nicrec_x64.1
-cp enicstat ${iprefix}/bin
-
-# final check; all 4 steps
-nrec_done=`expr $step1 + $step2 + $step3 + $step4`
-if [ "$nrec_done" -eq 4 ]; then
-   nrec_done=1
-else
-   nrec_done=90
-fi
-
-cd ../..
-}
-
-
-# webrec
-build_rec_webrec() {
-
-dir=WebRec
-step1=0
-step2=0
-step3=0
-
-
-cd $dir
-echo "\n############################################################"
-echo "" >> ${BUILD_PATH}/${BUILD_LOG}
-echo "Submodule: $dir" | tee -a ${BUILD_PATH}/${BUILD_LOG}
-
-# STEP 1
-
-echo "" >> ${BUILD_PATH}/${BUILD_LOG}
-echo "Info: Step 1 - Configure $dir ..." |\
- tee -a ${BUILD_PATH}/${BUILD_LOG}
-
-env JAVA_HOME=/opt/java/current ant clean >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
-
-if [ $? -ne 0 ]; then
-    echo "Error: configure $dir failed !" |\
-     tee -a ${BUILD_PATH}/${BUILD_LOG}
-    rm /var/tmp/build.${module}
-    exit 3
-else
-    step1=1
-fi  
-
-# STEP 2
-echo "" >> ${BUILD_PATH}/${BUILD_LOG}
-echo "Info: Step 2 - Make $dir..." |\
- tee -a ${BUILD_PATH}/${BUILD_LOG}
-env JAVA_HOME=/opt/java/current ant >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
-if [ $? -ne 0 ]; then
-    echo "Error: make $dir failed !" |\
-     tee -a ${BUILD_PATH}/${BUILD_LOG}
-    rm /var/tmp/build.${module}
-    exit 3
-else
-    step2=1
-fi 
-
-# STEP 3
-echo "" >> ${BUILD_PATH}/${BUILD_LOG}
-echo "Info: Step 3 - Make install $dir..." |\
- tee -a ${BUILD_PATH}/${BUILD_LOG}
-
-# etc copy
-if [ ! -d ${iprefix}/etc ]; then
-    mkdir ${iprefix}/etc
-fi
-
-cp etc/log4j.properties ${iprefix}/etc
-cp etc/webrec.conf ${iprefix}/etc
-
-# lib
-if [ ! -d ${iprefix}/lib ]; then
-    mkdir ${iprefix}/lib
-fi
-
-cp lib/*.jar ${iprefix}/lib
-cp dist/webrec.jar ${iprefix}/lib
-if [ $? -ne 0 ]; then
-    echo "Error: make install perl failed !" |\
-     tee -a ${BUILD_PATH}/${BUILD_LOG}
-    rm /var/tmp/build.${module}
-    exit 3
-else
-    step3=1
-fi
-#
-
-# final check; all 4 steps
-wrec_done=`expr $step1 + $step2 + $step3`
-if [ "$wrec_done" -eq 3 ]; then
-   wrec_done=1
-else
-   wrec_done=90
-fi
-
-
 cd ..
 
 }
