@@ -330,8 +330,13 @@ case "$OS_NAME" in
 
              # default appliance
              if [ -z "$appliance" ]; then
-                 appliance="enterprise"
-                 enterprise_sem=1
+                 if [ "$PT_NAME" = "armv6l" ]; then
+                     appliance="rbpi"
+                     enterprise_sem=1
+                 else
+                     appliance="enterprise"
+                     enterprise_sem=1
+                 fi
              fi
 
              iprefix=${iprefix:-/opt/kronometrix/auth}
@@ -355,8 +360,13 @@ case "$OS_NAME" in
 
              # default appliance
              if [ -z "$appliance" ]; then
-                 appliance="enterprise"
-                 enterprise_sem=1
+                 if [ "$PT_NAME" = "armv6l" ]; then
+                     appliance="rbpi"
+                     enterprise_sem=1
+                 else
+                     appliance="enterprise"
+                     enterprise_sem=1
+                 fi
              fi
       
              iprefix=${iprefix:-/opt/kronometrix/kernel}
@@ -409,8 +419,13 @@ case "$OS_NAME" in
 
              # default appliance
              if [ -z "$appliance" ]; then
-                 appliance="enterprise"
-                 enterprise_sem=1
+                 if [ "$PT_NAME" = "armv6l" ]; then
+                     appliance="rbpi"
+                     enterprise_sem=1
+                 else
+                     appliance="enterprise"
+                     enterprise_sem=1
+                 fi
              fi
       
              iprefix=${iprefix:-/opt/kronometrix/auth}
@@ -434,8 +449,13 @@ case "$OS_NAME" in
 
              # default appliance
              if [ -z "$appliance" ]; then
-                 appliance="enterprise"
-                 enterprise_sem=1
+                 if [ "$PT_NAME" = "armv6l" ]; then
+                     appliance="rbpi"
+                     enterprise_sem=1
+                 else
+                     appliance="enterprise"
+                     enterprise_sem=1
+                 fi
              fi
       
              iprefix=${iprefix:-/opt/kronometrix/kernel}
