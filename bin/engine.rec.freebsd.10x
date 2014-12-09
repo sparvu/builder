@@ -217,22 +217,40 @@ else
     step6=`expr $step6 + 1`
 fi
 
+
+
 for lib in Digest::SHA Proc::Daemon Proc::PID::File File::Tail \
-           JSON HTTP::Response Data::UUID
+           JSON::XS JSON HTTP::Response Data::UUID Carp::Assert \
+           Inline::MakeMaker Date::Calc Device::SerialPort
 do
-    ${iprefix}/perl/bin/perl -MCPAN -e 'install "'$lib'"' >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
-    if [ $? -ne 0 ]; then
-        echo "Error: $lib installation failed !" |\
-         tee -a ${BUILD_PATH}/${BUILD_LOG}
-        rm /var/tmp/build.${module}
-        exit 3
+    if  [ "$lib" = "JSON::XS" -o "$lib" = "Inline::MakeMaker" ]; then
+        env PERL_MM_USE_DEFAULT=1 \
+        ${iprefix}/perl/bin/perl -MCPAN -e 'install "'$lib'"' >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+        if [ $? -ne 0 ]; then
+            echo "Error: $lib installation failed !" |\
+                tee -a ${BUILD_LOG}/${module}.${version}.log
+            rm /var/tmp/build.${module}
+            exit 3
+        else
+            step6=`expr $step6 + 1`
+            continue
+        fi
     else
-        step6=`expr $step6 + 1`
+        ${iprefix}/perl/bin/perl -MCPAN -e 'install "'$lib'"' >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+        if [ $? -ne 0 ]; then
+            echo "Error: $lib installation failed !" |\
+                tee -a ${BUILD_LOG}/${module}.${version}.log
+            rm /var/tmp/build.${module}
+            exit 3
+        else
+            step6=`expr $step6 + 1`
+            continue
+        fi
     fi
 done
 
-# there are 8 perl modules install calls
-step6=`expr $step6 / 8`
+# there are 13 perl modules install calls
+step6=`expr $step6 / 13`
 
 # final check; all 6 steps
 perl_done=`expr $step1 + $step2 + $step3 + $step4 + $step5 + $step6`
@@ -512,6 +530,83 @@ cd ..
 }
 
 
+### perl Device::USB
+build_rec_deviceusb() {
+
+dir=Device-USB
+step1=0
+step2=0
+step3=0
+step4=0
+
+cd lib
+init_module "$dir"
+if [ $? -eq 0 ]; then
+    step1=1
+fi
+
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 2 - Configure $dir ..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+export LIBUSB_INCDIR=${iprefix}/include
+export LIBUSB_LIBDIR=${iprefix}/lib
+
+${iprefix}/perl/bin/perl Makefile.PL LDDLFLAGS="-L${iprefix}/lib -Wl,-rpath -Wl,${iprefix}/lib" >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+
+if [ $? -ne 0 ]; then
+    echo "Error: configure $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step2=1
+fi  
+
+
+# STEP 3
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 3 - Make $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+make >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if [ $? -ne 0 ]; then
+    echo "Error: make $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step3=1
+fi 
+
+# STEP 4
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 4 - Make install $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+make install >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if [ $? -ne 0 ]; then
+    echo "Error: make install perl failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step4=1
+fi
+
+## final check; all 4 steps
+deviceusb_done=`expr $step1 + $step2 + $step3 + $step4`
+if [ "$deviceusb_done" -eq 4 ]; then
+   deviceusb_done=1
+else
+   deviceusb_done=90
+fi
+
+clean_module
+
+# back to root
+cd ..
+
+}
 
 
 ### curl
