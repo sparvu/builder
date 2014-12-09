@@ -550,17 +550,19 @@ case "$module" in
         build_rec_perl
         build_rec_ossl
         build_rec_idn
-        build_rec_libusb
-        build_rec_deviceusb
+        if [ "$OS_NAME" = "linux" ]; then
+            build_rec_libusb
+            build_rec_deviceusb
+        fi
         build_rec_curl
         build_rec_wcurl
-            if [ "$OS_NAME" = "linux" ]; then
-                build_rec_sysstat
-            fi
+        if [ "$OS_NAME" = "linux" ]; then
+            build_rec_sysstat
+        fi
   
-            #if [ "$PT_NAME" != "armv6l" ]; then 
-                #    build_rec_webrec
-            #fi
+        #if [ "$PT_NAME" != "armv6l" ]; then 
+        #    build_rec_webrec
+        #fi
         build_rec_scripts
         
         if [ "$OS_NAME" != "freebsd" ]; then 
