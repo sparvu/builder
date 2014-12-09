@@ -699,31 +699,23 @@ else
     exit 3
 fi
 
-
 cd ${OS_NAME}
 # STEP 2
 echo "" >> ${BUILD_PATH}/${BUILD_LOG}
 echo "Info: Step 2 - Installing recorders ..." |\
  tee -a ${BUILD_PATH}/${BUILD_LOG}
 
-nrecs=`ls *rec | wc -l`
-if [ "$nrecs" -ne 5 ]; then
-    echo "Error: wrong no. of recorders, check workspace !" |\
+cp sysrec cpurec diskrec nicrec hdwrec ${iprefix}/bin
+cp ../wsrec ${iprefix}/bin
+cp ../raw2day ${iprefix}/bin
+if [ $? -ne 0 ]; then
+    echo "Error: cannot install rec scripts !" |\
      tee -a ${BUILD_PATH}/${BUILD_LOG}
     rm /var/tmp/build.${module}
     exit 3
 else
-    cp *rec ${iprefix}/bin
-    if [ $? -ne 0 ]; then
-        echo "Error: cannot install rec scripts !" |\
-         tee -a ${BUILD_PATH}/${BUILD_LOG}
-        rm /var/tmp/build.${module}
-        exit 3
-    else
-        step2=1
-    fi
+    step2=1
 fi
-
 
 # set the other bins
 cp sender ${iprefix}/bin
@@ -736,19 +728,29 @@ fi
 
 
 # set etc settings
+if [ ! -d ${iprefix}/etc ]; then
+    mkdir ${iprefix}/etc 
+    if [ $? -ne 0 ]; then
+        echo "Error: cannot set etc director !" |\
+          tee -a ${BUILD_PATH}/${BUILD_LOG}
+        rm /var/tmp/build.${module}
+        exit 3
+    fi
+fi
+
 cd ../..
 cp etc/${OS_NAME}/* ${iprefix}/etc
 cp etc/*.start ${iprefix}/etc
-cp etc/sdr.json ${iprefix}/etc
-cp etc/sdr ${iprefix}/etc
-cp etc/sdr ${iprefix}/etc
-cp etc/sdr.transport ${iprefix}/etc
+cp etc/kronometrix.json ${iprefix}/etc
+cp etc/kronometrix ${iprefix}/etc
+cp etc/kronometrix.transport ${iprefix}/etc
 if [ $? -ne 0 ]; then
     echo "Error: cannot install etc settings !" |\
       tee -a ${BUILD_PATH}/${BUILD_LOG}
     rm /var/tmp/build.${module}
     exit 3
 fi
+
 
 # final check; all 2 steps
 recs_done=`expr $step1 + $step2`
@@ -758,11 +760,10 @@ else
    recs_done=0
 fi
 
-
 # set man pages
 if [ ! -d ${iprefix}/man ]; then
     mkdir ${iprefix}/man
-fi  
+fi
 
 cp -pr man/${OS_NAME}/* ${iprefix}/man
 if [ $? -ne 0 ]; then
@@ -771,7 +772,6 @@ if [ $? -ne 0 ]; then
     rm /var/tmp/build.${module}
     exit 3
 fi
-
 
 # link man to share man
 ln -s ${iprefix}/share/man/man3 ${iprefix}/man
