@@ -1126,7 +1126,7 @@ do
     fi
 done
 
-step1=`expr $step1 / 6`
+step1=`expr $step1 / 5`
 
 # STEP 2
 # Check all shared libs if they are build correctly
