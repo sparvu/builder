@@ -663,7 +663,7 @@ elif [ $rbpi_sem -eq 1 ]; then
 fi
 
 if [ $? -ne 0 ]; then
-    echo "Error: cannot install sdrauth startup services !" |\
+    echo "Error: cannot install auth startup services !" |\
      tee -a ${BUILD_PATH}/${BUILD_LOG}
     rm /var/tmp/build.${module}
     exit 3
