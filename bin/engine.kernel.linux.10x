@@ -688,7 +688,7 @@ step1=`expr $step1 / 5`
 
 # STEP 2
 echo "" >> ${BUILD_PATH}/${BUILD_LOG}
-echo "Info: Step 2 - Installing sdrkernel startup services ..." |\
+echo "Info: Step 2 - Installing kernel startup services ..." |\
  tee -a ${BUILD_PATH}/${BUILD_LOG}
 
 cp krono* ${iprefix}/etc/
@@ -699,7 +699,7 @@ elif [ $rbpi_sem -eq 1 ]; then
 fi
 
 if [ $? -ne 0 ]; then
-    echo "Error: cannot install sdrkernel startup services !" |\
+    echo "Error: cannot install kernel startup services !" |\
      tee -a ${BUILD_PATH}/${BUILD_LOG}
     rm /var/tmp/build.${module}
     exit 3
