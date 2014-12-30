@@ -739,7 +739,7 @@ fi
 cd ${iprefix}/../..
 
 if [ "$buildno" -ne 0 ]; then
-    tar cf /var/tmp/kronometrix-auth-${krmxver}b${buildno}-${DIST_ID}.${PT_NAME}.tar kronometrix/
+    tar cf /var/tmp/kronometrix-auth-${krmxver}b${buildno}-${DIST_ID}.${PT_NAME}.tar kronometrix/auth
     if [ -f /var/tmp/kronometrix-auth-${krmxver}b${buildno}-${DIST_ID}.${PT_NAME}.tar.bz2 ]; then
         rm /var/tmp/kronometrix-auth-${krmxver}b${buildno}-${DIST_ID}.${PT_NAME}.tar.bz2
     fi
@@ -754,7 +754,7 @@ if [ "$buildno" -ne 0 ]; then
     fi
 else
     # GA General Release
-    tar cf /var/tmp/kronometrix-auth-${krmxver}-${DIST_ID}.${PT_NAME}.tar kronometrix/
+    tar cf /var/tmp/kronometrix-auth-${krmxver}-${DIST_ID}.${PT_NAME}.tar kronometrix/auth
     if [ -f /var/tmp/kronometrix-auth-${krmxver}-${DIST_ID}.${PT_NAME}.tar.bz2 ]; then
         rm /var/tmp/kronometrix-auth-${krmxver}-${DIST_ID}.${PT_NAME}.tar.bz2
     fi
