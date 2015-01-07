@@ -1015,9 +1015,17 @@ echo "Info: Step 1 - Create stage directory" |\
  tee -a ${BUILD_PATH}/${BUILD_LOG}
 
 if [ "$PT_NAME" = "x86_64" ]; then
-    pkgname="kronometrix-kernel-${krmxver}-amd64"
+    if [ "$buildno" -ne 0 ]; then
+        pkgname="kronometrix-kernel-${krmxver}b${buildno}-amd64"
+    else
+        pkgname="kronometrix-kernel-${krmxver}-amd64"
+    fi
 else
-    pkgname="kronometrix-kernel-${krmxver}-${PT_NAME}"
+    if [ "$buildno" -ne 0 ]; then
+        pkgname="kronometrix-kernel-${krmxver}b${buildno}-${PT_NAME}"
+    else
+        pkgname="kronometrix-kernel-${krmxver}-${PT_NAME}"
+    fi
 fi
 
 if [ ! -d $pkgname ]; then
