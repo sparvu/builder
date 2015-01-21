@@ -20,10 +20,10 @@
 #
 #  (http://www.gnu.org/copyleft/gpl.html)
 
-# VERSION: 1.2
+# VERSION: 2
 
 # ############################################################### #
-# SDR Engine: FreeBSD                                               # 
+# Engine: FreeBSD                                                 # 
 # ############################################################### #
 
 
@@ -1004,7 +1004,7 @@ cd $dir
 
 echo "############################################################"
 echo "" >> ${BUILD_PATH}/${BUILD_LOG}
-echo "Submodule: txz package ${OS_NAME}" | tee -a ${BUILD_PATH}/${BUILD_LOG}
+echo "Submodule: FreeBSD package ${OS_NAME}" | tee -a ${BUILD_PATH}/${BUILD_LOG}
 
 
 # STEP 1
@@ -1019,10 +1019,9 @@ else
 fi
 
 if [ ! -d $pkgname ]; then
-    mkdir -p "$pkgname/opt"
-    mkdir -p "$pkgname/DEBIAN"
+    mkdir -p "$pkgname"
     if [ $? -ne 0 ]; then
-        echo "Error: cannot copy tar archive to SOURCE directory !" |\
+        echo "Error: cannot set working package directory !" |\
             tee -a ${BUILD_PATH}/${BUILD_LOG}
         rm /var/tmp/build.${module}
         exit 3
@@ -1038,18 +1037,15 @@ echo "Info: Step 2 - Prepare stage directory" |\
  tee -a ${BUILD_PATH}/${BUILD_LOG}
 
 # copy config files
-cp changelog prerm copyright preinst postinst $pkgname/DEBIAN
 if [ "$PT_NAME" = "x86_64" ]; then
-    cp control.amd64 $pkgname/DEBIAN/control
-elif [ "$PT_NAME" = "armv6l" ]; then
-    cp control.armv6l $pkgname/DEBIAN/control
+    cp MANIFEST.amd64 $pkgname/MANIFEST
 elif [ "$PT_NAME" = "i386" ]; then
-    cp control.i386 $pkgname/DEBIAN/control
+    cp MANIFEST.i386 $pkgname/MANIFEST
 fi
 
 
 # tar package
-cd ${pkgname}/opt
+cd ${pkgname}
 
 if [ "$buildno" -ne 0 ]; then
 
@@ -1153,7 +1149,6 @@ echo "Submodule: tar package ${OS_NAME}" | tee -a ${BUILD_PATH}/${BUILD_LOG}
 echo "" >> ${BUILD_PATH}/${BUILD_LOG}
 echo "Info: Step 1 - Kronometrix tar package" |\
  tee -a ${BUILD_PATH}/${BUILD_LOG}
-
 
 build_rec_freebsd_pkg
 
