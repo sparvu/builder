@@ -917,3 +917,246 @@ fi
 cd ..
 
 }
+
+
+### tar package
+build_rec_tar_pkg() {
+
+step1=0
+
+krmxver=$version
+
+# export iprefix
+export iprefix=${iprefix}
+
+if [ ! -z "$build_num" ]; then
+   buildno="$build_num"
+else
+   buildno=0
+fi
+
+cd ${iprefix}/..
+
+if [ "$buildno" -ne 0 ]; then
+    tar cf /var/tmp/kronometrix-${krmxver}b${buildno}-${DIST_ID}.${PT_NAME}.tar kronometrix/
+    if [ -f /var/tmp/kronometrix-${krmxver}b${buildno}-${DIST_ID}.${PT_NAME}.tar.bz2 ]; then
+        rm /var/tmp/kronometrix-${krmxver}b${buildno}-${DIST_ID}.${PT_NAME}.tar.bz2
+    fi
+    bzip2 /var/tmp/kronometrix-${krmxver}b${buildno}-${DIST_ID}.${PT_NAME}.tar
+    if [ $? -ne 0 ]; then
+        echo "Error: cannot create kronometrix data recording package !" |\
+         tee -a ${BUILD_PATH}/${BUILD_LOG}
+        rm /var/tmp/build.${module}
+        exit 3
+    else
+        step1=1
+    fi
+else
+    # GA General Release
+    tar cf /var/tmp/kronometrix-${krmxver}-${DIST_ID}.${PT_NAME}.tar kronometrix/
+    if [ -f /var/tmp/kronometrix-${krmxver}-${DIST_ID}.${PT_NAME}.tar.bz2 ]; then
+        rm /var/tmp/kronometrix-${krmxver}-${DIST_ID}.${PT_NAME}.tar.bz2
+    fi
+    bzip2 /var/tmp/kronometrix-${krmxver}-${DIST_ID}.${PT_NAME}.tar
+    if [ $? -ne 0 ]; then
+        echo "Error: cannot create kronometrix data recording package !" |\
+         tee -a ${BUILD_PATH}/${BUILD_LOG}
+        rm /var/tmp/build.${module}
+        exit 3
+    else
+        step1=1
+    fi
+fi
+
+# final check; 1 step
+tar_pkg_done=$step1
+if [ "$tar_pkg_done" -eq 1 ]; then
+   tar_pkg_done=1
+else
+   tar_pkg_done=90
+fi
+
+cd ${WORKSPACE}/${module}
+
+}
+
+
+### freebsd package
+build_rec_fbsd_pkg() {
+
+dir='pkg/fbsd'
+step1=0
+step2=0
+step3=0
+
+krmxver=$version
+
+# export iprefix
+export iprefix=${iprefix}
+
+if [ ! -z "$build_num" ]; then
+   buildno="$build_num"
+else
+   buildno=0
+fi
+
+cd $dir
+
+echo "############################################################"
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Submodule: txz package ${OS_NAME}" | tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+
+# STEP 1
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 1 - Create stage directory" |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+if [ "$PT_NAME" = "x86_64" ]; then
+    pkgname="kronometrix-${krmxver}-amd64"
+else
+    pkgname="kronometrix-${krmxver}-${PT_NAME}"
+fi
+
+if [ ! -d $pkgname ]; then
+    mkdir -p "$pkgname/opt"
+    mkdir -p "$pkgname/DEBIAN"
+    if [ $? -ne 0 ]; then
+        echo "Error: cannot copy tar archive to SOURCE directory !" |\
+            tee -a ${BUILD_PATH}/${BUILD_LOG}
+        rm /var/tmp/build.${module}
+        exit 3
+    else
+        step1=1
+    fi
+fi
+
+
+# STEP 2
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 2 - Prepare stage directory" |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+# copy config files
+cp changelog prerm copyright preinst postinst $pkgname/DEBIAN
+if [ "$PT_NAME" = "x86_64" ]; then
+    cp control.amd64 $pkgname/DEBIAN/control
+elif [ "$PT_NAME" = "armv6l" ]; then
+    cp control.armv6l $pkgname/DEBIAN/control
+elif [ "$PT_NAME" = "i386" ]; then
+    cp control.i386 $pkgname/DEBIAN/control
+fi
+
+
+# tar package
+cd ${pkgname}/opt
+
+if [ "$buildno" -ne 0 ]; then
+
+    # get control file fixed correct build and version
+    sed "s/^Version.*/Version:${krmxver}-b${buildno}/" ../../$pkgname/DEBIAN/control > ../../$pkgname/DEBIAN/control.tmp
+    mv ../../${pkgname}/DEBIAN/control.tmp ../../${pkgname}/DEBIAN/control
+
+    if [ -f /var/tmp/kronometrix-${krmxver}b${buildno}-${DIST_ID}.${PT_NAME}.tar.bz2 ]; then
+        bzcat /var/tmp/kronometrix-${krmxver}b${buildno}-${DIST_ID}.${PT_NAME}.tar.bz2 | tar xf -
+        if [ $? -ne 0 ]; then
+            echo "Error: cannot untar archive !" |\
+              tee -a ${BUILD_PATH}/${BUILD_LOG}
+            rm /var/tmp/build.${module}
+            exit 3
+        else
+            step2=1
+        fi
+    fi
+else
+
+    # get control file fixed correct version
+    sed "s/^Version.*/Version:${krmxver}/" ../../$pkgname/DEBIAN/control > ../../$pkgname/DEBIAN/control.tmp
+    mv ../../${pkgname}/DEBIAN/control.tmp ../../${pkgname}/DEBIAN/control
+
+    if [ -f /var/tmp/kronometrix-${krmxver}-${DIST_ID}.${PT_NAME}.tar.bz2 ]; then
+        bzcat /var/tmp/kronometrix-${krmxver}-${DIST_ID}.${PT_NAME}.tar.bz2 | tar xf -
+        if [ $? -ne 0 ]; then
+            echo "Error: cannot untar archive !" |\
+              tee -a ${BUILD_PATH}/${BUILD_LOG}
+            rm /var/tmp/build.${module}
+            exit 3
+        else
+            step2=1
+        fi
+    fi
+fi
+
+cd ../..
+
+/usr/bin/dpkg-deb --build $pkgname >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if [ $? -ne 0 ]; then
+    echo "Error: cannot build deb, dpkg-deb error !" |\
+        tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step2=`expr $step2 + 1`
+fi
+
+step2=`expr $step2 / 2`
+
+
+# STEP 3
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 3 - Cleanup stage directory" |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+if [ -d $pkgname ]; then
+    rm -rf $pkgname
+    if [ $? -ne 0 ]; then
+        echo "Error: cannot clean stage directory !" |\
+          tee -a ${BUILD_PATH}/${BUILD_LOG}
+        rm /var/tmp/build.${module}
+        exit 3
+    else
+        step3=1
+    fi
+fi
+
+mv ${pkgname}.deb /var/tmp
+
+
+# final check; 3 steps
+deb_pkg_done=`expr $step1 + $step2 + $step3`
+if [ "$deb_pkg_done" -eq 3 ]; then
+   deb_pkg_done=1
+else
+   deb_pkg_done=90
+fi
+
+cd ../..
+
+}
+
+
+
+build_rec_pkg() {
+
+dir=pkg
+step1=0
+step2=0
+
+
+echo "############################################################"
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Submodule: tar package ${OS_NAME}" | tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+# STEP 1
+# tar package must be created
+
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 1 - Kronometrix tar package" |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+
+build_rec_tar_pkg
+build_rec_txz_pkg
+
+}
+
