@@ -984,7 +984,7 @@ cd ${WORKSPACE}/${module}
 ### freebsd package
 build_rec_fbsd_pkg() {
 
-dir='pkg/fbsd'
+dir='pkg/freebsd'
 step1=0
 step2=0
 step3=0
@@ -1155,8 +1155,7 @@ echo "Info: Step 1 - Kronometrix tar package" |\
  tee -a ${BUILD_PATH}/${BUILD_LOG}
 
 
-build_rec_tar_pkg
-build_rec_txz_pkg
+build_rec_freebsd_pkg
 
 }
 
