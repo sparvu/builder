@@ -1038,13 +1038,12 @@ echo "Info: Step 2 - Prepare stage directory" |\
 
 # copy config files
 if [ "$PT_NAME" = "x86_64" ]; then
-    cp MANIFEST.amd64 $pkgname/MANIFEST
+    cp MANIFEST.amd64 $pkgname/\+MANIFEST
 elif [ "$PT_NAME" = "i386" ]; then
-    cp MANIFEST.i386 $pkgname/MANIFEST
+    cp MANIFEST.i386 $pkgname/\+MANIFEST
 fi
 
 
-# tar package
 cd ${pkgname}
 
 if [ "$buildno" -ne 0 ]; then
