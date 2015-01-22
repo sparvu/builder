@@ -82,17 +82,6 @@ KRMX_DAILY=${KRMX_LOG}/daily
 KRMX_PERLBIN=${KRMX_ROOT}/perl/bin
 
 
-### RAW COLLECTOR DATA DIRECTORY
-SYSREC_RAW=${KRMX_RAW}/sysrec.sdrd
-CPUREC_RAW=${KRMX_RAW}/cpurec.sdrd
-NICREC_RAW=${KRMX_RAW}/nicrec.sdrd
-DISKREC_RAW=${KRMX_RAW}/diskrec.sdrd
-NETREC_RAW=${KRMX_RAW}/netrec.sdrd
-JVMREC_RAW=${KRMX_RAW}/jvmrec.sdrd
-COREREC_RAW=${KRMX_RAW}/corerec.sdrd
-ZONEREC_RAW=${KRMX_RAW}/zonerec.sdrd
-
-
 WEBREC_LOG=${KRMX_RAW}/webrec.log
 
 

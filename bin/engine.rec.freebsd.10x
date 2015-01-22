@@ -1088,7 +1088,7 @@ REL=`echo $KERNEL | sed 's/\-.*//'`
 
 # copy config files
 if [ "$buildno" -ne 0 ]; then
-    mv kronometrix-${krmxver}b${buildno}.txz /var/tmp/kronometrix-${krmxver}b${buildno}-${OS_NAME}${REL}_${PT_NAME}.txz
+    cp kronometrix-${krmxver}b${buildno}.txz /var/tmp/kronometrix-${krmxver}b${buildno}-${OS_NAME}${REL}_${PT_NAME}.txz
 else
     mv kronometrix-${krmxver}.txz /var/tmp/kronometrix-${krmxver}-${OS_NAME}${REL}_${PT_NAME}.txz
 fi
