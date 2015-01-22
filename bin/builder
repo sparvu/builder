@@ -570,7 +570,8 @@ case "$module" in
         fi
 
         # currently we support Linux deb, rpm
-        if [ "$OS_NAME" = "linux" ]; then
+        if [ "$OS_NAME" = "linux" -o \
+             "$OS_NAME" = "freebsd"  ]; then
             build_rec_pkg
         fi
     fi

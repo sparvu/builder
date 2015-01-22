@@ -1038,9 +1038,9 @@ echo "Info: Step 2 - Prepare stage directory" |\
 
 # copy config files
 if [ "$PT_NAME" = "x86_64" ]; then
-    cp MANIFEST.amd64 $pkgname/\+MANIFEST
+    cp MANIFEST.amd64 $pkgname/\MANIFEST
 elif [ "$PT_NAME" = "i386" ]; then
-    cp MANIFEST.i386 $pkgname/\+MANIFEST
+    cp MANIFEST.i386 $pkgname/\MANIFEST
 fi
 
 
@@ -1049,83 +1049,41 @@ cd ${pkgname}
 if [ "$buildno" -ne 0 ]; then
 
     # get control file fixed correct build and version
-    sed "s/^Version.*/Version:${krmxver}-b${buildno}/" ../../$pkgname/DEBIAN/control > ../../$pkgname/DEBIAN/control.tmp
-    mv ../../${pkgname}/DEBIAN/control.tmp ../../${pkgname}/DEBIAN/control
+    sed "s/^version.*/version: \"${krmxver}-b${buildno}\"/" MANIFEST > MANIFEST.tmp
+    mv MANIFEST.tmp MANIFEST
 
-    if [ -f /var/tmp/kronometrix-${krmxver}b${buildno}-${DIST_ID}.${PT_NAME}.tar.bz2 ]; then
-        bzcat /var/tmp/kronometrix-${krmxver}b${buildno}-${DIST_ID}.${PT_NAME}.tar.bz2 | tar xf -
-        if [ $? -ne 0 ]; then
-            echo "Error: cannot untar archive !" |\
-              tee -a ${BUILD_PATH}/${BUILD_LOG}
-            rm /var/tmp/build.${module}
-            exit 3
-        else
-            step2=1
-        fi
+    if [ -d /opt/kronometrix ]; then
+        for f in `find /opt/kronometrix`
+        do
+            echo "$f: \"`sha256 -q $f`\"," >> files.txt
+        done
+        echo "files: {" >> MANIFEST
+        cat files >> MANIFEST
+        echo "}" >> MANIFEST
     fi
 else
 
-    # get control file fixed correct version
-    sed "s/^Version.*/Version:${krmxver}/" ../../$pkgname/DEBIAN/control > ../../$pkgname/DEBIAN/control.tmp
-    mv ../../${pkgname}/DEBIAN/control.tmp ../../${pkgname}/DEBIAN/control
+    # get control file fixed correct build and version
+    sed "s/^version.*/version: \"${krmxver}\"/" MANIFEST > MANIFEST.tmp
+    mv MANIFEST.tmp MANIFEST
 
-    if [ -f /var/tmp/kronometrix-${krmxver}-${DIST_ID}.${PT_NAME}.tar.bz2 ]; then
-        bzcat /var/tmp/kronometrix-${krmxver}-${DIST_ID}.${PT_NAME}.tar.bz2 | tar xf -
-        if [ $? -ne 0 ]; then
-            echo "Error: cannot untar archive !" |\
-              tee -a ${BUILD_PATH}/${BUILD_LOG}
-            rm /var/tmp/build.${module}
-            exit 3
-        else
-            step2=1
-        fi
+    if [ -d /opt/kronometrix ]; then
+        for f in `find /opt/kronometrix`
+        do
+            echo "$f: \"`sha256 -q $f`\"," >> files.txt
+        done
+        echo "files: {" >> MANIFEST
+        cat files >> MANIFEST
+        echo "}" >> MANIFEST
     fi
 fi
 
-cd ../..
-
-/usr/bin/dpkg-deb --build $pkgname >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
-if [ $? -ne 0 ]; then
-    echo "Error: cannot build deb, dpkg-deb error !" |\
-        tee -a ${BUILD_PATH}/${BUILD_LOG}
-    rm /var/tmp/build.${module}
-    exit 3
-else
-    step2=`expr $step2 + 1`
-fi
-
-step2=`expr $step2 / 2`
+mv MANIFEST \+MANIFEST
+pkg create -m . -r . -o . >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
 
 
-# STEP 3
-echo "" >> ${BUILD_PATH}/${BUILD_LOG}
-echo "Info: Step 3 - Cleanup stage directory" |\
- tee -a ${BUILD_PATH}/${BUILD_LOG}
 
-if [ -d $pkgname ]; then
-    rm -rf $pkgname
-    if [ $? -ne 0 ]; then
-        echo "Error: cannot clean stage directory !" |\
-          tee -a ${BUILD_PATH}/${BUILD_LOG}
-        rm /var/tmp/build.${module}
-        exit 3
-    else
-        step3=1
-    fi
-fi
-
-mv ${pkgname}.deb /var/tmp
-
-
-# final check; 3 steps
-deb_pkg_done=`expr $step1 + $step2 + $step3`
-if [ "$deb_pkg_done" -eq 3 ]; then
-   deb_pkg_done=1
-else
-   deb_pkg_done=90
-fi
-
-cd ../..
+cd ..
 
 }
 
