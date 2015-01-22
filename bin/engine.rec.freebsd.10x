@@ -773,16 +773,6 @@ if [ $? -ne 0 ]; then
     exit 3
 fi
 
-# link man to share man
-ln -s ${iprefix}/share/man/man3 ${iprefix}/man
-ln -s ${iprefix}/share/man/man8 ${iprefix}/man
-ln -s ${iprefix}/share/man/man5 ${iprefix}/man
-for man in $(ls ${iprefix}/share/man/man1)
-do
-    ln -s ${iprefix}/share/man/man1/${man} ${iprefix}/man/man1
-done 
-
-
 # set release notes
 cp release.notes.${OS_NAME} ${iprefix}/release.notes
 if [ $? -ne 0 ]; then
@@ -795,7 +785,7 @@ fi
 # set README 
 cp README.${OS_NAME} ${iprefix}
 if [ $? -ne 0 ]; then
-    echo "Error: cannot install README.${OS_NMAE} !" |\
+    echo "Error: cannot install README.${OS_NAME} !" |\
       tee -a ${BUILD_PATH}/${BUILD_LOG}
     rm /var/tmp/build.${module}
     exit 3
@@ -1092,6 +1082,12 @@ if [ "$buildno" -ne 0 ]; then
 else
     cp /var/tmp/kronometrix-${krmxver}.txz /var/tmp/kronometrix-${krmxver}-${OS_NAME}${REL}-${PT_NAME}.txz
 fi
+
+
+
+
+
+
 
 }
 

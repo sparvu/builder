@@ -1015,16 +1015,6 @@ if [ $? -ne 0 ]; then
     exit 3
 fi
 
-# link man to share man
-ln -s ${iprefix}/share/man/man3 ${iprefix}/man
-ln -s ${iprefix}/share/man/man8 ${iprefix}/man
-ln -s ${iprefix}/share/man/man5 ${iprefix}/man
-for man in $(ls ${iprefix}/share/man/man1)
-do
-    ln -s ${iprefix}/share/man/man1/${man} ${iprefix}/man/man1
-done 
-
-
 # set release notes
 cp release.notes.${OS_NAME} ${iprefix}/release.notes
 if [ $? -ne 0 ]; then
