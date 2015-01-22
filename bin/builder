@@ -73,6 +73,7 @@ libusb_sem=0
 rec1_sem=0
 rpm_sem=0
 deb_sem=0
+fbsd_pkg_sem=0
 
 idn_done=0
 libusb_done=0
@@ -89,6 +90,7 @@ sysstat_done=0
 tar_pkg_done=0
 deb_pkg_done=0
 rpm_pkg_done=0
+fbsd_pkg_done=0
 ##
 
 ##appliance
@@ -224,6 +226,10 @@ do
 
             deb)
                 deb_sem=1
+            ;;
+
+            fbsdpkg)
+                fbsd_pkg_sem=1
             ;;
 
             libusb)
@@ -546,6 +552,8 @@ case "$module" in
             rm /var/tmp/${STATFILE}
             exit 3
         fi
+    elif [ $fbsd_pkg_sem -eq 1 ]; then
+        build_rec_pkg
     else 
         build_rec_perl
         build_rec_ossl
