@@ -821,6 +821,13 @@ case "$module" in
         fi
     fi
 
+    if [ $fbsd_pkg_done -eq 1 ]; then
+        echo "# FreeBSD PKG   :     ok"
+    else
+        if [ $deb_pkg_done -eq 90 ]; then
+            echo "# FreeBSD PKG   : failed"
+        fi
+    fi
 
  ;;
 

@@ -1067,11 +1067,30 @@ else
         echo "}" >> MANIFEST
     fi
 fi
+if [ $? -ne 0 ]; then
+    echo "Error: cannot set FreeBSD pkg, MANIFEST create error !" |\
+        tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step2=`expr $step2 + 1`
+fi
+
 
 rm files.txt
 mv MANIFEST \+MANIFEST
 (cd /opt ; tar cf - kronometrix)|(mkdir opt; cd opt; tar xpf -)
+
 pkg create -m . -r . -o /var/tmp >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if [ $? -ne 0 ]; then
+    echo "Error: cannot build FreeBSD pkg, pkg create error !" |\
+        tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step2=`expr $step2 + 1`
+fi
+
 
 # set release
 REL=`echo $KERNEL | sed 's/\-.*//'`
@@ -1084,10 +1103,37 @@ else
 fi
 
 
+step2=`expr $step2 / 2`
+
+cd ..
+
+# STEP 3
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 3 - Cleanup stage directory" |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+if [ -d $pkgname ]; then
+    rm -rf $pkgname
+    if [ $? -ne 0 ]; then
+        echo "Error: cannot clean stage directory !" |\
+          tee -a ${BUILD_PATH}/${BUILD_LOG}
+        rm /var/tmp/build.${module}
+        exit 3
+    else
+        step3=1
+    fi
+fi
 
 
+# final check; 3 steps
+fbsd_pkg_done=`expr $step1 + $step2 + $step3`
+if [ "$fbsd_pkg_done" -eq 3 ]; then
+   fbsd_pkg_done=1
+else
+   fbsd_pkg_done=90
+fi
 
-
+cd ../..
 
 }
 
