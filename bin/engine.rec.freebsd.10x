@@ -1058,7 +1058,7 @@ if [ "$buildno" -ne 0 ]; then
             echo "$f: \"`sha256 -q $f`\"," >> files.txt
         done
         echo "files: {" >> MANIFEST
-        cat files >> MANIFEST
+        cat files.txt >> MANIFEST
         echo "}" >> MANIFEST
     fi
 else
@@ -1073,11 +1073,12 @@ else
             echo "$f: \"`sha256 -q $f`\"," >> files.txt
         done
         echo "files: {" >> MANIFEST
-        cat files >> MANIFEST
+        cat files.txt >> MANIFEST
         echo "}" >> MANIFEST
     fi
 fi
 
+rm files.txt
 mv MANIFEST \+MANIFEST
 pkg create -m . -r . -o . >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
 
