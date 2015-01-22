@@ -1080,9 +1080,8 @@ fi
 
 rm files.txt
 mv MANIFEST \+MANIFEST
-(cd / ; tar cvf - /opt/kronometrix)|(tar xvpf -)
+(cd /opt ; tar cf - kronometrix)|(mkdir opt; cd opt; tar xpf -)
 pkg create -m . -r . -o . >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
-
 
 }
 
