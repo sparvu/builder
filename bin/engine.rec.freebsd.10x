@@ -982,7 +982,7 @@ cd ${WORKSPACE}/${module}
 
 
 ### freebsd package
-build_rec_fbsd_pkg() {
+build_rec_freebsd_pkg() {
 
 dir='pkg/freebsd'
 step1=0
