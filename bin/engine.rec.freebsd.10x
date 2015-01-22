@@ -122,7 +122,7 @@ echo "" >> ${BUILD_PATH}/${BUILD_LOG}
 echo "Info: Step 2 - Configure perl ..." |\
  tee -a ${BUILD_PATH}/${BUILD_LOG}
 
-if [ "$PT_NAME" = "x86_64" ]; then
+if [ "$PT_NAME" = "amd64" ]; then
     sh Configure -Doptimize='-O3' -Duselargefiles -Duse64bitall \
         -Dcf_by="support@systemdatarecorder.org"       \
         -Dcf_email="support@systemdatarecorder.org"    \
@@ -386,7 +386,7 @@ echo "" >> ${BUILD_PATH}/${BUILD_LOG}
 echo "Info: Step 2 - Configure $dir ..." |\
  tee -a ${BUILD_PATH}/${BUILD_LOG}
 
-if [ "$PT_NAME" = "x86_64" ]; then 
+if [ "$PT_NAME" = "amd64" ]; then 
     env CC=cc CFLAGS="-O3 -I${iprefix}/include" \
         LDFLAGS="-L${iprefix}/lib -Wl,-rpath -Wl,${iprefix}/lib \
         -L/lib64 -L/usr/lib64" ./configure \
@@ -1049,7 +1049,7 @@ cd ${pkgname}
 if [ "$buildno" -ne 0 ]; then
 
     # get control file fixed correct build and version
-    sed "s/^version.*/version: \"${krmxver}-b${buildno}\"/" MANIFEST > MANIFEST.tmp
+    sed "s/^version.*/version: \"${krmxver}b${buildno}\"/" MANIFEST > MANIFEST.tmp
     mv MANIFEST.tmp MANIFEST
 
     if [ -d /opt/kronometrix ]; then
@@ -1082,6 +1082,16 @@ rm files.txt
 mv MANIFEST \+MANIFEST
 (cd /opt ; tar cf - kronometrix)|(mkdir opt; cd opt; tar xpf -)
 pkg create -m . -r . -o /var/tmp >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+
+# set release
+REL=`echo $KERNEL | sed 's/\-.*//'`
+
+# copy config files
+if [ "$buildno" -ne 0 ]; then
+    mv kronometrix-${krmxver}b${buildno}.txz /var/tmp/kronometrix-${krmxver}b${buildno}-${OS_NAME}${REL}_${PT_NAME}.txz
+else
+    mv kronometrix-${krmxver}.txz /var/tmp/kronometrix-${krmxver}-${OS_NAME}${REL}_${PT_NAME}.txz
+fi
 
 }
 
