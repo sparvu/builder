@@ -1053,7 +1053,7 @@ if [ "$buildno" -ne 0 ]; then
     mv MANIFEST.tmp MANIFEST
 
     if [ -d /opt/kronometrix ]; then
-        for f in `find /opt/kronometrix`
+        for f in `find /opt/kronometrix -type f`
         do
             echo "$f: \"`sha256 -q $f`\"," >> files.txt
         done
@@ -1068,7 +1068,7 @@ else
     mv MANIFEST.tmp MANIFEST
 
     if [ -d /opt/kronometrix ]; then
-        for f in `find /opt/kronometrix`
+        for f in `find /opt/kronometrix -type f`
         do
             echo "$f: \"`sha256 -q $f`\"," >> files.txt
         done
