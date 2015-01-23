@@ -657,6 +657,8 @@ case "$module" in
             rm /var/tmp/${STATFILE}
             exit 3
         fi
+    elif [ $fbsd_pkg_sem -eq 1 ]; then
+        build_kernel_pkg 
     else 
         build_kernel_openresty
         build_kernel_libluafs
@@ -674,7 +676,8 @@ case "$module" in
         build_kernel_fin
 
         # currently we support Linux deb, rpm
-        if [ "$OS_NAME" = "linux" ]; then
+        if [ "$OS_NAME" = "linux" -o \
+             "$OS_NAME" = "freebsd"  ]; then
             build_kernel_pkg
         fi
     fi
@@ -1049,6 +1052,38 @@ case "$module" in
         fi
     fi
 
+    if [ $kernel_tar_pkg_done -eq 1 ]; then
+        echo "# tar pkg: ok"
+    else
+        if [ $kernel_tar_pkg_done -eq 90 ]; then
+            echo "# tar pkg: failed"
+        fi
+    fi
+
+    if [ $kernel_rpm_pkg_done -eq 1 ]; then
+        echo "# rpm pkg: ok"
+    else
+        if [ $kernel_rpm_pkg_done -eq 90 ]; then
+            echo "# rpm pkg: failed"
+        fi
+    fi
+
+    if [ $kernel_deb_pkg_done -eq 1 ]; then
+        echo "# deb pkg: ok"
+    else
+        if [ $kernel_deb_pkg_done -eq 90 ]; then
+            echo "# deb pkg: failed"
+        fi
+    fi
+
+    if [ $kernel_fbsd_pkg_done -eq 1 ]; then
+        echo "# freebsd pkg: ok"
+    else
+        if [ $auth_fbsd_pkg_done -eq 90 ]; then
+            echo "# freebsd pkg: failed"
+        fi
+    fi
+
     if [ $kernel_fin_done -ne 0 ]; then
         if [ $kernel_fin_done -eq 1 ]; then
             echo  "# FINALIZE: done"
@@ -1056,30 +1091,6 @@ case "$module" in
             if [ $kernel_fin_done -eq 90 ]; then
                 echo  "# FINALIZE: not done"
             fi
-        fi
-    fi
-
-    if [ $kernel_tar_pkg_done -eq 1 ]; then
-        echo "# TAR PKG: ok"
-    else
-        if [ $kernel_tar_pkg_done -eq 90 ]; then
-            echo "# TAR PKG: failed"
-        fi
-    fi
-
-    if [ $kernel_rpm_pkg_done -eq 1 ]; then
-        echo "# RPM PKG: ok"
-    else
-        if [ $kernel_rpm_pkg_done -eq 90 ]; then
-            echo "# RPM PKG: failed"
-        fi
-    fi
-
-    if [ $kernel_deb_pkg_done -eq 1 ]; then
-        echo "# DEB PKG: ok"
-    else
-        if [ $kernel_deb_pkg_done -eq 90 ]; then
-            echo "# DEB PKG: failed"
         fi
     fi
 
