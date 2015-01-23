@@ -568,7 +568,7 @@ step1=`expr $step1 / 4`
 
 # STEP 2
 echo "" >> ${BUILD_PATH}/${BUILD_LOG}
-echo "Info: Step 2 - Installing sdrauth startup services ..." |\
+echo "Info: Step 2 - Installing auth startup services ..." |\
  tee -a ${BUILD_PATH}/${BUILD_LOG}
 
 cp auth* ${iprefix}/etc/
@@ -579,7 +579,7 @@ elif [ $rbpi_sem -eq 1 ]; then
 fi
 
 if [ $? -ne 0 ]; then
-    echo "Error: cannot install sdrauth startup services !" |\
+    echo "Error: cannot install auth startup services !" |\
      tee -a ${BUILD_PATH}/${BUILD_LOG}
     rm /var/tmp/build.${module}
     exit 3
@@ -612,7 +612,7 @@ echo "Info: Step 4 - Creating kronometrix-auth package ..." |\
 
 cd ${iprefix}/../../..
 if [ "$buildno" -ne 0 ]; then
-    tar cf /var/tmp/kronometrix-auth-${krmxver}b${buildno}-${OS_NAME}.${PT_NAME}.tar sdr/analytics/auth
+    tar cf /var/tmp/kronometrix-auth-${krmxver}b${buildno}-${OS_NAME}.${PT_NAME}.tar kronometrix/auth
     if [ -f /var/tmp/kronometrix-auth-${krmxver}b${buildno}-${OS_NAME}.${PT_NAME}.tar.bz2 ]; then
         rm /var/tmp/kronometrix-auth-${krmxver}b${buildno}-${OS_NAME}.${PT_NAME}.tar.bz2
     fi
@@ -627,7 +627,7 @@ if [ "$buildno" -ne 0 ]; then
     fi
 else
     # GA General Release
-    tar cf /var/tmp/kronometrix-auth-${krmxver}-${OS_NAME}.${PT_NAME}.tar sdr/analytics/auth
+    tar cf /var/tmp/kronometrix-auth-${krmxver}-${OS_NAME}.${PT_NAME}.tar kronometrix/auth
     if [ -f /var/tmp/kronometrix-auth-${krmxver}-${OS_NAME}.${PT_NAME}.tar.bz2 ]; then
         rm /var/tmp/kronometrix-auth-${krmxver}-${OS_NAME}.${PT_NAME}.tar.bz2
     fi
