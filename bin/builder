@@ -784,15 +784,6 @@ case "$module" in
     fi
 
 
-    if [ $recs_done -eq 1 ]; then
-        echo "# recorders: ok"
-    else
-        if [ $recs_done -eq 90 ]; then
-            echo "# recorders: failed"
-        fi
-    fi
-
-
     if [ $tests_done -eq 1 ]; then
         echo "# tests: ok"
     else
@@ -831,6 +822,14 @@ case "$module" in
     else
         if [ $fbsd_pkg_done -eq 90 ]; then
             echo "# freebsd pkg: failed"
+        fi
+    fi
+
+    if [ $recs_done -eq 1 ]; then
+        echo "# FINALIZE: ok"
+    else
+        if [ $recs_done -eq 90 ]; then
+            echo "# FINALIZE: failed"
         fi
     fi
 
@@ -911,6 +910,38 @@ case "$module" in
         fi
     fi
 
+    if [ $auth_tar_pkg_done -eq 1 ]; then
+        echo "# tar pkg: ok"
+    else
+        if [ $auth_tar_pkg_done -eq 90 ]; then
+            echo "# tar pkg: failed"
+        fi
+    fi
+
+    if [ $auth_rpm_pkg_done -eq 1 ]; then
+        echo "# rpm pkg: ok"
+    else
+        if [ $auth_rpm_pkg_done -eq 90 ]; then
+            echo "# rpm pkg: failed"
+        fi
+    fi
+
+    if [ $auth_deb_pkg_done -eq 1 ]; then
+        echo "# deb pkg: ok"
+    else
+        if [ $auth_deb_pkg_done -eq 90 ]; then
+            echo "# deb pkg: failed"
+        fi
+    fi
+
+    if [ $auth_fbsd_pkg_done -eq 1 ]; then
+        echo "# freebsd pkg: ok"
+    else
+        if [ $auth_fbsd_pkg_done -eq 90 ]; then
+            echo "# freebsd pkg: failed"
+        fi
+    fi
+
     if [ $auth_fin_done -ne 0 ]; then
         if [ $auth_fin_done -eq 1 ]; then
             echo  "# FINALIZE: done"
@@ -918,38 +949,6 @@ case "$module" in
             if [ $auth_fin_done -eq 90 ]; then
                 echo  "# FINALIZE: not done"
             fi
-        fi
-    fi
-
-    if [ $auth_tar_pkg_done -eq 1 ]; then
-        echo "# TAR PKG   :     ok"
-    else
-        if [ $auth_tar_pkg_done -eq 90 ]; then
-            echo "# TAR PKG   : failed"
-        fi
-    fi
-
-    if [ $auth_rpm_pkg_done -eq 1 ]; then
-        echo "# RPM PKG   :     ok"
-    else
-        if [ $auth_rpm_pkg_done -eq 90 ]; then
-            echo "# RPM PKG   : failed"
-        fi
-    fi
-
-    if [ $auth_deb_pkg_done -eq 1 ]; then
-        echo "# DEB PKG   :     ok"
-    else
-        if [ $auth_deb_pkg_done -eq 90 ]; then
-            echo "# DEB PKG   : failed"
-        fi
-    fi
-
-    if [ $auth_fbsd_pkg_done -eq 1 ]; then
-        echo "# FBSD PKG  :     ok"
-    else
-        if [ $auth_fbsd_pkg_done -eq 90 ]; then
-            echo "# FBSD PKG  : failed"
         fi
     fi
 
