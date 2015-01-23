@@ -695,7 +695,7 @@ echo "" >> ${BUILD_PATH}/${BUILD_LOG}
 echo "Info: Step 2 - Installing kernel startup services ..." |\
  tee -a ${BUILD_PATH}/${BUILD_LOG}
 
-cp kernel* ${iprefix}/etc/
+cp kronometrix.kernel* ${iprefix}/etc/
 if [ $enterprise_sem -eq 1 ]; then
     cp redis.conf.maas ${iprefix}/etc/redis.conf
 elif [ $rbpi_sem -eq 1 ]; then
@@ -734,8 +734,6 @@ if [ "$kernel_fin_done" -eq 3 ]; then
 else
    kernel_fin_done=90
 fi
-
-cd ..
 
 }
 
