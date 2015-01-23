@@ -709,128 +709,128 @@ case "$module" in
  recording)
 
     if [ $perl_done -eq 1 ]; then
-        echo "# PERL      :     ok"
+        echo "# perl: ok"
     else
         if [ $perl_done -eq 90 ]; then
-            echo "# PERL      : failed"
+            echo "# perl: failed"
         fi
     fi
 
     if [ $ossl_done -eq 1 ]; then
-        echo "# OPENSSL   :     ok"
+        echo "# openssl: ok"
     else
         if [ $ossl_done -eq 90 ]; then
-            echo "# OPENSSL   : failed"
+            echo "# openssl: failed"
         fi
     fi
 
     if [ $idn_done -eq 1 ]; then
-        echo "# IDN       :     ok"
+        echo "# idn: ok"
     else
         if [ $idn_done -eq 90 ]; then
-            echo "# IDN       : failed"
+            echo "# idn: failed"
         fi
     fi
 
     if [ $libusb_done -eq 1 ]; then
-        echo "# LIBUSB    :     ok"
+        echo "# libusb: ok"
     else
         if [ $libusb_done -eq 90 ]; then
-            echo "# LIBUSB    : failed"
+            echo "# libusb: failed"
         fi
     fi
 
     if [ $deviceusb_done -eq 1 ]; then
-        echo "# DeviceUSB :     ok"
+        echo "# deviceusb: ok"
     else
         if [ $deviceusb_done -eq 90 ]; then
-            echo "# DeviceUSB : failed"
+            echo "# deviceusb: failed"
         fi
     fi
 
     if [ $curl_done -eq 1 ]; then
-        echo "# CURL      :     ok"
+        echo "# curl: ok"
     else
         if [ $curl_done -eq 90 ]; then
-            echo "# CURL      : failed"
+            echo "# curl: failed"
         fi
     fi
 
     if [ "$OS_NAME" = "linux" ]; then
         if [ $sysstat_done -eq 1 ]; then
-            echo "# SYSSTAT   :     ok"
+            echo "# sysstat: ok"
         else
             if [ $sysstat_done -eq 90 ]; then
-                echo "# SYSSTAT   : failed"
+                echo "# sysstat: failed"
             fi
         fi
     fi
 
     if [ $wwwcurl_done -eq 1 ]; then
-        echo "# WCURL     :     ok"
+        echo "# wcurl: ok"
     else
         if [ $wwwcurl_done -eq 90 ]; then
-            echo "# WCURL     : failed"
+            echo "# wcurl: failed"
         fi
     fi
 
 
     if [ $wrec_done -eq 1 ]; then
-        echo "# WEBREC    :     ok"
+        echo "# webrec: ok"
     else
         if [ $wrec_done -eq 90 ]; then
-            echo "# WEBREC    : failed"
+            echo "# webrec: failed"
         fi
     fi
 
 
     if [ $recs_done -eq 1 ]; then
-        echo "# RECORDERS :     ok"
+        echo "# recorders: ok"
     else
         if [ $recs_done -eq 90 ]; then
-            echo "# RECORDERS : failed"
+            echo "# recorders: failed"
         fi
     fi
 
 
     if [ $tests_done -eq 1 ]; then
-        echo "# TESTS     :     ok"
+        echo "# tests: ok"
     else
         if [ $tests_done -eq 90 ]; then
-            echo "# TESTS     : failed"
+            echo "# tests: failed"
         fi
     fi
 
 
     if [ $tar_pkg_done -eq 1 ]; then
-        echo "# TAR PKG   :     ok"
+        echo "# tar pkg: ok"
     else
         if [ $tar_pkg_done -eq 90 ]; then
-            echo "# TAR PKG   : failed"
+            echo "# tar pkg: failed"
         fi
     fi
 
     if [ $rpm_pkg_done -eq 1 ]; then
-        echo "# RPM PKG   :     ok"
+        echo "# rpm pkg: ok"
     else
         if [ $rpm_pkg_done -eq 90 ]; then
-            echo "# RPM PKG   : failed"
+            echo "# rpm pkg: failed"
         fi
     fi
 
     if [ $deb_pkg_done -eq 1 ]; then
-        echo "# DEB PKG   :     ok"
+        echo "# deb pkg: ok"
     else
         if [ $deb_pkg_done -eq 90 ]; then
-            echo "# DEB PKG   : failed"
+            echo "# deb pkg: failed"
         fi
     fi
 
     if [ $fbsd_pkg_done -eq 1 ]; then
-        echo "# FBSD PKG  :     ok"
+        echo "# freebsd pkg: ok"
     else
         if [ $fbsd_pkg_done -eq 90 ]; then
-            echo "# FBSD PKG  : failed"
+            echo "# freebsd pkg: failed"
         fi
     fi
 
@@ -1061,26 +1061,26 @@ case "$module" in
     fi
 
     if [ $kernel_tar_pkg_done -eq 1 ]; then
-        echo "# TAR PKG   :     ok"
+        echo "# TAR PKG: ok"
     else
         if [ $kernel_tar_pkg_done -eq 90 ]; then
-            echo "# TAR PKG   : failed"
+            echo "# TAR PKG: failed"
         fi
     fi
 
     if [ $kernel_rpm_pkg_done -eq 1 ]; then
-        echo "# RPM PKG   :     ok"
+        echo "# RPM PKG: ok"
     else
         if [ $kernel_rpm_pkg_done -eq 90 ]; then
-            echo "# RPM PKG   : failed"
+            echo "# RPM PKG: failed"
         fi
     fi
 
     if [ $kernel_deb_pkg_done -eq 1 ]; then
-        echo "# DEB PKG   :     ok"
+        echo "# DEB PKG: ok"
     else
         if [ $kernel_deb_pkg_done -eq 90 ]; then
-            echo "# DEB PKG   : failed"
+            echo "# DEB PKG: failed"
         fi
     fi
 

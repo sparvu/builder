@@ -571,7 +571,7 @@ echo "" >> ${BUILD_PATH}/${BUILD_LOG}
 echo "Info: Step 2 - Installing auth startup services ..." |\
  tee -a ${BUILD_PATH}/${BUILD_LOG}
 
-cp auth* ${iprefix}/etc/
+cp kronometrix.auth* ${iprefix}/etc/
 if [ $enterprise_sem -eq 1 ]; then
     cp redis.conf.maas ${iprefix}/etc/redis.conf
 elif [ $rbpi_sem -eq 1 ]; then
