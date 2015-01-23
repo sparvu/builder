@@ -626,7 +626,7 @@ case "$module" in
         build_auth_config
         build_auth_fin
 
-        # currently we support Linux deb, rpm
+        # currently we support Linux(deb,rpm), FreeBSD(pkg)
         if [ "$OS_NAME" = "linux" -o \
              "$OS_NAME" = "freebsd"  ]; then
             build_auth_pkg

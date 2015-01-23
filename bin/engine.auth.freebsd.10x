@@ -605,51 +605,13 @@ else
 fi
 
 
-# STEP 4
-echo "" >> ${BUILD_PATH}/${BUILD_LOG}
-echo "Info: Step 4 - Creating kronometrix-auth package ..." |\
- tee -a ${BUILD_PATH}/${BUILD_LOG}
-
-cd ${iprefix}/../../..
-if [ "$buildno" -ne 0 ]; then
-    tar cf /var/tmp/kronometrix-auth-${krmxver}b${buildno}-${OS_NAME}.${PT_NAME}.tar kronometrix/auth
-    if [ -f /var/tmp/kronometrix-auth-${krmxver}b${buildno}-${OS_NAME}.${PT_NAME}.tar.bz2 ]; then
-        rm /var/tmp/kronometrix-auth-${krmxver}b${buildno}-${OS_NAME}.${PT_NAME}.tar.bz2
-    fi
-    bzip2 /var/tmp/kronometrix-auth-${krmxver}b${buildno}-${OS_NAME}.${PT_NAME}.tar
-    if [ $? -ne 0 ]; then
-        echo "Error: cannot create kronometrix-auth package !" |\
-         tee -a ${BUILD_PATH}/${BUILD_LOG}
-        rm /var/tmp/build.${module}
-        exit 3
-    else
-        step4=1
-    fi
-else
-    # GA General Release
-    tar cf /var/tmp/kronometrix-auth-${krmxver}-${OS_NAME}.${PT_NAME}.tar kronometrix/auth
-    if [ -f /var/tmp/kronometrix-auth-${krmxver}-${OS_NAME}.${PT_NAME}.tar.bz2 ]; then
-        rm /var/tmp/kronometrix-auth-${krmxver}-${OS_NAME}.${PT_NAME}.tar.bz2
-    fi
-    bzip2 /var/tmp/kronometrix-auth-${krmxver}-${OS_NAME}.${PT_NAME}.tar
-    if [ $? -ne 0 ]; then
-        echo "Error: cannot create kronometrix-auth package !" |\
-         tee -a ${BUILD_PATH}/${BUILD_LOG}
-        rm /var/tmp/build.${module}
-        exit 3
-    else
-        step4=1
-    fi
-fi
-# final check; all 4 steps
-auth_fin_done=`expr $step1 + $step2 + $step3 + $step4`
-if [ "$auth_fin_done" -eq 4 ]; then
+# final check; all 3 steps
+auth_fin_done=`expr $step1 + $step2 + $step3`
+if [ "$auth_fin_done" -eq 3 ]; then
    auth_fin_done=1
 else
    auth_fin_done=90
 fi
-
-cd ..
 
 }
 
