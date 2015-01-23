@@ -110,6 +110,8 @@ auth_config_done=0
 auth_tar_pkg_done=0
 auth_deb_pkg_done=0
 auth_rpm_pkg_done=0
+auth_rpm_pkg_done=0
+auth_fbsd_pkg_done=0
 ##
 
 ##kernel
@@ -126,6 +128,7 @@ kernel_config_done=0
 kernel_tar_pkg_done=0
 kernel_deb_pkg_done=0
 kernel_rpm_pkg_done=0
+kernel_fbsd_pkg_done=0
 ##
 
 
@@ -607,6 +610,8 @@ case "$module" in
             rm /var/tmp/${STATFILE}
             exit 3
         fi
+    elif [ $fbsd_pkg_sem -eq 1 ]; then
+        build_auth_pkg 
     else 
         build_auth_openresty
         build_auth_libluatemplate
@@ -621,9 +626,9 @@ case "$module" in
         build_auth_config
         build_auth_fin
 
-
         # currently we support Linux deb, rpm
-        if [ "$OS_NAME" = "linux" ]; then
+        if [ "$OS_NAME" = "linux" -o \
+             "$OS_NAME" = "freebsd"  ]; then
             build_auth_pkg
         fi
 
@@ -937,6 +942,14 @@ case "$module" in
     else
         if [ $auth_deb_pkg_done -eq 90 ]; then
             echo "# DEB PKG   : failed"
+        fi
+    fi
+
+    if [ $auth_fbsd_pkg_done -eq 1 ]; then
+        echo "# FBSD PKG  :     ok"
+    else
+        if [ $auth_fbsd_pkg_done -eq 90 ]; then
+            echo "# FBSD PKG  : failed"
         fi
     fi
 

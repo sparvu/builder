@@ -21,10 +21,10 @@
 #
 #  (http://www.gnu.org/copyleft/gpl.html)
 
-# VERSION: 1.3
+# VERSION: 2
 
 # ############################################################### #
-# SDR Engine: Analytics Authentication FreeBSD                    #
+# Analytics Authentication FreeBSD                                #
 # ############################################################### #
 
 
@@ -486,7 +486,7 @@ step2=0
 step3=0
 step4=0
 
-sdrver=$version
+krmxver=$version
 
 # export iprefix
 export iprefix=${iprefix}
@@ -607,18 +607,18 @@ fi
 
 # STEP 4
 echo "" >> ${BUILD_PATH}/${BUILD_LOG}
-echo "Info: Step 4 - Creating sdranalytics-auth package ..." |\
+echo "Info: Step 4 - Creating kronometrix-auth package ..." |\
  tee -a ${BUILD_PATH}/${BUILD_LOG}
 
 cd ${iprefix}/../../..
 if [ "$buildno" -ne 0 ]; then
-    tar cf /var/tmp/sdranalytics-auth-${sdrver}b${buildno}-${OS_NAME}.${PT_NAME}.tar sdr/analytics/auth
-    if [ -f /var/tmp/sdranalytics-auth-${sdrver}b${buildno}-${OS_NAME}.${PT_NAME}.tar.bz2 ]; then
-        rm /var/tmp/sdranalytics-auth-${sdrver}b${buildno}-${OS_NAME}.${PT_NAME}.tar.bz2
+    tar cf /var/tmp/kronometrix-auth-${krmxver}b${buildno}-${OS_NAME}.${PT_NAME}.tar sdr/analytics/auth
+    if [ -f /var/tmp/kronometrix-auth-${krmxver}b${buildno}-${OS_NAME}.${PT_NAME}.tar.bz2 ]; then
+        rm /var/tmp/kronometrix-auth-${krmxver}b${buildno}-${OS_NAME}.${PT_NAME}.tar.bz2
     fi
-    bzip2 /var/tmp/sdranalytics-auth-${sdrver}b${buildno}-${OS_NAME}.${PT_NAME}.tar
+    bzip2 /var/tmp/kronometrix-auth-${krmxver}b${buildno}-${OS_NAME}.${PT_NAME}.tar
     if [ $? -ne 0 ]; then
-        echo "Error: cannot create sdranalytics-auth package !" |\
+        echo "Error: cannot create kronometrix-auth package !" |\
          tee -a ${BUILD_PATH}/${BUILD_LOG}
         rm /var/tmp/build.${module}
         exit 3
@@ -627,13 +627,13 @@ if [ "$buildno" -ne 0 ]; then
     fi
 else
     # GA General Release
-    tar cf /var/tmp/sdranalytics-auth-${sdrver}-${OS_NAME}.${PT_NAME}.tar sdr/analytics/auth
-    if [ -f /var/tmp/sdranalytics-auth-${sdrver}-${OS_NAME}.${PT_NAME}.tar.bz2 ]; then
-        rm /var/tmp/sdranalytics-auth-${sdrver}-${OS_NAME}.${PT_NAME}.tar.bz2
+    tar cf /var/tmp/kronometrix-auth-${krmxver}-${OS_NAME}.${PT_NAME}.tar sdr/analytics/auth
+    if [ -f /var/tmp/kronometrix-auth-${krmxver}-${OS_NAME}.${PT_NAME}.tar.bz2 ]; then
+        rm /var/tmp/kronometrix-auth-${krmxver}-${OS_NAME}.${PT_NAME}.tar.bz2
     fi
-    bzip2 /var/tmp/sdranalytics-auth-${sdrver}-${OS_NAME}.${PT_NAME}.tar
+    bzip2 /var/tmp/kronometrix-auth-${krmxver}-${OS_NAME}.${PT_NAME}.tar
     if [ $? -ne 0 ]; then
-        echo "Error: cannot create sdranalytics-auth package !" |\
+        echo "Error: cannot create kronometrix-auth package !" |\
          tee -a ${BUILD_PATH}/${BUILD_LOG}
         rm /var/tmp/build.${module}
         exit 3
@@ -650,6 +650,197 @@ else
 fi
 
 cd ..
+
+}
+
+
+### freebsd package
+build_auth_freebsd_pkg() {
+
+dir='pkg/freebsd'
+step1=0
+step2=0
+step3=0
+
+krmxver=$version
+
+# export iprefix
+export iprefix=${iprefix}
+
+if [ ! -z "$build_num" ]; then
+   buildno="$build_num"
+else
+   buildno=0
+fi
+
+cd $dir
+
+echo "############################################################"
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Submodule: FreeBSD package ${OS_NAME}" | tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+
+# STEP 1
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 1 - Create stage directory" |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+if [ "$PT_NAME" = "x86_64" ]; then
+    pkgname="kronometrix-auth-${krmxver}-amd64"
+else
+    pkgname="kronometrix-auth-${krmxver}-${PT_NAME}"
+fi
+
+if [ ! -d $pkgname ]; then
+    mkdir -p "$pkgname"
+    if [ $? -ne 0 ]; then
+        echo "Error: cannot set working package directory !" |\
+            tee -a ${BUILD_PATH}/${BUILD_LOG}
+        rm /var/tmp/build.${module}
+        exit 3
+    else
+        step1=1
+    fi
+fi
+
+
+# STEP 2
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 2 - Prepare stage directory" |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+# copy config files
+if [ "$PT_NAME" = "amd64" ]; then
+    cp MANIFEST.amd64 $pkgname/MANIFEST
+elif [ "$PT_NAME" = "i386" ]; then
+    cp MANIFEST.i386 $pkgname/MANIFEST
+fi
+
+
+cd ${pkgname}
+
+if [ "$buildno" -ne 0 ]; then
+
+    # get control file fixed correct build and version
+    sed "s/^version.*/version: \"${krmxver}b${buildno}\"/" MANIFEST > MANIFEST.tmp
+    mv MANIFEST.tmp MANIFEST
+
+    if [ -d /opt/kronometrix/auth ]; then
+        for f in `find /opt/kronometrix/auth -type f`
+        do
+            echo "$f: \"`sha256 -q $f`\"," >> files.txt
+        done
+        echo "files: {" >> MANIFEST
+        cat files.txt >> MANIFEST
+        echo "}" >> MANIFEST
+    fi
+else
+
+    # get control file fixed correct build and version
+    sed "s/^version.*/version: \"${krmxver}\"/" MANIFEST > MANIFEST.tmp
+    mv MANIFEST.tmp MANIFEST
+
+    if [ -d /opt/kronometrix/auth ]; then
+        for f in `find /opt/kronometrix/auth -type f`
+        do
+            echo "$f: \"`sha256 -q $f`\"," >> files.txt
+        done
+        echo "files: {" >> MANIFEST
+        cat files.txt >> MANIFEST
+        echo "}" >> MANIFEST
+    fi
+fi
+if [ $? -ne 0 ]; then
+    echo "Error: cannot set FreeBSD pkg, MANIFEST create error !" |\
+        tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step2=`expr $step2 + 1`
+fi
+
+
+rm files.txt
+mv MANIFEST \+MANIFEST
+(cd /opt/kronometrix ; tar cf - auth)|(mkdir -p opt/kronometrix; cd opt/kronometrix; tar xpf -)
+
+pkg create -m . -r . -o /var/tmp >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if [ $? -ne 0 ]; then
+    echo "Error: cannot build FreeBSD pkg, pkg create error !" |\
+        tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step2=`expr $step2 + 1`
+fi
+
+
+# set release
+REL=`echo $KERNEL | sed 's/\-.*//'`
+
+# copy config files
+if [ "$buildno" -ne 0 ]; then
+    mv /var/tmp/kronometrix-auth-${krmxver}b${buildno}.txz /var/tmp/kronometrix-auth-${krmxver}b${buildno}-${OS_NAME}${REL}-${PT_NAME}.txz
+else
+    cp /var/tmp/kronometrix-auth-${krmxver}.txz /var/tmp/kronometrix-auth-${krmxver}-${OS_NAME}${REL}-${PT_NAME}.txz
+fi
+
+
+step2=`expr $step2 / 2`
+
+cd ..
+
+# STEP 3
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 3 - Cleanup stage directory" |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+if [ -d $pkgname ]; then
+    rm -rf $pkgname
+    if [ $? -ne 0 ]; then
+        echo "Error: cannot clean stage directory !" |\
+          tee -a ${BUILD_PATH}/${BUILD_LOG}
+        rm /var/tmp/build.${module}
+        exit 3
+    else
+        step3=1
+    fi
+fi
+
+
+# final check; 3 steps
+auth_fbsd_pkg_done=`expr $step1 + $step2 + $step3`
+if [ "$auth_fbsd_pkg_done" -eq 3 ]; then
+   auth_fbsd_pkg_done=1
+else
+   auth_fbsd_pkg_done=90
+fi
+
+cd ../..
+
+}
+
+
+
+build_auth_pkg() {
+
+dir=pkg
+step1=0
+step2=0
+
+
+echo "############################################################"
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Submodule: tar package ${OS_NAME}" | tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+# STEP 1
+# tar package must be created
+
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 1 - Kronometrix tar package" |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+build_auth_freebsd_pkg
 
 }
 
