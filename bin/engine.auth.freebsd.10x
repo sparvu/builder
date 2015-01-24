@@ -682,45 +682,34 @@ fi
 cd ${pkgname}
 
 if [ "$buildno" -ne 0 ]; then
-
     # get control file fixed correct build and version
     sed "s/^version.*/version: \"${krmxver}b${buildno}\"/" MANIFEST > MANIFEST.tmp
     mv MANIFEST.tmp MANIFEST
-
-    if [ -d /opt/kronometrix/auth ]; then
-
-        for f in `find /opt/kronometrix/auth -type d -empty`
-        do
-            echo "$f: \"-\"," >> dirs.txt
-        done
-        echo "directories: {" >> MANIFEST
-        cat dirs.txt >> MANIFEST
-        echo "}" >> MANIFEST
-
-        for f in `find /opt/kronometrix/auth -type f`
-        do
-            echo "$f: \"`sha256 -q $f`\"," >> files.txt
-        done
-        echo "files: {" >> MANIFEST
-        cat files.txt >> MANIFEST
-        echo "}" >> MANIFEST
-    fi
 else
-
     # get control file fixed correct build and version
     sed "s/^version.*/version: \"${krmxver}\"/" MANIFEST > MANIFEST.tmp
     mv MANIFEST.tmp MANIFEST
-
-    #if [ -d /opt/kronometrix/auth ]; then
-    #    for f in `find /opt/kronometrix/auth -type f`
-    #    do
-    #        echo "$f: \"`sha256 -q $f`\"," >> files.txt
-    #    done
-    #    echo "files: {" >> MANIFEST
-    #    cat files.txt >> MANIFEST
-    #    echo "}" >> MANIFEST
-    #fi
 fi
+
+if [ -d /opt/kronometrix/auth ]; then
+
+    for f in `find /opt/kronometrix/auth -type d -empty`
+    do
+        echo "$f: \"-\"," >> dirs.txt
+    done
+    echo "directories: {" >> MANIFEST
+    cat dirs.txt >> MANIFEST
+    echo "}" >> MANIFEST
+
+    for f in `find /opt/kronometrix/auth -type f`
+    do
+        echo "$f: \"`sha256 -q $f`\"," >> files.txt
+    done
+    echo "files: {" >> MANIFEST
+    cat files.txt >> MANIFEST
+    echo "}" >> MANIFEST
+fi
+
 if [ $? -ne 0 ]; then
     echo "Error: cannot set FreeBSD pkg, MANIFEST create error !" |\
         tee -a ${BUILD_PATH}/${BUILD_LOG}
