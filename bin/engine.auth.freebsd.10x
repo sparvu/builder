@@ -688,6 +688,15 @@ if [ "$buildno" -ne 0 ]; then
     mv MANIFEST.tmp MANIFEST
 
     if [ -d /opt/kronometrix/auth ]; then
+
+        for f in `find /opt/kronometrix/auth -type d -empty`
+        do
+            echo "$f: \"-\"," >> dirs.txt
+        done
+        echo "directories: {" >> MANIFEST
+        cat dirs.txt >> MANIFEST
+        echo "}" >> MANIFEST
+
         for f in `find /opt/kronometrix/auth -type f`
         do
             echo "$f: \"`sha256 -q $f`\"," >> files.txt
@@ -702,15 +711,15 @@ else
     sed "s/^version.*/version: \"${krmxver}\"/" MANIFEST > MANIFEST.tmp
     mv MANIFEST.tmp MANIFEST
 
-    if [ -d /opt/kronometrix/auth ]; then
-        for f in `find /opt/kronometrix/auth -type f`
-        do
-            echo "$f: \"`sha256 -q $f`\"," >> files.txt
-        done
-        echo "files: {" >> MANIFEST
-        cat files.txt >> MANIFEST
-        echo "}" >> MANIFEST
-    fi
+    #if [ -d /opt/kronometrix/auth ]; then
+    #    for f in `find /opt/kronometrix/auth -type f`
+    #    do
+    #        echo "$f: \"`sha256 -q $f`\"," >> files.txt
+    #    done
+    #    echo "files: {" >> MANIFEST
+    #    cat files.txt >> MANIFEST
+    #    echo "}" >> MANIFEST
+    #fi
 fi
 if [ $? -ne 0 ]; then
     echo "Error: cannot set FreeBSD pkg, MANIFEST create error !" |\
@@ -721,8 +730,13 @@ else
     step2=`expr $step2 + 1`
 fi
 
+if [ -f files.txt ]; then
+    rm files.txt
+fi
 
-rm files.txt
+if [ -f dirs.txt ]; then
+    rm dirs.txt
+fi
 mv MANIFEST \+MANIFEST
 (cd /opt/kronometrix ; tar cf - auth)|(mkdir -p opt/kronometrix; cd opt/kronometrix; tar xpf -)
 
