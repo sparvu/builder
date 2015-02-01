@@ -1517,6 +1517,16 @@ else
     step2=`expr $step2 + 1`
 fi
 
+
+# copy config files
+# kronometrix-1.0.0-amd64.deb
+if [ "$buildno" -ne 0 ]; then
+    mv /var/tmp/kronometrix-${krmxver}-${PT_NAME}.deb /var/tmp/kronometrix-${krmxver}b${buildno}-${OS_NAME}${RELOS}-${PT_NAME}.deb
+else
+    cp /var/tmp/kronometrix-${krmxver}-${PT_NAME}.deb /var/tmp/kronometrix-${krmxver}-${OS_NAME}${RELOS}-${PT_NAME}.deb
+fi
+
+
 step2=`expr $step2 / 2`
 
 
