@@ -560,7 +560,7 @@ case "$module" in
     else 
         build_rec_perl
         build_rec_ossl
-        build_rec_idn
+        # build_rec_idn
         if [ "$OS_NAME" = "linux" ]; then
             build_rec_libusb
             build_rec_deviceusb
@@ -727,13 +727,13 @@ case "$module" in
         fi
     fi
 
-    if [ $idn_done -eq 1 ]; then
-        echo "# idn: ok"
-    else
-        if [ $idn_done -eq 90 ]; then
-            echo "# idn: failed"
-        fi
-    fi
+    #if [ $idn_done -eq 1 ]; then
+    #    echo "# idn: ok"
+    #else
+    #    if [ $idn_done -eq 90 ]; then
+    #        echo "# idn: failed"
+    #    fi
+    #fi
 
     if [ $libusb_done -eq 1 ]; then
         echo "# libusb: ok"
