@@ -1096,13 +1096,13 @@ fi
 
 
 # set release
-REL=`echo $KERNEL | sed 's/\-.*//'`
+#REL=`echo $KERNEL | sed 's/\-.*//'`
 
 # copy config files
 if [ "$buildno" -ne 0 ]; then
-    mv /var/tmp/kronometrix-${krmxver}b${buildno}.txz /var/tmp/kronometrix-${krmxver}b${buildno}-${OS_NAME}${REL}-${PT_NAME}.txz
+    mv /var/tmp/kronometrix-${krmxver}b${buildno}.txz /var/tmp/kronometrix-${krmxver}b${buildno}-${OS_NAME}${RELOS}-${PT_NAME}.txz
 else
-    cp /var/tmp/kronometrix-${krmxver}.txz /var/tmp/kronometrix-${krmxver}-${OS_NAME}${REL}-${PT_NAME}.txz
+    cp /var/tmp/kronometrix-${krmxver}.txz /var/tmp/kronometrix-${krmxver}-${OS_NAME}${RELOS}-${PT_NAME}.txz
 fi
 
 

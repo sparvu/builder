@@ -55,12 +55,16 @@ case "$OS_NAME" in
             fi
             
         fi
+        if [ -f /usr/bin/lsb_release ]; then
+            RELOS=`lsb_release -r | sed 's/^Release\:[ \t]*//'`
+        fi
     ;;
 
     freebsd)
         KERNEL=`uname -r`
         USER_ID=`/usr/bin/id -u`
         DIST_ID="freebsd"
+        RELOS=`echo $KERNEL | sed 's/\-.*//'`
     ;;
 
     *)
