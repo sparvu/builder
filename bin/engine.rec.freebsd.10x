@@ -475,7 +475,7 @@ echo "Info: Step 2 - Configure $dir ..." |\
 env CFLAGS="-O3" \
     CPPFLAGS="-I${iprefix}/include"   \
     LDFLAGS="-L${iprefix}/lib -Wl,-rpath -Wl,${iprefix}/lib" \
-    ./configure --with-ssl=${iprefix} --with-libidn=${iprefix} \
+    ./configure --with-ssl=${iprefix} \
      --prefix=${iprefix} --enable-cookies --enable-nonblocking \
      --disable-ldap --disable-ldaps >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
 if [ $? -ne 0 ]; then
@@ -514,7 +514,7 @@ if [ -f ${iprefix}/bin/curl ]; then
     rm ${iprefix}/bin/curl
     rm ${iprefix}/bin/curl-config
     if [ $? -ne 0 ]; then
-        echo "Error: cleaning idn binary failed !" |\
+        echo "Error: cleaning curl binary failed !" |\
          tee -a ${BUILD_PATH}/${BUILD_LOG}
         rm /var/tmp/build.${module}
         exit 3
