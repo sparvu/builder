@@ -127,9 +127,18 @@ echo "" >> ${BUILD_PATH}/${BUILD_LOG}
 echo "Info: Step 2 - Configure $dir ..." |\
  tee -a ${BUILD_PATH}/${BUILD_LOG}
 
+if [ "$PT_NAME" = "armv6l" ]; then
+
+ env PATH=/sbin:$PATH \
+     ./configure --with-cc-opt="-O0" --prefix=${iprefix} --with-luajit \
+     >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+else
+
  env PATH=/sbin:$PATH \
      ./configure --prefix=${iprefix} --with-luajit \
-      >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+     >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+fi
+
 
 if [ $? -ne 0 ]; then
     echo "Error: configure $dir failed !" |\
