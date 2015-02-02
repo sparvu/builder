@@ -1131,6 +1131,22 @@ fi
 
 mv ${pkgname}.deb /var/tmp
 
+# kronometrix-kernel-1.0.0b31-armv6l.deb
+if [ "$buildno" -ne 0 ]; then
+    if [ "$PT_NAME" = "x86_64" ]; then
+        mv /var/tmp/kronometrix-kernel-${krmxver}b${buildno}-amd64.deb /var/tmp/kronometrix-kernel-${krmxver}b${buildno}-${DIST_ID}${RELOS}-amd64.deb
+    else
+        mv /var/tmp/kronometrix-kernel-${krmxver}b${buildno}-${PT_NAME}.deb /var/tmp/kronometrix-kernel-${krmxver}b${buildno}-${DIST_ID}${RELOS}-${PT_NA
+ME}.deb
+    fi
+else
+    if [ "$PT_NAME" = "x86_64" ]; then
+        mv /var/tmp/kronometrix-kernel-${krmxver}-amd64.deb /var/tmp/kronometrix-kernel-${krmxver}-${DIST_ID}${RELOS}-amd64.deb
+    else
+        mv /var/tmp/kronometrix-kernel-${krmxver}-${PT_NAME}.deb /var/tmp/kronometrix-kernel-${krmxver}-${DIST_ID}${RELOS}-${PT_NAME}.deb
+    fi
+fi
+
 
 # final check; 3 steps
 kernel_deb_pkg_done=`expr $step1 + $step2 + $step3`
