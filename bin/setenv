@@ -57,6 +57,8 @@ case "$OS_NAME" in
         fi
         if [ -f /usr/bin/lsb_release ]; then
             RELOS=`lsb_release -r | sed 's/^Release\:[ \t]*//'`
+        elif [ -f /etc/debian_version ]; then
+            RELOS=`cat /etc/debian_version`
         fi
     ;;
 
