@@ -219,7 +219,7 @@ else
 fi
 
 for lib in Digest::SHA Proc::Daemon Proc::PID::File File::Tail \
-           JSON::XS JSON HTTP::Response Data::UUID Carp::Assert \
+           JSON::XS JSON HTTP::Response UUID::Tiny Carp::Assert \
            Inline::MakeMaker Date::Calc Device::SerialPort
 do
     if  [ "$lib" = "JSON::XS" -o "$lib" = "Inline::MakeMaker" ]; then
