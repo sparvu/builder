@@ -742,6 +742,10 @@ cd ../..
 cp etc/${OS_NAME}/* ${iprefix}/etc
 cp etc/*.start ${iprefix}/etc
 cp etc/kronometrix.json ${iprefix}/etc
+cp etc/agents ${iprefix}/etc
+cp etc/transport ${iprefix}/etc
+mkdir ${iprefix}/etc/rc
+cp etc/${OS_NAME}/kronometrix* ${iprefix}/etc/rc
 cp etc/kronometrix ${iprefix}/etc
 cp etc/kronometrix.transport ${iprefix}/etc
 if [ $? -ne 0 ]; then
@@ -1163,4 +1167,3 @@ echo "Info: Step 1 - Kronometrix tar package" |\
 build_rec_freebsd_pkg
 
 }
-
