@@ -746,8 +746,6 @@ cp etc/agents ${iprefix}/etc
 cp etc/transport ${iprefix}/etc
 mkdir ${iprefix}/etc/rc
 cp etc/${OS_NAME}/kronometrix* ${iprefix}/etc/rc
-cp etc/kronometrix ${iprefix}/etc
-cp etc/kronometrix.transport ${iprefix}/etc
 if [ $? -ne 0 ]; then
     echo "Error: cannot install etc settings !" |\
       tee -a ${BUILD_PATH}/${BUILD_LOG}
