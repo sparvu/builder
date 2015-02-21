@@ -231,7 +231,7 @@ do
                 deb_sem=1
             ;;
 
-            fbsdpkg)
+            pkg)
                 fbsd_pkg_sem=1
             ;;
 
