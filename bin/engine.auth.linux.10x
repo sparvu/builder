@@ -21,7 +21,7 @@
 #
 #  (http://www.gnu.org/copyleft/gpl.html)
 
-# VERSION: 2
+# VERSION: 2.1
 
 # ############################################################### #
 # Analytics Authentication Linux                                  #
@@ -647,8 +647,24 @@ if [ ! -d ${iprefix}/logs ]; then
 fi
 
 
-# there are 4 settings
-step1=`expr $step1 / 4`
+if [ ! -d ${iprefix}/data/db ]; then
+    mkdir -p ${iprefix}/data/db
+    if [ $? -ne 0 ]; then
+        echo "Error: cannot setup data directory !" |\
+         tee -a ${BUILD_PATH}/${BUILD_LOG}
+        rm /var/tmp/build.${module}
+        exit 3
+    else
+        step1=`expr $step1 + 1`
+    fi
+
+    step1=`expr $step1 + 1`
+fi
+
+
+
+# there are 5 settings
+step1=`expr $step1 / 5`
 
 
 # STEP 2
