@@ -3,7 +3,7 @@
 #  Kronometrix Development tools
 #  Linux Kernel Engine
 #
-#  Copyright (c) 2014 Stefan Parvu (www.systemdatarecorder.org).
+#  Copyright (c) 2015 Stefan Parvu (www.kronometrix.org).
 #
 #  This program is free software; you can redistribute it and/or
 #  modify it under the terms of the GNU General Public License
@@ -667,11 +667,10 @@ if [ ! -d ${iprefix}/logs ]; then
     step1=`expr $step1 + 1`
 fi
 
-
-if [ ! -d ${iprefix}/subscriptions ]; then
-    mkdir ${iprefix}/subscriptions
+if [ ! -d ${iprefix}/data/db ]; then
+    mkdir -p ${iprefix}/data/db
     if [ $? -ne 0 ]; then
-        echo "Error: cannot setup subscriptions directory !" |\
+        echo "Error: cannot setup data directory !" |\
          tee -a ${BUILD_PATH}/${BUILD_LOG}
         rm /var/tmp/build.${module}
         exit 3
@@ -682,8 +681,24 @@ if [ ! -d ${iprefix}/subscriptions ]; then
     step1=`expr $step1 + 1`
 fi
 
-# there are 5 settings
-step1=`expr $step1 / 5`
+
+
+if [ ! -d ${iprefix}/data/raw ]; then
+    mkdir ${iprefix}/data/raw
+    if [ $? -ne 0 ]; then
+        echo "Error: cannot setup raw directory !" |\
+         tee -a ${BUILD_PATH}/${BUILD_LOG}
+        rm /var/tmp/build.${module}
+        exit 3
+    else
+        step1=`expr $step1 + 1`
+    fi
+
+    step1=`expr $step1 + 1`
+fi
+
+# there are 6 settings
+step1=`expr $step1 / 6`
 
 
 # STEP 2
