@@ -29,7 +29,7 @@ Usage: $0 [-ht] [-p prefix_path]
           [-b build_number] [-m module_name] 
           [-a appliance_name] pkg version
 pkg:
-   recording, auth, kernel
+   recording, auth, kernel, mesg
 version:
    1.0.0
 
@@ -110,7 +110,6 @@ auth_config_done=0
 auth_tar_pkg_done=0
 auth_deb_pkg_done=0
 auth_rpm_pkg_done=0
-auth_rpm_pkg_done=0
 auth_fbsd_pkg_done=0
 ##
 
@@ -131,6 +130,19 @@ kernel_rpm_pkg_done=0
 kernel_fbsd_pkg_done=0
 ##
 
+##mesg
+mesg_openresty_done=0
+mesg_libluatemplate_done=0
+mesg_libluainspect_done=0
+mesg_libluarouter_done=0
+mesg_libluasmtp_done=0
+mesg_fin_done=0
+mesg_config_done=0
+mesg_tar_pkg_done=0
+mesg_deb_pkg_done=0
+mesg_rpm_pkg_done=0
+mesg_fbsd_pkg_done=0
+##
 
 # Source Global SDR Settings
 PWD=`dirname $0`
@@ -364,6 +376,34 @@ case "$OS_NAME" in
              esac
          ;;
 
+         mesg)
+
+             # default appliance
+             if [ -z "$appliance" ]; then
+                 if [ "$PT_NAME" = "armv6l" ]; then
+                     appliance="rbpi"
+                     enterprise_sem=1
+                 else
+                     appliance="enterprise"
+                     enterprise_sem=1
+                 fi
+             fi
+
+             iprefix=${iprefix:-/opt/kronometrix/mesg}
+             iuser=krmx
+
+             WORKSPACE="${WORKSPACE_PREFIX}/kronometrix"
+
+             case "$version" in
+                 1.0*)
+                  . ${PWD}/engine.mesg.linux.10x
+                  ;;
+
+                 *)
+                   usage
+                 ;;
+             esac
+         ;;
 
          kernel)
 
@@ -453,6 +493,34 @@ case "$OS_NAME" in
              esac
          ;;
 
+         mesg)
+
+             # default appliance
+             if [ -z "$appliance" ]; then
+                 if [ "$PT_NAME" = "armv6l" ]; then
+                     appliance="rbpi"
+                     enterprise_sem=1
+                 else
+                     appliance="enterprise"
+                     enterprise_sem=1
+                 fi
+             fi
+
+             iprefix=${iprefix:-/opt/kronometrix/mesg}
+             iuser=krmx
+
+             WORKSPACE="${WORKSPACE_PREFIX}/kronometrix"
+
+             case "$version" in
+                 1.0*)
+                  . ${PWD}/engine.mesg.freebsd.10x
+                  ;;
+
+                 *)
+                   usage
+                 ;;
+             esac
+         ;;
 
          kernel)
 
@@ -635,6 +703,50 @@ case "$module" in
     fi
     ;;
 
+ mesg)
+    echo "" > ${BUILD_PATH}/${BUILD_LOG}
+
+    if [ $rpm_sem -eq 1 ]; then
+        if [ "x${DIST_ID}" = "xrhel" -o "x${DIST_ID}" = "xcentos" ]; then
+            build_auth_pkg
+        else
+            echo "Error: not a RPM installation, cannot build rpm pkg"
+            rm /var/tmp/${STATFILE}
+            exit 3
+        fi
+    elif [ $deb_sem -eq 1 ]; then
+        if [ "x${DIST_ID}" = "xdebian" -o \
+             "x${DIST_ID}" = "xubuntu" -o \
+             "x${DIST_ID}" = "xraspbian" ]; then
+            build_auth_pkg
+        else
+            echo "Error: not a DEB installation, cannot build deb pkg"
+            rm /var/tmp/${STATFILE}
+            exit 3
+        fi
+    elif [ $fbsd_pkg_sem -eq 1 ]; then
+        build_mesg_pkg 
+    else 
+        build_mesg_openresty
+        build_mesg_libluatemplate
+        build_mesg_libluarouter
+        build_mesg_libluasmtp
+
+        if [ ! -z "$build_num" ]; then
+            build_mesg_libluainspect
+        fi
+
+        build_mesg_config
+        build_mesg_fin
+
+        # currently we support Linux(deb,rpm), FreeBSD(pkg)
+        if [ "$OS_NAME" = "linux" -o \
+             "$OS_NAME" = "freebsd"  ]; then
+            build_mesg_pkg
+        fi
+
+    fi
+    ;;
 
  kernel)
     echo "" > ${BUILD_PATH}/${BUILD_LOG}
@@ -957,6 +1069,114 @@ case "$module" in
 
  ;;
 
+
+ mesg)
+
+    if [ $mesg_openresty_done -ne 0 ]; then
+        if [ $mesg_openresty_done -eq 1 ]; then
+            echo "# openresty: built and integrated"
+        else
+            if [ $mesg_openresty_done -eq 90 ]; then
+                echo "# openresty: not integrated"
+            fi
+        fi
+    fi
+
+    if [ $mesg_libluatemplate_done -ne 0 ]; then
+        if [ $mesg_libluatemplate_done -eq 1 ]; then
+            echo  "# lib lua-resty-template: built and integrated"
+        else
+            if [ $mesg_libluatemplate_done -eq 90 ]; then
+                echo  "# lib lua-resty-template: not integrated"
+            fi
+        fi
+    fi
+
+    if [ $mesg_libluarouter_done -ne 0 ]; then
+        if [ $mesg_libluarouter_done -eq 1 ]; then
+            echo  "# lib router.lua: built and integrated"
+        else
+            if [ $mesg_libluarouter_done -eq 90 ]; then
+                echo  "# lib router.lua: not integrated"
+            fi
+        fi
+    fi
+
+    if [ $mesg_libluasmtp_done -ne 0 ]; then
+        if [ $mesg_libluasmtp_done -eq 1 ]; then
+            echo  "# lib smtp.lua: built and integrated"
+        else
+            if [ $mesg_libluasmtp_done -eq 90 ]; then
+                echo  "# lib smtp.lua: not integrated"
+            fi
+        fi
+    fi
+
+    if [ ! -z "$build_num" ]; then
+        if [ $mesg_libluainspect_done -ne 0 ]; then
+            if [ $mesg_libluainspect_done -eq 1 ]; then
+                echo  "# lib inspect.lua: built and integrated"
+            else
+                if [ $mesg_libluainspect_done -eq 90 ]; then
+                    echo  "# lib inspect.lua: not integrated"
+                fi
+            fi
+        fi
+    fi
+
+    if [ $mesg_config_done -ne 0 ]; then
+        if [ $mesg_config_done -eq 1 ]; then
+            echo  "# analytics-mesg nginx.conf: done"
+        else
+            if [ $mesg_config_done -eq 90 ]; then
+                echo  "# analytics-mesg nginx.conf: not done"
+            fi
+        fi
+    fi
+
+    if [ $mesg_tar_pkg_done -eq 1 ]; then
+        echo "# tar pkg: ok"
+    else
+        if [ $mesg_tar_pkg_done -eq 90 ]; then
+            echo "# tar pkg: failed"
+        fi
+    fi
+
+    if [ $mesg_rpm_pkg_done -eq 1 ]; then
+        echo "# rpm pkg: ok"
+    else
+        if [ $mesg_rpm_pkg_done -eq 90 ]; then
+            echo "# rpm pkg: failed"
+        fi
+    fi
+
+    if [ $mesg_deb_pkg_done -eq 1 ]; then
+        echo "# deb pkg: ok"
+    else
+        if [ $mesg_deb_pkg_done -eq 90 ]; then
+            echo "# deb pkg: failed"
+        fi
+    fi
+
+    if [ $mesg_fbsd_pkg_done -eq 1 ]; then
+        echo "# freebsd pkg: ok"
+    else
+        if [ $mesg_fbsd_pkg_done -eq 90 ]; then
+            echo "# freebsd pkg: failed"
+        fi
+    fi
+
+    if [ $mesg_fin_done -ne 0 ]; then
+        if [ $mesg_fin_done -eq 1 ]; then
+            echo  "# FINALIZE: done"
+        else
+            if [ $mesg_fin_done -eq 90 ]; then
+                echo  "# FINALIZE: not done"
+            fi
+        fi
+    fi
+
+ ;;
 
  kernel)
 
