@@ -667,6 +667,7 @@ if [ ! -d ${iprefix}/logs ]; then
     step1=`expr $step1 + 1`
 fi
 
+
 if [ ! -d ${iprefix}/data/db ]; then
     mkdir -p ${iprefix}/data/db
     if [ $? -ne 0 ]; then
@@ -680,7 +681,6 @@ if [ ! -d ${iprefix}/data/db ]; then
 
     step1=`expr $step1 + 1`
 fi
-
 
 
 if [ ! -d ${iprefix}/data/raw ]; then
@@ -697,7 +697,24 @@ if [ ! -d ${iprefix}/data/raw ]; then
     step1=`expr $step1 + 1`
 fi
 
-# there are 6 settings
+
+if [ ! -d ${iprefix}/data/events ]; then
+    mkdir ${iprefix}/data/events
+    if [ $? -ne 0 ]; then
+        echo "Error: cannot setup events directory !" |\
+         tee -a ${BUILD_PATH}/${BUILD_LOG}
+        rm /var/tmp/build.${module}
+        exit 3
+    else
+        step1=`expr $step1 + 1`
+    fi
+
+    step1=`expr $step1 + 1`
+fi
+
+
+
+# there are 7 settings
 step1=`expr $step1 / 6`
 
 
