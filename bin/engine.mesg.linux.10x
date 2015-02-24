@@ -1,7 +1,7 @@
 #/bin/sh
 #
 #  Kronometrix Development tools
-#  Linux Authentication Engine
+#  Linux Messenger Engine
 #
 #  Copyright (c) 2015 Stefan Parvu (www.kronometrix.org).
 #
@@ -24,7 +24,7 @@
 # VERSION: 2.1
 
 # ############################################################### #
-# Analytics Authentication Linux                                  #
+# Analytics Messenger Linux                                       #
 # ############################################################### #
 
 
@@ -105,152 +105,8 @@ cd ..
 }
 
 
-### redis
-build_auth_redis() {
-dir=redis
-step1=0
-step2=0
-step3=0
-
-# STEP 1
-init_module "$dir"
-if [ $? -eq 0 ]; then
-    step1=1
-fi
-
-# STEP 2
-echo "" >> ${BUILD_PATH}/${BUILD_LOG}
-echo "Info: Step 2 - Make $dir ..." |\
- tee -a ${BUILD_PATH}/${BUILD_LOG}
-
-make PREFIX=${iprefix} >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
-if [ $? -ne 0 ]; then
-    echo "Error: make $dir failed !" | tee -a ${BUILD_PATH}/${BUILD_LOG}
-    exit 3
-else
-    step2=1
-fi  
-
-
-# STEP 3
-echo "" >> ${BUILD_PATH}/${BUILD_LOG}
-echo "Info: Step 3 - Make install $dir..." |\
- tee -a ${BUILD_PATH}/${BUILD_LOG}
-
-make PREFIX=${iprefix} install >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
-if [ $? -ne 0 ]; then
-    echo "Error: make install perl failed !" |\
-     tee -a ${BUILD_PATH}/${BUILD_LOG}
-    exit 3
-else
-    step3=1
-fi
-
-# final check; all 3 steps
-auth_redis_done=`expr $step1 + $step2 + $step3`
-if [ $auth_redis_done -eq 3 ]; then
-   auth_redis_done=1
-else
-   auth_redis_done=90
-fi
-
-clean_module
-
-}
-
-
-### memcached
-build_auth_mcd() {
-dir=memcached
-step1=0
-step2=0
-step3=0
-step4=0
-
-# STEP 1
-init_module "$dir"
-if [ $? -eq 0 ]; then
-    step1=1
-fi
-
-# STEP 2
-
-echo "" >> ${BUILD_PATH}/${BUILD_LOG}
-echo "Info: Step 2 - Configure $dir ..." |\
- tee -a ${BUILD_PATH}/${BUILD_LOG}
-
-if [ "$PT_NAME" = "armv6l" ]; then
-    env PATH=${iprefix}/bin:$PATH \
-    PKG_CONFIG_PATH=/usr/local/libdata/pkgconfig  \
-    CC=cc CFLAGS="-O3 -I/usr/local/include -I${iprefix}/include" \
-    LDFLAGS="-L${iprefix}/lib -L/usr/local/lib -Wl,-rpath -Wl,${iprefix}/lib" \
-    ./configure --prefix=${iprefix} >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
-elif [ "$PT_NAME" = "x86_64" ]; then
-    env PATH=${iprefix}/bin:$PATH \
-    PKG_CONFIG_PATH=/usr/local/libdata/pkgconfig  \
-    CC=cc CFLAGS="-O3 -I/usr/local/include -I${iprefix}/include" \
-    LDFLAGS="-L${iprefix}/lib -L/usr/local/lib -Wl,-rpath -Wl,${iprefix}/lib" \
-    ./configure --enable-64bit --prefix=${iprefix} >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
-else
-    env PATH=${iprefix}/bin:$PATH \
-    PKG_CONFIG_PATH=/usr/local/libdata/pkgconfig  \
-    CC=cc CFLAGS="-O3 -I/usr/local/include -I${iprefix}/include" \
-    LDFLAGS="-L${iprefix}/lib -L/usr/local/lib -Wl,-rpath -Wl,${iprefix}/lib" \
-    ./configure --prefix=${iprefix} >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
-fi
-
-if [ $? -ne 0 ]; then
-    echo "Error: configure $dir failed !" | tee -a ${BUILD_PATH}/${BUILD_LOG}
-    exit 3
-else
-    step2=1
-fi  
-
-
-# STEP 3
-echo "" >> ${BUILD_PATH}/${BUILD_LOG}
-echo "Info: Step 3 - Make $dir..." |\
- tee -a ${BUILD_PATH}/${BUILD_LOG}
-make >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
-if [ $? -ne 0 ]; then
-    echo "Error: make $dir failed !" |\
-     tee -a ${BUILD_PATH}/${BUILD_LOG}
-    exit 3
-else
-    step3=1
-fi 
-
-
-# STEP 4
-echo "" >> ${BUILD_PATH}/${BUILD_LOG}
-echo "Info: Step 4 - Make install $dir..." |\
- tee -a ${BUILD_PATH}/${BUILD_LOG}
-
-make install >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
-if [ $? -ne 0 ]; then
-    echo "Error: make install perl failed !" |\
-     tee -a ${BUILD_PATH}/${BUILD_LOG}
-    exit 3
-else
-    step4=1
-fi
-
-
-# final check; all 4 steps
-auth_mcd_done=`expr $step1 + $step2 + $step3 + $step4`
-if [ $auth_mcd_done -eq 4 ]; then
-   auth_mcd_done=1
-else
-   auth_mcd_done=90
-fi
-
-clean_module
-
-}
-
-
 ### openresty
-build_auth_openresty() {
+build_mesg_openresty() {
 dir=openresty
 step1=0
 step2=0
@@ -313,11 +169,11 @@ else
 fi
 
 # final check; all 4 steps
-auth_openresty_done=`expr $step1 + $step2 + $step3 + $step4`
-if [ $auth_openresty_done -eq 4 ]; then
-   auth_openresty_done=1
+mesg_openresty_done=`expr $step1 + $step2 + $step3 + $step4`
+if [ $mesg_openresty_done -eq 4 ]; then
+   mesg_openresty_done=1
 else
-   auth_openresty_done=90
+   mesg_openresty_done=90
 fi
 
 
@@ -327,7 +183,7 @@ clean_module
 
 
 ### lua-resty-template
-build_auth_libluatemplate() {
+build_mesg_libluatemplate() {
 dir="lua-resty-template"
 step1=0
 step2=0
@@ -360,11 +216,11 @@ else
 fi
 
 # final check; all 2 steps
-auth_libluatemplate_done=`expr $step1 + $step2`
-if [ $auth_libluatemplate_done -eq 2 ]; then
-   auth_libluatemplate_done=1
+mesg_libluatemplate_done=`expr $step1 + $step2`
+if [ $mesg_libluatemplate_done -eq 2 ]; then
+   mesg_libluatemplate_done=1
 else
-   auth_libluatemplate_done=90
+   mesg_libluatemplate_done=90
 fi
 
 clean_module
@@ -376,7 +232,7 @@ cd ..
 
 
 ### router.lua
-build_auth_libluarouter() {
+build_mesg_libluarouter() {
 dir="router.lua"
 step1=0
 step2=0
@@ -406,11 +262,11 @@ else
 fi
 
 # final check; all 2 steps
-auth_libluarouter_done=`expr $step1 + $step2`
-if [ $auth_libluarouter_done -eq 2 ]; then
-   auth_libluarouter_done=1
+mesg_libluarouter_done=`expr $step1 + $step2`
+if [ $mesg_libluarouter_done -eq 2 ]; then
+   mesg_libluarouter_done=1
 else
-   auth_libluarouter_done=90
+   mesg_libluarouter_done=90
 fi
 
 clean_module
@@ -422,7 +278,7 @@ cd ..
 
 
 ### lua-resty-smtp
-build_auth_libluasmtp() {
+build_mesg_libluasmtp() {
 dir="lua-resty-smtp"
 step1=0
 step2=0
@@ -452,11 +308,11 @@ else
 fi
 
 # final check; all 2 steps
-auth_libluasmtp_done=`expr $step1 + $step2`
-if [ $auth_libluasmtp_done -eq 2 ]; then
-   auth_libluasmtp_done=1
+mesg_libluasmtp_done=`expr $step1 + $step2`
+if [ $mesg_libluasmtp_done -eq 2 ]; then
+   mesg_libluasmtp_done=1
 else
-   auth_libluasmtp_done=90
+   mesg_libluasmtp_done=90
 fi
 
 clean_module
@@ -468,7 +324,7 @@ cd ..
 
 
 ### inspect.lua
-build_auth_libluainspect() {
+build_mesg_libluainspect() {
 dir="inspect.lua"
 step1=0
 step2=0
@@ -501,11 +357,11 @@ else
 fi
 
 # final check; all 2 steps
-auth_libluainspect_done=`expr $step1 + $step2`
-if [ $auth_libluainspect_done -eq 2 ]; then
-   auth_libluainspect_done=1
+mesg_libluainspect_done=`expr $step1 + $step2`
+if [ $mesg_libluainspect_done -eq 2 ]; then
+   mesg_libluainspect_done=1
 else
-   auth_libluainspect_done=90
+   mesg_libluainspect_done=90
 fi
 
 clean_module
@@ -517,7 +373,7 @@ cd ..
 
 
 ### configuration settings
-build_auth_config() {
+build_mesg_config() {
 
 dir=config
 step1=0
@@ -551,11 +407,11 @@ fi
 
 
 # final check
-auth_config_done=$step1
-if [ $auth_config_done -eq 1 ]; then
-   auth_config_done=1
+mesg_config_done=$step1
+if [ $mesg_config_done -eq 1 ]; then
+   mesg_config_done=1
 else
-   auth_config_done=90
+   mesg_config_done=90
 fi
 
 cd ../..
@@ -564,7 +420,7 @@ cd ../..
 
 
 ### finalize
-build_auth_fin() {
+build_mesg_fin() {
 
 dir=etc
 step1=0
@@ -647,24 +503,8 @@ if [ ! -d ${iprefix}/logs ]; then
 fi
 
 
-if [ ! -d ${iprefix}/data/db ]; then
-    mkdir -p ${iprefix}/data/db
-    if [ $? -ne 0 ]; then
-        echo "Error: cannot setup data directory !" |\
-         tee -a ${BUILD_PATH}/${BUILD_LOG}
-        rm /var/tmp/build.${module}
-        exit 3
-    else
-        step1=`expr $step1 + 1`
-    fi
-
-    step1=`expr $step1 + 1`
-fi
-
-
-
-# there are 5 settings
-step1=`expr $step1 / 5`
+# there are 4 settings
+step1=`expr $step1 / 4`
 
 
 # STEP 2
@@ -673,14 +513,9 @@ echo "Info: Step 2 - Installing startup services..." |\
  tee -a ${BUILD_PATH}/${BUILD_LOG}
 
 cp krono* ${iprefix}/etc/
-if [ $enterprise_sem -eq 1 ]; then
-    cp redis.conf.maas ${iprefix}/etc/redis.conf
-elif [ $rbpi_sem -eq 1 ]; then
-    cp redis.conf.rbpi ${iprefix}/etc/redis.conf
-fi
 
 if [ $? -ne 0 ]; then
-    echo "Error: cannot install auth startup services !" |\
+    echo "Error: cannot install mesg startup services !" |\
      tee -a ${BUILD_PATH}/${BUILD_LOG}
     rm /var/tmp/build.${module}
     exit 3
@@ -706,11 +541,11 @@ fi
 
 
 # final check; all 3 steps
-auth_fin_done=`expr $step1 + $step2 + $step3`
-if [ "$auth_fin_done" -eq 3 ]; then
-   auth_fin_done=1
+mesg_fin_done=`expr $step1 + $step2 + $step3`
+if [ "$mesg_fin_done" -eq 3 ]; then
+   mesg_fin_done=1
 else
-   auth_fin_done=90
+   mesg_fin_done=90
 fi
 
 cd ..
@@ -725,7 +560,7 @@ cat > ~/.rpmmacros << "EOF"
 %packager       Support Kronometrix
 %vendor         Kronometrix
 
-%_topdir        %(echo $HOME)/workspace/kronometrix/auth/pkg/rpm
+%_topdir        %(echo $HOME)/workspace/kronometrix/mesg/pkg/rpm
 %_tmppath       %{_topdir}/tmp
 %_sourcedir     %{_topdir}/SOURCES/%{name}-%{version}
 %_rpmfilename   %{name}-%{version}-%{arch}.rpm
@@ -738,7 +573,7 @@ EOF
 
 
 ### tar package
-build_auth_tar_pkg() {
+build_mesg_tar_pkg() {
 
 step1=0
 
@@ -756,13 +591,13 @@ fi
 cd ${iprefix}/../..
 
 if [ "$buildno" -ne 0 ]; then
-    tar cf /var/tmp/kronometrix-auth-${krmxver}b${buildno}-${DIST_ID}.${PT_NAME}.tar kronometrix/auth
-    if [ -f /var/tmp/kronometrix-auth-${krmxver}b${buildno}-${DIST_ID}.${PT_NAME}.tar.bz2 ]; then
-        rm /var/tmp/kronometrix-auth-${krmxver}b${buildno}-${DIST_ID}.${PT_NAME}.tar.bz2
+    tar cf /var/tmp/kronometrix-mesg-${krmxver}b${buildno}-${DIST_ID}.${PT_NAME}.tar kronometrix/mesg
+    if [ -f /var/tmp/kronometrix-mesg-${krmxver}b${buildno}-${DIST_ID}.${PT_NAME}.tar.bz2 ]; then
+        rm /var/tmp/kronometrix-mesg-${krmxver}b${buildno}-${DIST_ID}.${PT_NAME}.tar.bz2
     fi
-    bzip2 /var/tmp/kronometrix-auth-${krmxver}b${buildno}-${DIST_ID}.${PT_NAME}.tar
+    bzip2 /var/tmp/kronometrix-mesg-${krmxver}b${buildno}-${DIST_ID}.${PT_NAME}.tar
     if [ $? -ne 0 ]; then
-        echo "Error: cannot create kronometrix auth data recording package !" |\
+        echo "Error: cannot create kronometrix mesg data recording package !" |\
          tee -a ${BUILD_PATH}/${BUILD_LOG}
         rm /var/tmp/build.${module}
         exit 3
@@ -771,13 +606,13 @@ if [ "$buildno" -ne 0 ]; then
     fi
 else
     # GA General Release
-    tar cf /var/tmp/kronometrix-auth-${krmxver}-${DIST_ID}.${PT_NAME}.tar kronometrix/auth
-    if [ -f /var/tmp/kronometrix-auth-${krmxver}-${DIST_ID}.${PT_NAME}.tar.bz2 ]; then
-        rm /var/tmp/kronometrix-auth-${krmxver}-${DIST_ID}.${PT_NAME}.tar.bz2
+    tar cf /var/tmp/kronometrix-mesg-${krmxver}-${DIST_ID}.${PT_NAME}.tar kronometrix/mesg
+    if [ -f /var/tmp/kronometrix-mesg-${krmxver}-${DIST_ID}.${PT_NAME}.tar.bz2 ]; then
+        rm /var/tmp/kronometrix-mesg-${krmxver}-${DIST_ID}.${PT_NAME}.tar.bz2
     fi
-    bzip2 /var/tmp/kronometrix-auth-${krmxver}-${DIST_ID}.${PT_NAME}.tar
+    bzip2 /var/tmp/kronometrix-mesg-${krmxver}-${DIST_ID}.${PT_NAME}.tar
     if [ $? -ne 0 ]; then
-        echo "Error: cannot create kronometrix auth data recording package !" |\
+        echo "Error: cannot create kronometrix mesg data recording package !" |\
          tee -a ${BUILD_PATH}/${BUILD_LOG}
         rm /var/tmp/build.${module}
         exit 3
@@ -787,11 +622,11 @@ else
 fi
 
 # final check; 1 step
-auth_tar_pkg_done=$step1
-if [ "$auth_tar_pkg_done" -eq 1 ]; then
-   auth_tar_pkg_done=1
+mesg_tar_pkg_done=$step1
+if [ "$mesg_tar_pkg_done" -eq 1 ]; then
+   mesg_tar_pkg_done=1
 else
-   auth_tar_pkg_done=90
+   mesg_tar_pkg_done=90
 fi
 
 cd ${WORKSPACE}/${module}
@@ -800,7 +635,7 @@ cd ${WORKSPACE}/${module}
 
 
 ### rpm package
-build_auth_rpm_pkg() {
+build_mesg_rpm_pkg() {
 
 dir='pkg/rpm'
 step1=0
@@ -872,9 +707,9 @@ if [ "$buildno" -ne 0 ]; then
     mv SPECS/kronometrix.tmp SPECS/kronometrix
 
 
-    if [ -f /var/tmp/kronometrix-auth-${krmxver}b${buildno}-${DIST_ID}.${PT_NAME}.tar.bz2 ]; then
-        cp /var/tmp/kronometrix-auth-${krmxver}b${buildno}-${DIST_ID}.${PT_NAME}.tar.bz2 \
-           SOURCES/kronometrix-auth-${krmxver}/kronometrix-${krmxver}-${PT_NAME}.tar.bz2
+    if [ -f /var/tmp/kronometrix-mesg-${krmxver}b${buildno}-${DIST_ID}.${PT_NAME}.tar.bz2 ]; then
+        cp /var/tmp/kronometrix-mesg-${krmxver}b${buildno}-${DIST_ID}.${PT_NAME}.tar.bz2 \
+           SOURCES/kronometrix-mesg-${krmxver}/kronometrix-${krmxver}-${PT_NAME}.tar.bz2
         if [ $? -ne 0 ]; then
             echo "Error: cannot copy tar archive to SOURCE directory !" |\
               tee -a ${BUILD_PATH}/${BUILD_LOG}
@@ -891,9 +726,9 @@ else
     sed "s/^Release.*/Release: 0/" SPECS/kronometrix > SPECS/kronometrix.tmp
     mv SPECS/kronometrix.tmp SPECS/kronometrix
 
-    if [ -f /var/tmp/kronometrix-auth-${krmxver}-${DIST_ID}.${PT_NAME}.tar.bz2 ]; then
-        cp /var/tmp/kronometrix-auth-${krmxver}-${DIST_ID}.${PT_NAME}.tar.bz2 \
-            SOURCES/kronometrix-auth-${krmxver}/kronometrix-${krmxver}-${PT_NAME}.tar.bz2
+    if [ -f /var/tmp/kronometrix-mesg-${krmxver}-${DIST_ID}.${PT_NAME}.tar.bz2 ]; then
+        cp /var/tmp/kronometrix-mesg-${krmxver}-${DIST_ID}.${PT_NAME}.tar.bz2 \
+            SOURCES/kronometrix-mesg-${krmxver}/kronometrix-${krmxver}-${PT_NAME}.tar.bz2
         if [ $? -ne 0 ]; then
             echo "Error: cannot copy tar archive to SOURCE directory !" |\
               tee -a ${BUILD_PATH}/${BUILD_LOG}
@@ -939,8 +774,8 @@ echo "" >> ${BUILD_PATH}/${BUILD_LOG}
 echo "Info: Step 3 - Cleanup rpm stage directories" |\
  tee -a ${BUILD_PATH}/${BUILD_LOG}
 
-if [ -f RPMS/kronometrix-auth-${krmxver}-${PT_NAME}.rpm ]; then
-   cp RPMS/kronometrix-auth-${krmxver}-${PT_NAME}.rpm /var/tmp
+if [ -f RPMS/kronometrix-mesg-${krmxver}-${PT_NAME}.rpm ]; then
+   cp RPMS/kronometrix-mesg-${krmxver}-${PT_NAME}.rpm /var/tmp
    # cleanup
    if [ $? -eq 0 ]; then 
        rm -rf RPMS SOURCES SRPMS BUILD tmp
@@ -951,11 +786,11 @@ fi
 
 
 # final check; 3 steps
-auth_rpm_pkg_done=`expr $step1 + $step2 + $step3`
-if [ "$auth_rpm_pkg_done" -eq 3 ]; then
-   auth_rpm_pkg_done=1
+mesg_rpm_pkg_done=`expr $step1 + $step2 + $step3`
+if [ "$mesg_rpm_pkg_done" -eq 3 ]; then
+   mesg_rpm_pkg_done=1
 else
-   auth_rpm_pkg_done=90
+   mesg_rpm_pkg_done=90
 fi
 
 cd ../..
@@ -964,7 +799,7 @@ cd ../..
 
 
 ### deb package
-build_auth_deb_pkg() {
+build_mesg_deb_pkg() {
 
 dir='pkg/deb'
 step1=0
@@ -996,15 +831,15 @@ echo "Info: Step 1 - Create stage directory" |\
 
 if [ "$PT_NAME" = "x86_64" ]; then
     if [ "$buildno" -ne 0 ]; then
-        pkgname="kronometrix-auth-${krmxver}b${buildno}-amd64"
+        pkgname="kronometrix-mesg-${krmxver}b${buildno}-amd64"
     else
-        pkgname="kronometrix-auth-${krmxver}-amd64"
+        pkgname="kronometrix-mesg-${krmxver}-amd64"
     fi
 else
     if [ "$buildno" -ne 0 ]; then
-        pkgname="kronometrix-auth-${krmxver}b${buildno}-${PT_NAME}"
+        pkgname="kronometrix-mesg-${krmxver}b${buildno}-${PT_NAME}"
     else
-        pkgname="kronometrix-auth-${krmxver}-${PT_NAME}"
+        pkgname="kronometrix-mesg-${krmxver}-${PT_NAME}"
     fi
 fi
 
@@ -1047,8 +882,8 @@ if [ "$buildno" -ne 0 ]; then
     sed "s/^Version.*/Version:${krmxver}-b${buildno}/" ../../$pkgname/DEBIAN/control > ../../$pkgname/DEBIAN/control.tmp
     mv ../../${pkgname}/DEBIAN/control.tmp ../../${pkgname}/DEBIAN/control
 
-    if [ -f /var/tmp/kronometrix-auth-${krmxver}b${buildno}-${DIST_ID}.${PT_NAME}.tar.bz2 ]; then
-        bzcat /var/tmp/kronometrix-auth-${krmxver}b${buildno}-${DIST_ID}.${PT_NAME}.tar.bz2 | tar xf -
+    if [ -f /var/tmp/kronometrix-mesg-${krmxver}b${buildno}-${DIST_ID}.${PT_NAME}.tar.bz2 ]; then
+        bzcat /var/tmp/kronometrix-mesg-${krmxver}b${buildno}-${DIST_ID}.${PT_NAME}.tar.bz2 | tar xf -
         if [ $? -ne 0 ]; then
             echo "Error: cannot untar archive !" |\
               tee -a ${BUILD_PATH}/${BUILD_LOG}
@@ -1064,8 +899,8 @@ else
     sed "s/^Version.*/Version:${krmxver}/" ../../$pkgname/DEBIAN/control > ../../$pkgname/DEBIAN/control.tmp
     mv ../../${pkgname}/DEBIAN/control.tmp ../../${pkgname}/DEBIAN/control
 
-    if [ -f /var/tmp/kronometrix-auth-${krmxver}-${DIST_ID}.${PT_NAME}.tar.bz2 ]; then
-        bzcat /var/tmp/kronometrix-auth-${krmxver}-${DIST_ID}.${PT_NAME}.tar.bz2 | tar xf -
+    if [ -f /var/tmp/kronometrix-mesg-${krmxver}-${DIST_ID}.${PT_NAME}.tar.bz2 ]; then
+        bzcat /var/tmp/kronometrix-mesg-${krmxver}-${DIST_ID}.${PT_NAME}.tar.bz2 | tar xf -
         if [ $? -ne 0 ]; then
             echo "Error: cannot untar archive !" |\
               tee -a ${BUILD_PATH}/${BUILD_LOG}
@@ -1111,28 +946,28 @@ fi
 
 mv ${pkgname}.deb /var/tmp
 
-# kronometrix-auth-1.0.0b41-armv6l.deb
+# kronometrix-mesg-1.0.0b41-armv6l.deb
 if [ "$buildno" -ne 0 ]; then
     if [ "$PT_NAME" = "x86_64" ]; then
-        mv /var/tmp/kronometrix-auth-${krmxver}b${buildno}-amd64.deb /var/tmp/kronometrix-auth-${krmxver}b${buildno}-${DIST_ID}${RELOS}-amd64.deb
+        mv /var/tmp/kronometrix-mesg-${krmxver}b${buildno}-amd64.deb /var/tmp/kronometrix-mesg-${krmxver}b${buildno}-${DIST_ID}${RELOS}-amd64.deb
     else
-        mv /var/tmp/kronometrix-auth-${krmxver}b${buildno}-${PT_NAME}.deb /var/tmp/kronometrix-auth-${krmxver}b${buildno}-${DIST_ID}${RELOS}-${PT_NAME}.deb
+        mv /var/tmp/kronometrix-mesg-${krmxver}b${buildno}-${PT_NAME}.deb /var/tmp/kronometrix-mesg-${krmxver}b${buildno}-${DIST_ID}${RELOS}-${PT_NAME}.deb
     fi
 else
     if [ "$PT_NAME" = "x86_64" ]; then
-        mv /var/tmp/kronometrix-auth-${krmxver}-amd64.deb /var/tmp/kronometrix-auth-${krmxver}-${DIST_ID}${RELOS}-amd64.deb
+        mv /var/tmp/kronometrix-mesg-${krmxver}-amd64.deb /var/tmp/kronometrix-mesg-${krmxver}-${DIST_ID}${RELOS}-amd64.deb
     else
-        mv /var/tmp/kronometrix-auth-${krmxver}-${PT_NAME}.deb /var/tmp/kronometrix-auth-${krmxver}-${DIST_ID}${RELOS}-${PT_NAME}.deb
+        mv /var/tmp/kronometrix-mesg-${krmxver}-${PT_NAME}.deb /var/tmp/kronometrix-mesg-${krmxver}-${DIST_ID}${RELOS}-${PT_NAME}.deb
     fi
 fi
 
 
 # final check; 3 steps
-auth_deb_pkg_done=`expr $step1 + $step2 + $step3`
-if [ "$auth_deb_pkg_done" -eq 3 ]; then
-   auth_deb_pkg_done=1
+mesg_deb_pkg_done=`expr $step1 + $step2 + $step3`
+if [ "$mesg_deb_pkg_done" -eq 3 ]; then
+   mesg_deb_pkg_done=1
 else
-   auth_deb_pkg_done=90
+   mesg_deb_pkg_done=90
 fi
 
 cd ../..
@@ -1140,7 +975,7 @@ cd ../..
 }
 
 
-build_auth_pkg() {
+build_mesg_pkg() {
 
 dir=pkg
 step1=0
@@ -1161,13 +996,13 @@ echo "Info: Step 1 - Kronometrix tar package" |\
 
 case "$DIST_ID" in
     centos|rhel)
-        build_auth_tar_pkg
-        build_auth_rpm_pkg
+        build_mesg_tar_pkg
+        build_mesg_rpm_pkg
     ;;
 
     debian|ubuntu|raspbian)
-        build_auth_tar_pkg
-        build_auth_deb_pkg
+        build_mesg_tar_pkg
+        build_mesg_deb_pkg
     ;;
                
     *)
