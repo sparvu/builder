@@ -515,8 +515,9 @@ echo "" >> ${BUILD_PATH}/${BUILD_LOG}
 echo "Info: Step 2 - Installing auth startup services ..." |\
  tee -a ${BUILD_PATH}/${BUILD_LOG}
 
-cp kronometrix.mesg* ${iprefix}/etc/
-
+cp mesg db http ${iprefix}/etc/
+mkdir ${iprefix}/etc/rc
+cp ${OS_NAME}/kronometrix* ${iprefix}/etc/rc
 if [ $? -ne 0 ]; then
     echo "Error: cannot install mesg startup services !" |\
      tee -a ${BUILD_PATH}/${BUILD_LOG}
@@ -611,6 +612,7 @@ echo "Info: Step 2 - Prepare stage directory" |\
  tee -a ${BUILD_PATH}/${BUILD_LOG}
 
 # copy config files
+cp pkg-install pkg-deinstall $pkgname/
 if [ "$PT_NAME" = "amd64" ]; then
     cp MANIFEST.amd64 $pkgname/MANIFEST
 elif [ "$PT_NAME" = "i386" ]; then
