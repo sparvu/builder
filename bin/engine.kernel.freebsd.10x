@@ -672,10 +672,10 @@ if [ ! -d ${iprefix}/logs ]; then
 fi
 
 
-if [ ! -d ${iprefix}/subscriptions ]; then
-    mkdir ${iprefix}/subscriptions
+if [ ! -d ${iprefix}/data/db ]; then
+    mkdir -p ${iprefix}/data/db
     if [ $? -ne 0 ]; then
-        echo "Error: cannot setup subscriptions directory !" |\
+        echo "Error: cannot setup data directory !" |\
          tee -a ${BUILD_PATH}/${BUILD_LOG}
         rm /var/tmp/build.${module}
         exit 3
@@ -686,8 +686,38 @@ if [ ! -d ${iprefix}/subscriptions ]; then
     step1=`expr $step1 + 1`
 fi
 
-# there are 5 steps
-step1=`expr $step1 / 5`
+
+if [ ! -d ${iprefix}/data/raw ]; then
+    mkdir ${iprefix}/data/raw
+    if [ $? -ne 0 ]; then
+        echo "Error: cannot setup raw directory !" |\
+         tee -a ${BUILD_PATH}/${BUILD_LOG}
+        rm /var/tmp/build.${module}
+        exit 3
+    else
+        step1=`expr $step1 + 1`
+    fi
+
+    step1=`expr $step1 + 1`
+fi
+
+
+if [ ! -d ${iprefix}/data/events ]; then
+    mkdir ${iprefix}/data/events
+    if [ $? -ne 0 ]; then
+        echo "Error: cannot setup events directory !" |\
+         tee -a ${BUILD_PATH}/${BUILD_LOG}
+        rm /var/tmp/build.${module}
+        exit 3
+    else
+        step1=`expr $step1 + 1`
+    fi
+
+    step1=`expr $step1 + 1`
+fi
+
+# there are 7 steps
+step1=`expr $step1 / 7`
 
 
 # STEP 2
@@ -695,7 +725,9 @@ echo "" >> ${BUILD_PATH}/${BUILD_LOG}
 echo "Info: Step 2 - Installing kernel startup services ..." |\
  tee -a ${BUILD_PATH}/${BUILD_LOG}
 
-cp kronometrix.kernel* ${iprefix}/etc/
+cp kernel db http ${iprefix}/etc/
+mkdir ${iprefix}/etc/rc
+cp ${OS_NAME}/kronometrix* ${iprefix}/etc/rc
 if [ $enterprise_sem -eq 1 ]; then
     cp redis.conf.maas ${iprefix}/etc/redis.conf
 elif [ $rbpi_sem -eq 1 ]; then
@@ -793,12 +825,12 @@ echo "Info: Step 2 - Prepare stage directory" |\
  tee -a ${BUILD_PATH}/${BUILD_LOG}
 
 # copy config files
+cp pkg-install pkg-deinstall $pkgname/
 if [ "$PT_NAME" = "amd64" ]; then
     cp MANIFEST.amd64 $pkgname/MANIFEST
 elif [ "$PT_NAME" = "i386" ]; then
     cp MANIFEST.i386 $pkgname/MANIFEST
 fi
-
 
 cd ${pkgname}
 
