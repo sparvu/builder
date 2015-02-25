@@ -681,12 +681,12 @@ echo "Info: Step 2 - Prepare stage directory" |\
  tee -a ${BUILD_PATH}/${BUILD_LOG}
 
 # copy config files
+cp pkg-install pkg-deinstall $pkgname/
 if [ "$PT_NAME" = "amd64" ]; then
     cp MANIFEST.amd64 $pkgname/MANIFEST
 elif [ "$PT_NAME" = "i386" ]; then
     cp MANIFEST.i386 $pkgname/MANIFEST
 fi
-
 
 cd ${pkgname}
 
