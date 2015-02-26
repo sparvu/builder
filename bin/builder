@@ -120,7 +120,7 @@ kernel_lua_resty_template_done=0
 kernel_lua_resty_session_done=0
 kernel_luarouter_done=0
 kernel_lua_resty_http_simple_done=0
-kernel_luainspect_done=0
+kernel_lua_inspect_done=0
 kernel_libdate_done=0
 kernel_redis_done=0
 kernel_fin_done=0
@@ -782,7 +782,7 @@ case "$module" in
         build_kernel_httpsimple
 
         if [ ! -z "$build_num" ]; then
-            build_kernel_libluainspect
+            build_kernel_inspect
         fi
 
         build_kernel_redis
