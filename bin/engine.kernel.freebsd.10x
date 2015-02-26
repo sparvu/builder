@@ -322,7 +322,7 @@ echo "" >> ${BUILD_PATH}/${BUILD_LOG}
 echo "Info: Step 2 - Install template.lua ..." |\
  tee -a ${BUILD_PATH}/${BUILD_LOG}
 
-cp -R lib/resty/template ${iprefix}/lualib/resty
+cp -R lib/resty/template* ${iprefix}/lualib/resty
 if [ $? -ne 0 ]; then
     echo "Error: cannot install template.lua script !" |\
      tee -a ${BUILD_PATH}/${BUILD_LOG}
