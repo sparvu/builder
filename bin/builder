@@ -133,10 +133,10 @@ kernel_fbsd_pkg_done=0
 
 ##mesg
 mesg_openresty_done=0
-mesg_libluatemplate_done=0
-mesg_libluainspect_done=0
-mesg_libluarouter_done=0
-mesg_libluasmtp_done=0
+mesg_lua_resty_template_done=0
+mesg_lua_inspect_done=0
+mesg_lua_router_done=0
+mesg_lua_resty_smtp_done=0
 mesg_fin_done=0
 mesg_config_done=0
 mesg_tar_pkg_done=0
@@ -729,12 +729,12 @@ case "$module" in
         build_mesg_pkg 
     else 
         build_mesg_openresty
-        build_mesg_libluatemplate
-        build_mesg_libluarouter
+        build_mesg_template
+        build_mesg_router
         build_mesg_smtp
 
         if [ ! -z "$build_num" ]; then
-            build_mesg_libluainspect
+            build_mesg_inspect
         fi
 
         build_mesg_config
