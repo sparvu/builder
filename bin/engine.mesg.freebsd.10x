@@ -184,7 +184,7 @@ clean_module
 
 
 ### lua-resty-template
-build_mesg_libluatemplate() {
+build_mesg_template() {
 dir="lua-resty-template"
 step1=0
 step2=0
@@ -206,7 +206,7 @@ echo "" >> ${BUILD_PATH}/${BUILD_LOG}
 echo "Info: Step 2 - Install template.lua ..." |\
  tee -a ${BUILD_PATH}/${BUILD_LOG}
 
-cp -R lib/resty/template* ${iprefix}/lualib/resty
+cp -R lib/resty/template ${iprefix}/lualib/resty
 if [ $? -ne 0 ]; then
     echo "Error: cannot install template.lua script !" |\
      tee -a ${BUILD_PATH}/${BUILD_LOG}
@@ -217,11 +217,11 @@ else
 fi
 
 # final check; all 2 steps
-mesg_libluatemplate_done=`expr $step1 + $step2`
-if [ $mesg_libluatemplate_done -eq 2 ]; then
-   mesg_libluatemplate_done=1
+mesg_lua_resty_template_done=`expr $step1 + $step2`
+if [ $mesg_lua_resty_template_done -eq 2 ]; then
+   mesg_lua_resty_template_done=1
 else
-   mesg_libluatemplate_done=90
+   mesg_lua_resty_template_done=90
 fi
 
 clean_module
@@ -233,7 +233,7 @@ cd ..
 
 
 ### router.lua
-build_mesg_libluarouter() {
+build_mesg_router() {
 dir="router.lua"
 step1=0
 step2=0
@@ -264,11 +264,11 @@ else
 fi
 
 # final check; all 2 steps
-mesg_libluarouter_done=`expr $step1 + $step2`
-if [ $mesg_libluarouter_done -eq 2 ]; then
-   mesg_libluarouter_done=1
+mesg_lua_router_done=`expr $step1 + $step2`
+if [ $mesg_lua_router_done -eq 2 ]; then
+   mesg_lua_router_done=1
 else
-   mesg_libluarouter_done=90
+   mesg_lua_router_done=90
 fi
 
 clean_module
@@ -280,7 +280,7 @@ cd ..
 
 
 ### lua-resty-smtp
-build_mesg_libluasmtp() {
+build_mesg_smtp() {
 dir="lua-resty-smtp"
 step1=0
 step2=0
@@ -299,7 +299,7 @@ echo "" >> ${BUILD_PATH}/${BUILD_LOG}
 echo "Info: Step 2 - Install router.lua ..." |\
  tee -a ${BUILD_PATH}/${BUILD_LOG}
 
-cp -R lib/resty/smtp* ${iprefix}/lualib/resty
+cp -R lib/resty/smtp ${iprefix}/lualib/resty
 if [ $? -ne 0 ]; then
     echo "Error: cannot install smtp.lua script !" |\
      tee -a ${BUILD_PATH}/${BUILD_LOG}
@@ -310,11 +310,11 @@ else
 fi
 
 # final check; all 2 steps
-mesg_libluasmtp_done=`expr $step1 + $step2`
-if [ $mesg_libluasmtp_done -eq 2 ]; then
-   mesg_libluasmtp_done=1
+mesg_lua_resty_smtp_done=`expr $step1 + $step2`
+if [ $mesg_lua_resty_smtp_done -eq 2 ]; then
+   mesg_lua_resty_smtp_done=1
 else
-   mesg_libluasmtp_done=90
+   mesg_lua_resty_smtp_done=90
 fi
 
 clean_module
@@ -326,7 +326,7 @@ cd ..
 
 
 ### inspect.lua
-build_mesg_libluainspect() {
+build_mesg_inspect() {
 dir="inspect.lua"
 step1=0
 step2=0
@@ -359,11 +359,11 @@ else
 fi
 
 # final check; all 2 steps
-mesg_libluainspect_done=`expr $step1 + $step2`
-if [ $mesg_libluainspect_done -eq 2 ]; then
-   mesg_libluainspect_done=1
+mesg_lua_inspect_done=`expr $step1 + $step2`
+if [ $mesg_lua_inspect_done -eq 2 ]; then
+   mesg_lua_inspect_done=1
 else
-   mesg_libluainspect_done=90
+   mesg_lua_inspect_done=90
 fi
 
 clean_module
