@@ -20,7 +20,7 @@
 #
 #  (http://www.gnu.org/copyleft/gpl.html)
 
-# VERSION: 2
+# VERSION: 2.1
 
 usage() {
 
@@ -710,7 +710,7 @@ case "$module" in
 
     if [ $rpm_sem -eq 1 ]; then
         if [ "x${DIST_ID}" = "xrhel" -o "x${DIST_ID}" = "xcentos" ]; then
-            build_auth_pkg
+            build_mesg_pkg
         else
             echo "Error: not a RPM installation, cannot build rpm pkg"
             rm /var/tmp/${STATFILE}
@@ -720,7 +720,7 @@ case "$module" in
         if [ "x${DIST_ID}" = "xdebian" -o \
              "x${DIST_ID}" = "xubuntu" -o \
              "x${DIST_ID}" = "xraspbian" ]; then
-            build_auth_pkg
+            build_mesg_pkg
         else
             echo "Error: not a DEB installation, cannot build deb pkg"
             rm /var/tmp/${STATFILE}
@@ -975,32 +975,32 @@ case "$module" in
         fi
     fi
 
-    if [ $auth_libluarouter_done -ne 0 ]; then
-        if [ $auth_libluarouter_done -eq 1 ]; then
+    if [ $auth_lua_router_done -ne 0 ]; then
+        if [ $auth_lua_router_done -eq 1 ]; then
             echo  "# lib router.lua: built and integrated"
         else
-            if [ $auth_libluarouter_done -eq 90 ]; then
+            if [ $auth_lua_router_done -eq 90 ]; then
                 echo  "# lib router.lua: not integrated"
             fi
         fi
     fi
 
-    if [ $auth_libluasmtp_done -ne 0 ]; then
-        if [ $auth_libluasmtp_done -eq 1 ]; then
+    if [ $auth_lua_resty_smtp_done -ne 0 ]; then
+        if [ $auth_lua_resty_smtp_done -eq 1 ]; then
             echo  "# lib smtp.lua: built and integrated"
         else
-            if [ $auth_libluasmtp_done -eq 90 ]; then
+            if [ $auth_lua_resty_smtp_done -eq 90 ]; then
                 echo  "# lib smtp.lua: not integrated"
             fi
         fi
     fi
 
     if [ ! -z "$build_num" ]; then
-        if [ $auth_libluainspect_done -ne 0 ]; then
-            if [ $auth_libluainspect_done -eq 1 ]; then
+        if [ $auth_lua_inspect_done -ne 0 ]; then
+            if [ $auth_lua_inspect_done -eq 1 ]; then
                 echo  "# lib inspect.lua: built and integrated"
             else
-                if [ $auth_libluainspect_done -eq 90 ]; then
+                if [ $auth_lua_inspect_done -eq 90 ]; then
                     echo  "# lib inspect.lua: not integrated"
                 fi
             fi
