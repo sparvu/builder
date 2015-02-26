@@ -115,11 +115,12 @@ auth_fbsd_pkg_done=0
 
 ##kernel
 kernel_openresty_done=0
-kernel_libluafs_done=0
-kernel_libluatemplate_done=0
-kernel_libluasession_done=0
-kernel_libluarouter_done=0
-kernel_libluainspect_done=0
+kernel_luafs_done=0
+kernel_lua_resty_template_done=0
+kernel_lua_resty_session_done=0
+kernel_luarouter_done=0
+kernel_lua_resty_http_simple_done=0
+kernel_luainspect_done=0
 kernel_libdate_done=0
 kernel_redis_done=0
 kernel_fin_done=0
@@ -773,11 +774,12 @@ case "$module" in
         build_kernel_pkg 
     else 
         build_kernel_openresty
-        build_kernel_libluafs
-        build_kernel_libluatemplate
-        build_kernel_libluasession
-        build_kernel_libluarouter
+        build_kernel_fs
+        build_kernel_template
+        build_kernel_session
+        build_kernel_router
         build_kernel_libdate
+        build_kernel_httpsimple
 
         if [ ! -z "$build_num" ]; then
             build_kernel_libluainspect
@@ -1190,41 +1192,41 @@ case "$module" in
         fi
     fi
 
-    if [ $kernel_libluafs_done -ne 0 ]; then
-        if [ $kernel_libluafs_done -eq 1 ]; then
+    if [ $kernel_luafs_done -ne 0 ]; then
+        if [ $kernel_luafs_done -eq 1 ]; then
             echo  "# lib luafilesystem: built and integrated"
         else
-            if [ $kernel_libluafs_done -eq 90 ]; then
+            if [ $kernel_luafs_done -eq 90 ]; then
                 echo  "# lib luafilesystem: not integrated"
             fi
         fi
     fi
 
-    if [ $kernel_libluatemplate_done -ne 0 ]; then
-        if [ $kernel_libluatemplate_done -eq 1 ]; then
+    if [ $kernel_lua_resty_template_done -ne 0 ]; then
+        if [ $kernel_lua_resty_template_done -eq 1 ]; then
             echo  "# lib lua-resty-template: built and integrated"
         else
-            if [ $kernel_libluatemplate_done -eq 90 ]; then
+            if [ $kernel_lua_resty_template_done -eq 90 ]; then
                 echo  "# lib lua-resty-template: not integrated"
             fi
         fi
     fi
 
-    if [ $kernel_libluasession_done -ne 0 ]; then
-        if [ $kernel_libluasession_done -eq 1 ]; then
+    if [ $kernel_lua_resty_session_done -ne 0 ]; then
+        if [ $kernel_lua_resty_session_done -eq 1 ]; then
             echo  "# lib lua-resty-session: built and integrated"
         else
-            if [ $kernel_libluasession_done -eq 90 ]; then
+            if [ $kernel_lua_resty_session_done -eq 90 ]; then
                 echo  "# lib lua-resty-session: not integrated"
             fi
         fi
     fi
 
-    if [ $kernel_libluarouter_done -ne 0 ]; then
+    if [ $kernel_luarouter_done -ne 0 ]; then
         if [ $kernel_libluarouter_done -eq 1 ]; then
             echo  "# lib router.lua: built and integrated"
         else
-            if [ $kernel_libluarouter_done -eq 90 ]; then
+            if [ $kernel_luarouter_done -eq 90 ]; then
                 echo  "# lib router.lua: not integrated"
             fi
         fi
@@ -1239,6 +1241,17 @@ case "$module" in
             fi
         fi
     fi
+
+    if [ $kernel_lua_resty_http_simple_done -ne 0 ]; then
+        if [ $kernel_lua_resty_http_simple_done -eq 1 ]; then
+            echo  "# lib simple.lua: built and integrated"
+        else
+            if [ $kerne_lua_resty_http_simple_done -eq 90 ]; then
+                echo  "# lib simple.lua: not integrated"
+            fi
+        fi
+    fi
+
 
     if [ ! -z "$build_num" ]; then
         if [ $kernel_libluainspect_done -ne 0 ]; then
