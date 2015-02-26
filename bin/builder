@@ -101,10 +101,11 @@ rbpi_sem=0
 ##auth
 auth_redis_done=0
 auth_openresty_done=0
-auth_libluatemplate_done=0
+auth_lua_resty_template_done=0
 auth_libluainspect_done=0
 auth_libluarouter_done=0
-auth_libluasmtp_done=0
+auth_lua_resty_smtp_done=0
+auth_lua_resty_http_simple_done=0
 auth_fin_done=0
 auth_config_done=0
 auth_tar_pkg_done=0
@@ -682,12 +683,13 @@ case "$module" in
         build_auth_pkg 
     else 
         build_auth_openresty
-        build_auth_libluatemplate
-        build_auth_libluarouter
-        build_auth_libluasmtp
+        build_auth_template
+        build_auth_router
+        build_auth_smtp
+        build_auth_httpsimple
 
         if [ ! -z "$build_num" ]; then
-            build_auth_libluainspect
+            build_auth_inspect
         fi
 
         build_auth_redis

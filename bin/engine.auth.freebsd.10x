@@ -241,7 +241,7 @@ clean_module
 
 
 ### lua-resty-template
-build_auth_libluatemplate() {
+build_auth_template() {
 dir="lua-resty-template"
 step1=0
 step2=0
@@ -274,11 +274,11 @@ else
 fi
 
 # final check; all 2 steps
-auth_libluatemplate_done=`expr $step1 + $step2`
-if [ $auth_libluatemplate_done -eq 2 ]; then
-   auth_libluatemplate_done=1
+auth_lua_resty_template_done=`expr $step1 + $step2`
+if [ $auth_lua_resty_template_done -eq 2 ]; then
+   auth_lua_resty_template_done=1
 else
-   auth_libluatemplate_done=90
+   auth_lua_resty_template_done=90
 fi
 
 clean_module
@@ -290,7 +290,7 @@ cd ..
 
 
 ### router.lua
-build_auth_libluarouter() {
+build_auth_router() {
 dir="router.lua"
 step1=0
 step2=0
@@ -337,7 +337,7 @@ cd ..
 
 
 ### lua-resty-smtp
-build_auth_libluasmtp() {
+build_auth_smtp() {
 dir="lua-resty-smtp"
 step1=0
 step2=0
@@ -367,11 +367,56 @@ else
 fi
 
 # final check; all 2 steps
-auth_libluasmtp_done=`expr $step1 + $step2`
-if [ $auth_libluasmtp_done -eq 2 ]; then
-   auth_libluasmtp_done=1
+auth_lua_resty_smtp_done=`expr $step1 + $step2`
+if [ $auth_lua_resty_smtp_done -eq 2 ]; then
+   auth_lua_resty_smtp_done=1
 else
-   auth_libluasmtp_done=90
+   auth_lua_resty_smtp_done=90
+fi
+
+clean_module
+
+# back to root
+cd ..
+}
+
+
+### lua-resty-http-simple
+build_auth_httpsimple() {
+dir="lua-resty-http-simple"
+step1=0
+step2=0
+
+
+cd lib
+
+init_module "$dir"
+if [ $? -eq 0 ]; then
+    step1=1
+fi
+
+# STEP 2
+
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 2 - Install router.lua ..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+cp -R lib/resty/http/* ${iprefix}/lualib/resty
+if [ $? -ne 0 ]; then
+    echo "Error: cannot install simple.lua script !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+     rm /var/tmp/build.${module}
+     exit 3
+else
+    step2=1
+fi
+
+# final check; all 2 steps
+auth_lua_resty_http_simple_done=`expr $step1 + $step2`
+if [ $auth_lua_resty_http_simple_done -eq 2 ]; then
+   auth_lua_resty_http_simple_done=1
+else
+   auth_lua_resty_http_simple_done=90
 fi
 
 clean_module
@@ -382,7 +427,7 @@ cd ..
 
 
 ### inspect.lua
-build_auth_libluainspect() {
+build_auth_inspect() {
 dir="inspect.lua"
 step1=0
 step2=0
