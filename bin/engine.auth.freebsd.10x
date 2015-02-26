@@ -321,11 +321,11 @@ else
 fi
 
 # final check; all 2 steps
-auth_libluarouter_done=`expr $step1 + $step2`
-if [ $auth_libluarouter_done -eq 2 ]; then
-   auth_libluarouter_done=1
+auth_lua_router_done=`expr $step1 + $step2`
+if [ $auth_lua_router_done -eq 2 ]; then
+   auth_lua_router_done=1
 else
-   auth_libluarouter_done=90
+   auth_lua_router_done=90
 fi
 
 clean_module
@@ -460,11 +460,11 @@ else
 fi
 
 # final check; all 2 steps
-auth_libluainspect_done=`expr $step1 + $step2`
-if [ $auth_libluainspect_done -eq 2 ]; then
-   auth_libluainspect_done=1
+auth_lua_inspect_done=`expr $step1 + $step2`
+if [ $auth_lua_inspect_done -eq 2 ]; then
+   auth_lua_inspect_done=1
 else
-   auth_libluainspect_done=90
+   auth_lua_inspect_done=90
 fi
 
 clean_module
