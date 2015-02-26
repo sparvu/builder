@@ -387,7 +387,6 @@ dir="lua-resty-http-simple"
 step1=0
 step2=0
 
-
 cd lib
 
 init_module "$dir"
@@ -401,7 +400,7 @@ echo "" >> ${BUILD_PATH}/${BUILD_LOG}
 echo "Info: Step 2 - Install router.lua ..." |\
  tee -a ${BUILD_PATH}/${BUILD_LOG}
 
-cp -R lib/resty/http/* ${iprefix}/lualib/resty
+cp -R lib/resty/http ${iprefix}/lualib/resty
 if [ $? -ne 0 ]; then
     echo "Error: cannot install simple.lua script !" |\
      tee -a ${BUILD_PATH}/${BUILD_LOG}
