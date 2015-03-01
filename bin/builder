@@ -628,7 +628,7 @@ case "$module" in
         build_rec_pkg
     else 
         build_rec_perl
-        build_rec_ossl
+        #build_rec_ossl
         # build_rec_idn
         if [ "$OS_NAME" = "linux" ]; then
             build_rec_libusb
