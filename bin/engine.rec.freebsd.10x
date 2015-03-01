@@ -2,7 +2,7 @@
 #
 #  Kronometrix Development tools, FreeBSD recording engine 
 #
-#  Copyright (c) 2014 Stefan Parvu (www.systemdatarecorder.org).
+#  Copyright (c) 2015 Stefan Parvu (www.systemdatarecorder.org).
 #
 #  This program is free software; you can redistribute it and/or
 #  modify it under the terms of the GNU General Public License
@@ -20,7 +20,7 @@
 #
 #  (http://www.gnu.org/copyleft/gpl.html)
 
-# VERSION: 2
+# VERSION: 2.1
 
 # ############################################################### #
 # Engine: FreeBSD                                                 # 
@@ -218,10 +218,9 @@ else
 fi
 
 
-
 for lib in Digest::SHA Proc::Daemon Proc::PID::File File::Tail \
            JSON::XS JSON HTTP::Response UUID::Tiny Carp::Assert \
-           Inline::MakeMaker Date::Calc Device::SerialPort
+           Inline::MakeMaker Inline::C Date::Calc Device::SerialPort
 do
     if  [ "$lib" = "JSON::XS" -o "$lib" = "Inline::MakeMaker" ]; then
         env PERL_MM_USE_DEFAULT=1 \
