@@ -2,7 +2,7 @@
 #
 #  Kronometrix Development tools, Linux recording engine 
 #
-#  Copyright (c) 2014 Stefan Parvu (www.systemdatarecorder.org).
+#  Copyright (c) 2015 Stefan Parvu (www.systemdatarecorder.org).
 #
 #  This program is free software; you can redistribute it and/or
 #  modify it under the terms of the GNU General Public License
@@ -20,7 +20,7 @@
 #
 #  (http://www.gnu.org/copyleft/gpl.html)
 
-# VERSION: 2
+# VERSION: 2.1
 
 # ############################################################### #
 # Engine: Linux                                                   # 
