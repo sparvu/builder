@@ -604,7 +604,6 @@ case "$module" in
     echo "" > ${BUILD_PATH}/${BUILD_LOG}
 
     if [ $libusb_sem -eq 1 ]; then
-        # build_rec_libusb
         build_rec_deviceusb
     elif [ $rpm_sem -eq 1 ]; then
         if [ "x${DIST_ID}" = "xrhel" -o "x${DIST_ID}" = "xcentos" ]; then
@@ -628,10 +627,8 @@ case "$module" in
         build_rec_pkg
     else 
         build_rec_perl
-        # build_rec_ossl
-        # build_rec_idn
+        build_rec_ossl
         if [ "$OS_NAME" = "linux" ]; then
-            # build_rec_libusb
             build_rec_deviceusb
         fi
         build_rec_curl
@@ -643,6 +640,7 @@ case "$module" in
         #if [ "$PT_NAME" != "armv6l" ]; then 
         #    build_rec_webrec
         #fi
+
         build_rec_scripts
         
         if [ "$OS_NAME" != "freebsd" ]; then 
@@ -838,22 +836,6 @@ case "$module" in
     else
         if [ $ossl_done -eq 90 ]; then
             echo "# openssl: failed"
-        fi
-    fi
-
-    #if [ $idn_done -eq 1 ]; then
-    #    echo "# idn: ok"
-    #else
-    #    if [ $idn_done -eq 90 ]; then
-    #        echo "# idn: failed"
-    #    fi
-    #fi
-
-    if [ $libusb_done -eq 1 ]; then
-        echo "# libusb: ok"
-    else
-        if [ $libusb_done -eq 90 ]; then
-            echo "# libusb: failed"
         fi
     fi
 
