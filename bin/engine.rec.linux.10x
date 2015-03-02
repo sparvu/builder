@@ -367,91 +367,6 @@ cd ..
 }
 
 
-### libidn
-build_rec_idn() {
-dir=idn
-step1=0
-step2=0
-step3=0
-step4=0
-
-cd lib
-init_module "$dir"
-if [ $? -eq 0 ]; then
-    step1=1
-fi
-
-echo "" >> ${BUILD_PATH}/${BUILD_LOG}
-echo "Info: Step 2 - Configure $dir ..." |\
- tee -a ${BUILD_PATH}/${BUILD_LOG}
-
-if [ "$PT_NAME" = "x86_64" ]; then 
-    env CC=cc CFLAGS="-O3 -I${iprefix}/include" \
-        LDFLAGS="-L${iprefix}/lib -Wl,-rpath -Wl,${iprefix}/lib \
-        -L/lib64 -L/usr/lib64" ./configure \
-    --prefix=${iprefix} >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
-else
-    env CC=cc CFLAGS="-O3 -I${iprefix}/include" \
-        LDFLAGS="-L${iprefix}/lib -Wl,-rpath -Wl,${iprefix}/lib\
-        -L/lib -L/usr/lib" ./configure \
-    --prefix=${iprefix} >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
-fi
-
-if [ $? -ne 0 ]; then
-    echo "Error: configure $dir failed !" |\
-     tee -a ${BUILD_PATH}/${BUILD_LOG}
-    rm /var/tmp/build.${module}
-    exit 3
-else
-    step2=1
-fi  
-
-# STEP 3
-echo "" >> ${BUILD_PATH}/${BUILD_LOG}
-echo "Info: Step 3 - Make $dir..." |\
- tee -a ${BUILD_PATH}/${BUILD_LOG}
-make >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
-if [ $? -ne 0 ]; then
-    echo "Error: make $dir failed !" |\
-     tee -a ${BUILD_PATH}/${BUILD_LOG}
-    rm /var/tmp/build.${module}
-    exit 3
-else
-    step3=1
-fi 
-
-# STEP 4
-echo "" >> ${BUILD_PATH}/${BUILD_LOG}
-echo "Info: Step 4 - Make install $dir..." |\
- tee -a ${BUILD_PATH}/${BUILD_LOG}
-
-
-make install >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
-if [ $? -ne 0 ]; then
-    echo "Error: make install perl failed !" |\
-     tee -a ${BUILD_PATH}/${BUILD_LOG}
-    rm /var/tmp/build.${module}
-    exit 3
-else
-    step4=1
-fi
-
-# final check; all 4 steps
-idn_done=`expr $step1 + $step2 + $step3 + $step4`
-if [ "$idn_done" -eq 4 ]; then
-   idn_done=1
-else
-   idn_done=90
-fi
-
-clean_module
-
-# back to root
-cd ..
-
-}
-
-
 ### libusb
 build_rec_libusb() {
 dir=libusb
@@ -982,10 +897,8 @@ fi
 
 # set etc settings
 cd ../..
-cp etc/${OS_NAME}/* ${iprefix}/etc
 cp etc/*.start ${iprefix}/etc
 cp etc/kronometrix.json ${iprefix}/etc
-
 cp etc/agents ${iprefix}/etc
 cp etc/transport ${iprefix}/etc
 mkdir ${iprefix}/etc/rc
@@ -1071,6 +984,27 @@ else
         mkdir ${iprefix}/log/current
         if [ $? -ne 0 ]; then
             echo "Error: cannot set log/current director !" |\
+             tee -a ${BUILD_PATH}/${BUILD_LOG}
+            rm /var/tmp/build.${module}
+            exit 3
+        fi
+    fi
+
+    # share openssl man page cleanup
+    if [ -d ${iprefix}/share ]; then
+        rm -rf ${iprefix}/share
+        if [ $? -ne 0 ]; then
+            echo "Error: cannot clean share director !" |\
+             tee -a ${BUILD_PATH}/${BUILD_LOG}
+            rm /var/tmp/build.${module}
+            exit 3
+        fi
+    fi
+
+    if [ -d ${iprefix}/openssl/man ]; then
+        rm -rf ${iprefix}/openssl/man
+        if [ $? -ne 0 ]; then
+            echo "Error: cannot clean openssl man director !" |\
              tee -a ${BUILD_PATH}/${BUILD_LOG}
             rm /var/tmp/build.${module}
             exit 3
