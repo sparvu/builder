@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# COPYRIGHT: Copyright (c) 2014 SystemDataRecorder
+# COPYRIGHT: Copyright (c) 2015 Kronometrix
 #
 #  This program is free software; you can redistribute it and/or
 #  modify it under the terms of the GNU General Public License
@@ -22,6 +22,7 @@
 ### Platform and OS
 OS_NAME=`uname -s | tr '[A-Z]' '[a-z]'`
 PT_NAME=`uname -m | tr '[A-Z]' '[a-z]'`
+HW_NAME=`uname -i | tr '[A-Z]' '[a-z]'`
 HOSTNAME=`uname -n`
 
 
@@ -41,6 +42,7 @@ case "$OS_NAME" in
         COMPILER=`gcc --version | head -1 | sed 's/(GCC) //'`
         KERNEL=`uname -r`
         USER_ID=`/usr/bin/id -u`
+        PT_NAME=$HW_NAME
         if [ -f /etc/os-release ]; then
             DIST_ID=`grep '^ID=' /etc/os-release | sed 's/^.*=//'`
         elif [ -f /etc/system-release ]; then
