@@ -1527,6 +1527,7 @@ echo "Info: Step 1 - Kronometrix tar package" |\
 
 case "$DIST_ID" in
     centos|rhel)
+        PT_NAME=$HW_NAME
         build_rec_tar_pkg
         build_rec_rpm_pkg
     ;;
