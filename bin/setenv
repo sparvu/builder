@@ -45,10 +45,8 @@ case "$OS_NAME" in
         if [ -f /etc/os-release ]; then
             DIST_ID=`grep '^ID=' /etc/os-release | sed 's/^.*=//'`
         elif [ -f /etc/system-release ]; then
-            PT_NAME=$HW_NAME
             DIST_ID=`sed 's/ release.*$//' /etc/system-release | tr '[A-Z]' '[a-z]'`
         elif [ -f /etc/redhat-release ]; then
-            PT_NAME=$HW_NAME
             DIST_TEMP=`sed 's/ release.*$//' /etc/redhat-release | tr '[A-Z]' '[a-z]'`
             echo $DIST_TEMP | grep '^red hat' >/dev/null
             if [ $? -eq 0 ]; then
