@@ -1484,17 +1484,20 @@ mv ${pkgname}.deb /var/tmp
 # kronometrix-1.0.0-amd64.deb
 if [ "$buildno" -ne 0 ]; then
     if [ "$PT_NAME" = "x86_64" ]; then
-        mv /var/tmp/kronometrix-${krmxver}-amd64.deb /var/tmp/kronometrix-${krmxver}b${buildno}-${DIST_ID}${RELOS}-amd64.deb
+        mv /var/tmp/kronometrix-${krmxver}-amd64.deb \
+         /var/tmp/kronometrix-${krmxver}b${buildno}-${DIST_ID}${RELOS}-amd64.deb
     else
-        mv /var/tmp/kronometrix-${krmxver}-${PT_NAME}.deb /var/tmp/kronometrix-${krmxver}b${buildno}-${DIST_ID}${RELOS}-${PT_NAME}.deb
-    fi
-else
-    if [ "$PT_NAME" = "x86_64" ]; then
-        mv /var/tmp/kronometrix-${krmxver}-amd64.deb /var/tmp/kronometrix-${krmxver}-${DIST_ID}${RELOS}-amd64.deb
-    else
-        mv /var/tmp/kronometrix-${krmxver}-${PT_NAME}.deb /var/tmp/kronometrix-${krmxver}-${DIST_ID}${RELOS}-${PT_NAME}.deb
+        mv /var/tmp/kronometrix-${krmxver}-${PT_NAME}.deb \
+         /var/tmp/kronometrix-${krmxver}b${buildno}-${DIST_ID}${RELOS}-${PT_NAME}.deb
     fi
 fi
+#else
+#    if [ "$PT_NAME" = "x86_64" ]; then
+#        mv /var/tmp/kronometrix-${krmxver}-amd64.deb /var/tmp/kronometrix-${krmxver}-${DIST_ID}${RELOS}-amd64.deb
+#    else
+#        mv /var/tmp/kronometrix-${krmxver}-${PT_NAME}.deb /var/tmp/kronometrix-${krmxver}-${DIST_ID}${RELOS}-${PT_NAME}.deb
+#    fi
+#fi
 
 # final check; 3 steps
 deb_pkg_done=`expr $step1 + $step2 + $step3`
