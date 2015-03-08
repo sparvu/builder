@@ -217,7 +217,7 @@ else
     step6=`expr $step6 + 1`
 fi
 
-for lib in Digest::SHA Proc::Daemon Proc::PID::File File::Tail \
+for lib in Digest::SHA Proc::Daemon Proc::PID::File File::Tail Regexp::Common \
            JSON::XS JSON HTTP::Response UUID::Tiny Carp::Assert \
            Inline::MakeMaker Inline::C Date::Calc Device::SerialPort
 do
@@ -248,7 +248,7 @@ do
 done
 
 # there are 14 perl modules install calls
-step6=`expr $step6 / 14`
+step6=`expr $step6 / 15`
 
 # final check; all 6 steps
 perl_done=`expr $step1 + $step2 + $step3 + $step4 + $step5 + $step6`
@@ -901,6 +901,7 @@ cp etc/*.start ${iprefix}/etc
 cp etc/kronometrix.json ${iprefix}/etc
 cp etc/agents ${iprefix}/etc
 cp etc/transport ${iprefix}/etc
+cp etc/${OS_NAME}/logrotate.krmx ${iprefix}/etc
 mkdir ${iprefix}/etc/rc
 cp etc/${OS_NAME}/kronometrix* ${iprefix}/etc/rc
 if [ $? -ne 0 ]; then
