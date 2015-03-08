@@ -1400,6 +1400,8 @@ elif [ "$PT_NAME" = "armv6l" ]; then
     cp control.armv6l $pkgname/DEBIAN/control
 elif [ "$PT_NAME" = "i386" ]; then
     cp control.i386 $pkgname/DEBIAN/control
+elif [ "$PT_NAME" = "i686" ]; then
+    cp control.i686 $pkgname/DEBIAN/control
 fi
 
 
