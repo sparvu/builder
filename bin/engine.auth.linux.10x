@@ -237,7 +237,7 @@ clean_module
 
 
 ### lua-resty-template
-build_auth_libluatemplate() {
+build_auth_template() {
 dir="lua-resty-template"
 step1=0
 step2=0
@@ -270,11 +270,11 @@ else
 fi
 
 # final check; all 2 steps
-auth_libluatemplate_done=`expr $step1 + $step2`
-if [ $auth_libluatemplate_done -eq 2 ]; then
-   auth_libluatemplate_done=1
+auth_lua_resty_template_done=`expr $step1 + $step2`
+if [ $auth_lua_resty_template_done -eq 2 ]; then
+   auth_lua_resty_template_done=1
 else
-   auth_libluatemplate_done=90
+   auth_lua_resty_template_done=90
 fi
 
 clean_module
@@ -330,7 +330,7 @@ cd ..
 
 
 ### router.lua
-build_auth_libluarouter() {
+build_auth_router() {
 dir="router.lua"
 step1=0
 step2=0
@@ -360,11 +360,11 @@ else
 fi
 
 # final check; all 2 steps
-auth_libluarouter_done=`expr $step1 + $step2`
-if [ $auth_libluarouter_done -eq 2 ]; then
-   auth_libluarouter_done=1
+auth_router_done=`expr $step1 + $step2`
+if [ $auth_router_done -eq 2 ]; then
+   auth_router_done=1
 else
-   auth_libluarouter_done=90
+   auth_router_done=90
 fi
 
 clean_module
@@ -376,7 +376,7 @@ cd ..
 
 
 ### inspect.lua
-build_auth_libluainspect() {
+build_auth_inspect() {
 dir="inspect.lua"
 step1=0
 step2=0
@@ -409,11 +409,11 @@ else
 fi
 
 # final check; all 2 steps
-auth_libluainspect_done=`expr $step1 + $step2`
-if [ $auth_libluainspect_done -eq 2 ]; then
-   auth_libluainspect_done=1
+auth_inspect_done=`expr $step1 + $step2`
+if [ $auth_inspect_done -eq 2 ]; then
+   auth_inspect_done=1
 else
-   auth_libluainspect_done=90
+   auth_inspect_done=90
 fi
 
 clean_module
