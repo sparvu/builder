@@ -159,96 +159,6 @@ clean_module
 }
 
 
-### memcached
-build_auth_mcd() {
-dir=memcached
-step1=0
-step2=0
-step3=0
-step4=0
-
-# STEP 1
-init_module "$dir"
-if [ $? -eq 0 ]; then
-    step1=1
-fi
-
-# STEP 2
-
-echo "" >> ${BUILD_PATH}/${BUILD_LOG}
-echo "Info: Step 2 - Configure $dir ..." |\
- tee -a ${BUILD_PATH}/${BUILD_LOG}
-
-if [ "$PT_NAME" = "armv6l" ]; then
-    env PATH=${iprefix}/bin:$PATH \
-    PKG_CONFIG_PATH=/usr/local/libdata/pkgconfig  \
-    CC=cc CFLAGS="-O3 -I/usr/local/include -I${iprefix}/include" \
-    LDFLAGS="-L${iprefix}/lib -L/usr/local/lib -Wl,-rpath -Wl,${iprefix}/lib" \
-    ./configure --prefix=${iprefix} >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
-elif [ "$PT_NAME" = "x86_64" ]; then
-    env PATH=${iprefix}/bin:$PATH \
-    PKG_CONFIG_PATH=/usr/local/libdata/pkgconfig  \
-    CC=cc CFLAGS="-O3 -I/usr/local/include -I${iprefix}/include" \
-    LDFLAGS="-L${iprefix}/lib -L/usr/local/lib -Wl,-rpath -Wl,${iprefix}/lib" \
-    ./configure --enable-64bit --prefix=${iprefix} >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
-else
-    env PATH=${iprefix}/bin:$PATH \
-    PKG_CONFIG_PATH=/usr/local/libdata/pkgconfig  \
-    CC=cc CFLAGS="-O3 -I/usr/local/include -I${iprefix}/include" \
-    LDFLAGS="-L${iprefix}/lib -L/usr/local/lib -Wl,-rpath -Wl,${iprefix}/lib" \
-    ./configure --prefix=${iprefix} >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
-fi
-
-if [ $? -ne 0 ]; then
-    echo "Error: configure $dir failed !" | tee -a ${BUILD_PATH}/${BUILD_LOG}
-    exit 3
-else
-    step2=1
-fi  
-
-
-# STEP 3
-echo "" >> ${BUILD_PATH}/${BUILD_LOG}
-echo "Info: Step 3 - Make $dir..." |\
- tee -a ${BUILD_PATH}/${BUILD_LOG}
-make >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
-if [ $? -ne 0 ]; then
-    echo "Error: make $dir failed !" |\
-     tee -a ${BUILD_PATH}/${BUILD_LOG}
-    exit 3
-else
-    step3=1
-fi 
-
-
-# STEP 4
-echo "" >> ${BUILD_PATH}/${BUILD_LOG}
-echo "Info: Step 4 - Make install $dir..." |\
- tee -a ${BUILD_PATH}/${BUILD_LOG}
-
-make install >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
-if [ $? -ne 0 ]; then
-    echo "Error: make install perl failed !" |\
-     tee -a ${BUILD_PATH}/${BUILD_LOG}
-    exit 3
-else
-    step4=1
-fi
-
-
-# final check; all 4 steps
-auth_mcd_done=`expr $step1 + $step2 + $step3 + $step4`
-if [ $auth_mcd_done -eq 4 ]; then
-   auth_mcd_done=1
-else
-   auth_mcd_done=90
-fi
-
-clean_module
-
-}
-
-
 ### openresty
 build_auth_openresty() {
 dir=openresty
@@ -375,6 +285,50 @@ cd ..
 }
 
 
+### lua-resty-http-simple
+build_auth_httpsimple() {
+dir="lua-resty-http-simple"
+step1=0
+step2=0
+
+cd lib
+
+init_module "$dir"
+if [ $? -eq 0 ]; then
+    step1=1
+fi
+
+# STEP 2
+
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 2 - Install simple.lua ..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+cp -R lib/resty/http ${iprefix}/lualib/resty
+if [ $? -ne 0 ]; then
+    echo "Error: cannot install simple.lua script !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+     rm /var/tmp/build.${module}
+     exit 3
+else
+    step2=1
+fi
+
+# final check; all 2 steps
+auth_lua_resty_http_simple_done=`expr $step1 + $step2`
+if [ $auth_lua_resty_http_simple_done -eq 2 ]; then
+   auth_lua_resty_http_simple_done=1
+else
+   auth_lua_resty_http_simple_done=90
+fi
+
+clean_module
+
+# back to root
+cd ..
+}
+
+
 ### router.lua
 build_auth_libluarouter() {
 dir="router.lua"
@@ -411,52 +365,6 @@ if [ $auth_libluarouter_done -eq 2 ]; then
    auth_libluarouter_done=1
 else
    auth_libluarouter_done=90
-fi
-
-clean_module
-
-# back to root
-cd ..
-
-}
-
-
-### lua-resty-smtp
-build_auth_libluasmtp() {
-dir="lua-resty-smtp"
-step1=0
-step2=0
-
-
-cd lib
-
-init_module "$dir"
-if [ $? -eq 0 ]; then
-    step1=1
-fi
-
-# STEP 2
-
-echo "" >> ${BUILD_PATH}/${BUILD_LOG}
-echo "Info: Step 2 - Install router.lua ..." |\
- tee -a ${BUILD_PATH}/${BUILD_LOG}
-
-cp -R lib/resty/smtp* ${iprefix}/lualib/resty
-if [ $? -ne 0 ]; then
-    echo "Error: cannot install smtp.lua script !" |\
-     tee -a ${BUILD_PATH}/${BUILD_LOG}
-     rm /var/tmp/build.${module}
-     exit 3
-else
-    step2=1
-fi
-
-# final check; all 2 steps
-auth_libluasmtp_done=`expr $step1 + $step2`
-if [ $auth_libluasmtp_done -eq 2 ]; then
-   auth_libluasmtp_done=1
-else
-   auth_libluasmtp_done=90
 fi
 
 clean_module
