@@ -580,7 +580,9 @@ echo "" >> ${BUILD_PATH}/${BUILD_LOG}
 echo "Info: Step 2 - Installing startup services..." |\
  tee -a ${BUILD_PATH}/${BUILD_LOG}
 
-cp krono* ${iprefix}/etc/
+cp auth db http ${iprefix}/etc/
+mkdir ${iprefix}/etc/rc
+cp ${OS_NAME}/kronometrix* ${iprefix}/etc/rc
 if [ $enterprise_sem -eq 1 ]; then
     cp redis.conf.maas ${iprefix}/etc/redis.conf
 elif [ $rbpi_sem -eq 1 ]; then
