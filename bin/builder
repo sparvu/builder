@@ -727,7 +727,6 @@ case "$module" in
         build_mesg_pkg 
     else 
         build_mesg_openresty
-        build_mesg_template
         build_mesg_router
         build_mesg_smtp
 
@@ -774,7 +773,6 @@ case "$module" in
         build_kernel_openresty
         build_kernel_fs
         build_kernel_template
-        build_kernel_session
         build_kernel_router
         build_kernel_libdate
         build_kernel_httpsimple
