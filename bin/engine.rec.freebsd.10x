@@ -248,8 +248,8 @@ do
     fi
 done
 
-# there are 13 perl modules install calls
-step6=`expr $step6 / 13`
+# there are 14 perl modules install calls
+step6=`expr $step6 / 14`
 
 # final check; all 6 steps
 perl_done=`expr $step1 + $step2 + $step3 + $step4 + $step5 + $step6`

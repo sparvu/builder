@@ -247,7 +247,7 @@ do
     fi
 done
 
-# there are 14 perl modules install calls
+# there are 15 perl modules install calls
 step6=`expr $step6 / 15`
 
 # final check; all 6 steps
