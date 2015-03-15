@@ -933,8 +933,17 @@ if [ $? -ne 0 ]; then
     exit 3
 fi
 
+# set LICENSE
+cp LICENSE ${iprefix}/
+if [ $? -ne 0 ]; then
+    echo "Error: cannot install license file !" |\
+      tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+fi
+
 # set release notes
-cp release.notes.${OS_NAME} ${iprefix}/release.notes
+cp RELEASENOTES.${OS_NAME} ${iprefix}/RELEASENOTES
 if [ $? -ne 0 ]; then
     echo "Error: cannot install release.notes !" |\
       tee -a ${BUILD_PATH}/${BUILD_LOG}
@@ -943,7 +952,7 @@ if [ $? -ne 0 ]; then
 fi
 
 # set README 
-cp README.${OS_NAME} ${iprefix}
+cp README.${OS_NAME} ${iprefix}/README
 if [ $? -ne 0 ]; then
     echo "Error: cannot install README.${OS_NMAE} !" |\
       tee -a ${BUILD_PATH}/${BUILD_LOG}
