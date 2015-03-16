@@ -793,7 +793,7 @@ if [ $? -ne 0 ]; then
 fi
 
 # set README 
-cp README.${OS_NAME} ${iprefix}
+cp README.${OS_NAME} ${iprefix}/README
 if [ $? -ne 0 ]; then
     echo "Error: cannot install README.${OS_NAME} !" |\
       tee -a ${BUILD_PATH}/${BUILD_LOG}
