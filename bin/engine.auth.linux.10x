@@ -768,8 +768,8 @@ if [ ! -d tmp ]; then
 fi
 
 # prepare SOURCES
-if [ ! -d "SOURCES/kronometrix-${krmxver}" ]; then
-    mkdir "SOURCES/kronometrix-${krmxver}"
+if [ ! -d "SOURCES/kronometrix-auth-${krmxver}" ]; then
+    mkdir "SOURCES/kronometrix-auth-${krmxver}"
 fi
 
 if [ "$buildno" -ne 0 ]; then
