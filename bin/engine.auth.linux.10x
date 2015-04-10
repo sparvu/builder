@@ -768,8 +768,8 @@ if [ ! -d tmp ]; then
 fi
 
 # prepare SOURCES
-if [ ! -d "SOURCES/kronometrix-auth-${krmxver}" ]; then
-    mkdir "SOURCES/kronometrix-auth-${krmxver}"
+if [ ! -d "SOURCES/kronometrix-${krmxver}" ]; then
+    mkdir "SOURCES/kronometrix-${krmxver}"
 fi
 
 if [ "$buildno" -ne 0 ]; then
@@ -1071,6 +1071,7 @@ echo "Info: Step 1 - Kronometrix tar package" |\
 
 case "$DIST_ID" in
     centos|rhel)
+        PT_NAME=$HW_NAME
         build_auth_tar_pkg
         build_auth_rpm_pkg
     ;;
