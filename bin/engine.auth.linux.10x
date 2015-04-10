@@ -845,7 +845,7 @@ else
 fi
 
 
-if [ -f SPECS/kronometrix-auth ]; then
+if [ -f SPECS/kronometrix ]; then
     rpmbuild -bb ./SPECS/kronometrix >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
     if [ $? -ne 0 ]; then
         echo "Error: cannot build rpm, rpmbuild error !" |\
