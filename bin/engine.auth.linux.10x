@@ -749,21 +749,36 @@ fi
 
 if [ ! -d SOURCES ]; then
     mkdir SOURCES
+else
+    rm -rf SOURCES
+    mkdir SOURCES
 fi
 
 if [ ! -d SRPMS ]; then
+    mkdir SRPMS
+else
+    rm -rf SRPMS
     mkdir SRPMS
 fi
 
 if [ ! -d BUILD ]; then
     mkdir BUILD
+else
+    rm -rf BUILD
+    mkdir BUILD
 fi
 
 if [ ! -d RPMS ]; then
     mkdir RPMS
+else
+    rm -rf RPMS
+    mkdir RPMS
 fi
 
 if [ ! -d tmp ]; then
+    mkdir tmp
+else
+    rm -rf tmp
     mkdir tmp
 fi
 
