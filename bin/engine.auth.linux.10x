@@ -868,6 +868,9 @@ if [ -f RPMS/kronometrix-auth-${krmxver}-${PT_NAME}.rpm ]; then
 
     if [ $? -eq 0 ]; then
         rm -rf RPMS SOURCES SRPMS BUILD tmp
+        if [ -d BUILDROOT ]; then
+            rm -rf BUILDROOT
+        fi
         rm $HOME/.rpmmacros
         step3=1
     fi
