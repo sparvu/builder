@@ -784,7 +784,7 @@ if [ "$buildno" -ne 0 ]; then
 
     if [ -f /var/tmp/kronometrix-auth-${krmxver}b${buildno}-${DIST_ID}.${PT_NAME}.tar.bz2 ]; then
         cp /var/tmp/kronometrix-auth-${krmxver}b${buildno}-${DIST_ID}.${PT_NAME}.tar.bz2 \
-           SOURCES/kronometrix-auth-${krmxver}/kronometrix-${krmxver}-${PT_NAME}.tar.bz2
+           SOURCES/kronometrix-auth-${krmxver}/kronometrix-auth-${krmxver}-${PT_NAME}.tar.bz2
         if [ $? -ne 0 ]; then
             echo "Error: cannot copy tar archive to SOURCE directory !" |\
               tee -a ${BUILD_PATH}/${BUILD_LOG}
@@ -796,14 +796,14 @@ if [ "$buildno" -ne 0 ]; then
     fi
 else
 
-    sed "s/^Version.*/Version: ${krmxver}/" SPECS/kronometrix > SPECS/kronometrix.tmp
-    mv SPECS/kronometrix.tmp SPECS/kronometrix
-    sed "s/^Release.*/Release: 0/" SPECS/kronometrix > SPECS/kronometrix.tmp
-    mv SPECS/kronometrix.tmp SPECS/kronometrix
+    sed "s/^Version.*/Version: ${krmxver}/" SPECS/kronometrix-auth > SPECS/kronometrix-auth.tmp
+    mv SPECS/kronometrix-auth.tmp SPECS/kronometrix-auth
+    sed "s/^Release.*/Release: 0/" SPECS/kronometrix-auth > SPECS/kronometrix-auth.tmp
+    mv SPECS/kronometrix-auth.tmp SPECS/kronometrix-auth
 
     if [ -f /var/tmp/kronometrix-auth-${krmxver}-${DIST_ID}.${PT_NAME}.tar.bz2 ]; then
         cp /var/tmp/kronometrix-auth-${krmxver}-${DIST_ID}.${PT_NAME}.tar.bz2 \
-            SOURCES/kronometrix-auth-${krmxver}/kronometrix-${krmxver}-${PT_NAME}.tar.bz2
+            SOURCES/kronometrix-auth-${krmxver}/kronometrix-auth-${krmxver}-${PT_NAME}.tar.bz2
         if [ $? -ne 0 ]; then
             echo "Error: cannot copy tar archive to SOURCE directory !" |\
               tee -a ${BUILD_PATH}/${BUILD_LOG}
