@@ -21,7 +21,7 @@
 #
 #  (http://www.gnu.org/copyleft/gpl.html)
 
-# VERSION: 2.1
+# VERSION: 2.2
 
 # ############################################################### #
 # Analytics Authentication Linux                                  #
@@ -776,10 +776,10 @@ if [ "$buildno" -ne 0 ]; then
     # Version: 1.0.0
     # Release: b10
     # get control file fixed correct build and version
-    sed "s/^Version.*/Version: ${krmxver}/" SPECS/kronometrix-auth > SPECS/kronometrix-auth.tmp
-    mv SPECS/kronometrix-auth.tmp SPECS/kronometrix-auth
-    sed "s/^Release.*/Release: b${buildno}/" SPECS/kronometrix-auth > SPECS/kronometrix-auth.tmp
-    mv SPECS/kronometrix-auth.tmp SPECS/kronometrix-auth
+    sed "s/^Version.*/Version: ${krmxver}/" SPECS/kronometrix > SPECS/kronometrix.tmp
+    mv SPECS/kronometrix.tmp SPECS/kronometrix
+    sed "s/^Release.*/Release: b${buildno}/" SPECS/kronometrix > SPECS/kronometrix.tmp
+    mv SPECS/kronometrix.tmp SPECS/kronometrix
 
 
     if [ -f /var/tmp/kronometrix-auth-${krmxver}b${buildno}-${DIST_ID}.${PT_NAME}.tar.bz2 ]; then
@@ -831,8 +831,7 @@ fi
 
 
 if [ -f SPECS/kronometrix-auth ]; then
-
-    rpmbuild -bb ./SPECS/kronometrix-auth >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+    rpmbuild -bb ./SPECS/kronometrix >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
     if [ $? -ne 0 ]; then
         echo "Error: cannot build rpm, rpmbuild error !" |\
             tee -a ${BUILD_PATH}/${BUILD_LOG}
