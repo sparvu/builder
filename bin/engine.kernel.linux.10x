@@ -889,38 +889,53 @@ fi
 
 if [ ! -d SOURCES ]; then
     mkdir SOURCES
+else
+    rm -rf SOURCES
+    mkdir SOURCES
 fi
 
 if [ ! -d SRPMS ]; then
+    mkdir SRPMS
+else
+    rm -rf SRPMS
     mkdir SRPMS
 fi
 
 if [ ! -d BUILD ]; then
     mkdir BUILD
+else
+    rm -rf BUILD
+    mkdir BUILD
 fi
 
 if [ ! -d RPMS ]; then
+    mkdir RPMS
+else
+    rm -rf RPMS
     mkdir RPMS
 fi
 
 if [ ! -d tmp ]; then
     mkdir tmp
+else
+    rm -rf tmp
+    mkdir tmp
 fi
 
 # prepare SOURCES
-if [ ! -d "SOURCES/kronometrix-${krmxver}" ]; then
-    mkdir "SOURCES/kronometrix-${krmxver}"
+if [ ! -d "SOURCES/kronometrix-kernel-${krmxver}" ]; then
+    mkdir "SOURCES/kronometrix-kernel-${krmxver}"
 fi
+
 
 if [ "$buildno" -ne 0 ]; then
     # Version: 1.0.0
     # Release: b10
     # get control file fixed correct build and version
-    sed "s/^Version.*/Version: ${krmxver}/" SPECS/kronometrix > SPECS/kronometrix.tmp
-    mv SPECS/kronometrix.tmp SPECS/kronometrix
-    sed "s/^Release.*/Release: b${buildno}/" SPECS/kronometrix > SPECS/kronometrix.tmp
-    mv SPECS/kronometrix.tmp SPECS/kronometrix
-
+    sed "s/^Version.*/Version: ${krmxver}/" SPECS/kronometrix-kernel > SPECS/kronometrix-kernel.tmp
+    mv SPECS/kronometrix-kernel.tmp SPECS/kronometrix-kernel
+    sed "s/^Release.*/Release: b${buildno}/" SPECS/kronometrix-kernel > SPECS/kronometrix-kernel.tmp
+    mv SPECS/kronometrix-kernel.tmp SPECS/kronometrix-kernel
 
     if [ -f /var/tmp/kronometrix-kernel-${krmxver}b${buildno}-${DIST_ID}.${PT_NAME}.tar.bz2 ]; then
         cp /var/tmp/kronometrix-kernel-${krmxver}b${buildno}-${DIST_ID}.${PT_NAME}.tar.bz2 \
@@ -936,10 +951,10 @@ if [ "$buildno" -ne 0 ]; then
     fi
 else
 
-    sed "s/^Version.*/Version: ${krmxver}/" SPECS/kronometrix > SPECS/kronometrix.tmp
-    mv SPECS/kronometrix.tmp SPECS/kronometrix
-    sed "s/^Release.*/Release: 0/" SPECS/kronometrix > SPECS/kronometrix.tmp
-    mv SPECS/kronometrix.tmp SPECS/kronometrix
+    sed "s/^Version.*/Version: ${krmxver}/" SPECS/kronometrix-kernel > SPECS/kronometrix-kernel.tmp
+    mv SPECS/kronometrix-kernel.tmp SPECS/kronometrix-kernel
+    sed "s/^Release.*/Release: 0/" SPECS/kronometrix-kernel > SPECS/kronometrix-kernel.tmp
+    mv SPECS/kronometrix-kernel.tmp SPECS/kronometrix-kernel
 
     if [ -f /var/tmp/kronometrix-kernel-${krmxver}-${DIST_ID}.${PT_NAME}.tar.bz2 ]; then
         cp /var/tmp/kronometrix-kernel-${krmxver}-${DIST_ID}.${PT_NAME}.tar.bz2 \
@@ -970,9 +985,9 @@ else
 fi
 
 
-if [ -f SPECS/kronometrix ]; then
+if [ -f SPECS/kronometrix-kernel ]; then
 
-    rpmbuild -bb ./SPECS/kronometrix >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+    rpmbuild -bb ./SPECS/kronometrix-kernel >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
     if [ $? -ne 0 ]; then
         echo "Error: cannot build rpm, rpmbuild error !" |\
             tee -a ${BUILD_PATH}/${BUILD_LOG}
@@ -990,14 +1005,25 @@ echo "Info: Step 3 - Cleanup rpm stage directories" |\
  tee -a ${BUILD_PATH}/${BUILD_LOG}
 
 if [ -f RPMS/kronometrix-kernel-${krmxver}-${PT_NAME}.rpm ]; then
-   cp RPMS/kronometrix-kernel-${krmxver}-${PT_NAME}.rpm /var/tmp
-   # cleanup
-   if [ $? -eq 0 ]; then 
-       rm -rf RPMS SOURCES SRPMS BUILD tmp
-       rm $HOME/.rpmmacros
-       step3=1
-   fi
+    cp RPMS/kronometrix-kernel-${krmxver}-${PT_NAME}.rpm /var/tmp
+
+    if [ $? -eq 0 ]; then
+        rm -rf RPMS SOURCES SRPMS BUILD tmp
+        if [ -d BUILDROOT ]; then
+            rm -rf BUILDROOT
+        fi
+        rm $HOME/.rpmmacros
+        step3=1
+    fi
+
+    if [ "$buildno" -ne 0 ]; then
+        mv /var/tmp/kronometrix-kernel-${krmxver}-${PT_NAME}.rpm \
+         /var/tmp/kronometrix-kernel-${krmxver}b${buildno}-${DIST_ID}${RELOS}-${PT_NAME}.rpm
+    else
+        mv /var/tmp/kronometrix-kernel-${krmxver}-${PT_NAME}.rpm /var/tmp/kronometrix-kernel-${krmxver}-${DIST_ID}${RELOS}-${PT_NAME}.rpm
+    fi
 fi
+
 
 
 # final check; 3 steps
@@ -1196,7 +1222,6 @@ dir=pkg
 step1=0
 step2=0
 
-
 echo "############################################################"
 echo "" >> ${BUILD_PATH}/${BUILD_LOG}
 echo "Submodule: tar package ${OS_NAME}" | tee -a ${BUILD_PATH}/${BUILD_LOG}
@@ -1208,9 +1233,9 @@ echo "" >> ${BUILD_PATH}/${BUILD_LOG}
 echo "Info: Step 1 - Kronometrix tar package" |\
  tee -a ${BUILD_PATH}/${BUILD_LOG}
 
-
 case "$DIST_ID" in
     centos|rhel)
+        PT_NAME=$HW_NAME
         build_kernel_tar_pkg
         build_kernel_rpm_pkg
     ;;
@@ -1219,14 +1244,11 @@ case "$DIST_ID" in
         build_kernel_tar_pkg
         build_kernel_deb_pkg
     ;;
-               
+
     *)
         echo "Not supported Linux distro, check builder"
         exit 3
     ;;
 esac
 
-
 }
-
-
