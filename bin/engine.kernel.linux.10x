@@ -767,7 +767,6 @@ cd ..
 }
 
 
-
 ## rpm macro configuration file
 make_rpmmacro() {
 
@@ -939,7 +938,7 @@ if [ "$buildno" -ne 0 ]; then
 
     if [ -f /var/tmp/kronometrix-kernel-${krmxver}b${buildno}-${DIST_ID}.${PT_NAME}.tar.bz2 ]; then
         cp /var/tmp/kronometrix-kernel-${krmxver}b${buildno}-${DIST_ID}.${PT_NAME}.tar.bz2 \
-           SOURCES/kronometrix-kernel-${krmxver}/kronometrix-${krmxver}-${PT_NAME}.tar.bz2
+           SOURCES/kronometrix-kernel-${krmxver}/kronometrix-kernel-${krmxver}-${PT_NAME}.tar.bz2
         if [ $? -ne 0 ]; then
             echo "Error: cannot copy tar archive to SOURCE directory !" |\
               tee -a ${BUILD_PATH}/${BUILD_LOG}
@@ -958,7 +957,7 @@ else
 
     if [ -f /var/tmp/kronometrix-kernel-${krmxver}-${DIST_ID}.${PT_NAME}.tar.bz2 ]; then
         cp /var/tmp/kronometrix-kernel-${krmxver}-${DIST_ID}.${PT_NAME}.tar.bz2 \
-            SOURCES/kronometrix-kernel-${krmxver}/kronometrix-${krmxver}-${PT_NAME}.tar.bz2
+            SOURCES/kronometrix-kernel-${krmxver}/kronometrix-kernel-${krmxver}-${PT_NAME}.tar.bz2
         if [ $? -ne 0 ]; then
             echo "Error: cannot copy tar archive to SOURCE directory !" |\
               tee -a ${BUILD_PATH}/${BUILD_LOG}
