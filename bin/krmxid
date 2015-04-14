@@ -1,0 +1,111 @@
+#!/opt/kronometrix/perl/bin/perl
+#
+#  Copyright (c) 2015 Stefan Parvu (www.kronometrix.org).
+#
+#  This program is free software; you can redistribute it and/or
+#  modify it under the terms of the GNU General Public License
+#  as published by the Free Software Foundation; either version 2
+#  of the License, or (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this program; if not, write to the Free Software Foundation,
+#  Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+#
+#  (http://www.gnu.org/copyleft/gpl.html)
+
+use strict;
+use warnings;
+use UUID::Tiny ':std';
+use Digest::SHA;
+use Getopt::Std;
+use Time::HiRes;
+
+###  Process command line args
+usage() if defined $ARGV[0] and $ARGV[0] eq "--help";
+getopts('hvV') or usage();
+usage()    if defined $main::opt_h;
+revision() if defined $main::opt_V;
+
+# verbose flag
+my $verbose_flag = defined $main::opt_v ? $main::opt_v : 0;
+
+
+###  Variables
+$main::opt_h = 0;    # help option
+$main::opt_V = 0;    # revision option
+my $osname   = $^O;
+my %count_of;
+
+## configuration
+
+local $| = 1;
+
+### MAIN BODY #
+
+# $osname = "centos";
+
+my $stringid = lc <<"STRING_MSG";
+Enterprise Appliance $osname
+Sun Apr 12 16:06:39 EEST 2015
+SDR Dynamics Oy, Helsinki, Finland
+5000
+Customer.Com
+STRING_MSG
+
+# print "stringid: $stringid";
+
+my ($records, $words, $chars) = 0;
+
+while( $stringid =~ /(.+)$/mg) {
+    print "'$1'\n" if ( $verbose_flag == 1 );
+    $records++;
+    $chars += length($1);
+    $words += scalar(split(/\W+/, $1));
+}
+
+
+my $krmxid = make_id($stringid);
+if ( $verbose_flag == 1 ) {
+    print "Records: $records\n";
+    print "Words: $words, Characters=$chars\n";
+}
+
+print "Appliance ID: $krmxid\n";
+
+### Subroutines
+
+# make appliance id
+sub make_id {
+
+    my ( $s ) = @_;
+    
+    my $id = create_uuid_as_string(UUID_V5,$s);
+    chomp($id);
+
+    return $id;
+}
+
+
+# usage - print usage and exit.
+sub usage {
+    print STDERR <<END;
+USAGE: krmxid [-hV]
+OPTIONS:
+  -h        : help information
+  -V        : release version
+END
+    exit 0;
+}
+
+# revision - print revision and exit
+sub revision {
+    print STDERR <<END;
+krmxid: 0.0.1, 2015-04-14 1434
+END
+    exit 0;
+}
