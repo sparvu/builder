@@ -124,14 +124,14 @@ echo "Info: Step 2 - Configure perl ..." |\
 
 if [ "$PT_NAME" = "x86_64" ]; then
     sh Configure -Doptimize='-O3' -Duselargefiles -Duse64bitall \
-        -Dcf_by="support@systemdatarecorder.org"       \
-        -Dcf_email="support@systemdatarecorder.org"    \
+        -Dcf_by="support@kronometrix.org"       \
+        -Dcf_email="support@kronometrix.org"    \
         -Dman1dir="none" -Dman3dir="none"        \
         -Dprefix=${iprefix}/perl -des >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
 else
     sh Configure -Doptimize='-O3' -Duselargefiles -Duse64bitint \
-        -Dcf_by="support@systemdatarecorder.org"       \
-        -Dcf_email="support@systemdatarecorder.org"    \
+        -Dcf_by="support@kronometrix.org"       \
+        -Dcf_email="support@kronometrix.org"    \
         -Dman1dir="none" -Dman3dir="none"        \
         -Dprefix=${iprefix}/perl -des >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
 fi
@@ -1387,7 +1387,9 @@ echo "Info: Step 1 - Create stage directory" |\
 
 if [ "$PT_NAME" = "x86_64" ]; then
     pkgname="kronometrix-${krmxver}-amd64"
-else
+elsif [ "$PT_NAME" = "i686" ]; then
+    pkgname="kronometrix-${krmxver}-i386"
+else 
     pkgname="kronometrix-${krmxver}-${PT_NAME}"
 fi
 
@@ -1419,7 +1421,8 @@ elif [ "$PT_NAME" = "armv6l" ]; then
 elif [ "$PT_NAME" = "i386" ]; then
     cp control.i386 $pkgname/DEBIAN/control
 elif [ "$PT_NAME" = "i686" ]; then
-    cp control.i686 $pkgname/DEBIAN/control
+    # cp control.i686 $pkgname/DEBIAN/control
+    cp control.i386 $pkgname/DEBIAN/control
 fi
 
 
