@@ -1387,7 +1387,7 @@ echo "Info: Step 1 - Create stage directory" |\
 
 if [ "$PT_NAME" = "x86_64" ]; then
     pkgname="kronometrix-${krmxver}-amd64"
-elsif [ "$PT_NAME" = "i686" ]; then
+elif [ "$PT_NAME" = "i686" ]; then
     pkgname="kronometrix-${krmxver}-i386"
 else 
     pkgname="kronometrix-${krmxver}-${PT_NAME}"
