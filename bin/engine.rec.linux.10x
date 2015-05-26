@@ -903,7 +903,9 @@ cp etc/kronometrix.json ${iprefix}/etc
 cp etc/agents ${iprefix}/etc
 cp etc/transport ${iprefix}/etc
 cp etc/${OS_NAME}/logrotate.krmx ${iprefix}/etc
-mkdir ${iprefix}/etc/rc
+if [ ! -d ${iprefix}/etc/rc ]; then
+    mkdir ${iprefix}/etc/rc
+fi
 cp etc/${OS_NAME}/kronometrix* ${iprefix}/etc/rc
 if [ $? -ne 0 ]; then
     echo "Error: cannot install etc settings !" |\
@@ -1389,7 +1391,7 @@ if [ "$PT_NAME" = "x86_64" ]; then
     pkgname="kronometrix-${krmxver}-amd64"
 elif [ "$PT_NAME" = "i686" ]; then
     pkgname="kronometrix-${krmxver}-i386"
-else 
+else
     pkgname="kronometrix-${krmxver}-${PT_NAME}"
 fi
 
@@ -1506,6 +1508,9 @@ if [ "$buildno" -ne 0 ]; then
     if [ "$PT_NAME" = "x86_64" ]; then
         mv /var/tmp/kronometrix-${krmxver}-amd64.deb \
          /var/tmp/kronometrix-${krmxver}b${buildno}-${DIST_ID}${RELOS}-amd64.deb
+    elif [ "$PT_NAME" = "i686" ]; then
+        mv /var/tmp/kronometrix-${krmxver}-i386.deb \
+         /var/tmp/kronometrix-${krmxver}b${buildno}-${DIST_ID}${RELOS}-i386.deb
     else
         mv /var/tmp/kronometrix-${krmxver}-${PT_NAME}.deb \
          /var/tmp/kronometrix-${krmxver}b${buildno}-${DIST_ID}${RELOS}-${PT_NAME}.deb
@@ -1513,6 +1518,8 @@ if [ "$buildno" -ne 0 ]; then
 else
     if [ "$PT_NAME" = "x86_64" ]; then
         mv /var/tmp/kronometrix-${krmxver}-amd64.deb /var/tmp/kronometrix-${krmxver}-${DIST_ID}${RELOS}-amd64.deb
+    elif [ "$PT_NAME" = "i686" ]; then
+        mv /var/tmp/kronometrix-${krmxver}-i386.deb /var/tmp/kronometrix-${krmxver}-${DIST_ID}${RELOS}-i386.deb
     else
         mv /var/tmp/kronometrix-${krmxver}-${PT_NAME}.deb /var/tmp/kronometrix-${krmxver}-${DIST_ID}${RELOS}-${PT_NAME}.deb
     fi
