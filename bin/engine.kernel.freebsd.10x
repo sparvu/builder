@@ -21,7 +21,7 @@
 #
 #  (http://www.gnu.org/copyleft/gpl.html)
 
-# VERSION: 2.1
+# VERSION: 2.2
 
 # ############################################################### #
 # Analytics Kernel FreeBSD                                        #
@@ -769,13 +769,15 @@ echo "" >> ${BUILD_PATH}/${BUILD_LOG}
 echo "Info: Step 2 - Installing kernel startup services ..." |\
  tee -a ${BUILD_PATH}/${BUILD_LOG}
 
-cp kernel db http ${iprefix}/etc/
+cp kernel db_aux db_stats http ${iprefix}/etc/
 mkdir ${iprefix}/etc/rc
 cp ${OS_NAME}/kronometrix* ${iprefix}/etc/rc
 if [ $enterprise_sem -eq 1 ]; then
-    cp redis.conf.maas ${iprefix}/etc/redis.conf
+    cp stats.conf.maas ${iprefix}/etc/stats.conf
+    cp aux.conf.maas ${iprefix}/etc/aux.conf
 elif [ $rbpi_sem -eq 1 ]; then
-    cp redis.conf.rbpi ${iprefix}/etc/redis.conf
+    cp stats.conf.rbpi ${iprefix}/etc/stats.conf
+    cp aux.conf.rbpi ${iprefix}/etc/aux.conf
 fi
 
 if [ $? -ne 0 ]; then
