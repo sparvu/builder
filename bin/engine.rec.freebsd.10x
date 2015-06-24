@@ -20,7 +20,7 @@
 #
 #  (http://www.gnu.org/copyleft/gpl.html)
 
-# VERSION: 2.1
+# VERSION: 2.2
 
 # ############################################################### #
 # Engine: FreeBSD                                                 # 
@@ -124,14 +124,14 @@ echo "Info: Step 2 - Configure perl ..." |\
 
 if [ "$PT_NAME" = "amd64" ]; then
     sh Configure -Doptimize='-O3' -Duselargefiles -Duse64bitall \
-        -Dcf_by="support@systemdatarecorder.org"       \
-        -Dcf_email="support@systemdatarecorder.org"    \
+        -Dcf_by="support@kronometrix.org"       \
+        -Dcf_email="support@kronometrix.org"    \
         -Dman1dir="none" -Dman3dir="none"        \
         -Dprefix=${iprefix}/perl -des >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
 else
     sh Configure -Doptimize='-O3' -Duselargefiles -Duse64bitint \
-        -Dcf_by="support@systemdatarecorder.org"       \
-        -Dcf_email="support@systemdatarecorder.org"    \
+        -Dcf_by="support@kronometrix.org"       \
+        -Dcf_email="support@kronometrix.org"    \
         -Dman1dir="none" -Dman3dir="none"        \
         -Dprefix=${iprefix}/perl -des >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
 fi
@@ -598,12 +598,14 @@ echo "Info: Step 2 - Configure $dir ..." |\
 env PATH=${iprefix}/bin:$PATH ${iprefix}/perl/bin/perl Makefile.PL >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
 #sed -i.backup '/^LDFLAGS =/ {s/.*/& \-L\/lib64 \-L\/usr\/lib64 \-L\/opt\/sdr\/lib/}' Makefile
 # LDFLAGS =  -fstack-protector -L/usr/local/lib
-sed "s:^LDFLAGS =  -fstack-protector -L/usr/local/lib:LDFLAGS = -fstack-protector -L${iprefix}/lib -L/usr/local/lib -Wl,-rpath -Wl,${iprefix}/lib:" Makefile > Makefile.tmp
+# sed "s:^LDFLAGS =  -fstack-protector -L/usr/local/lib:LDFLAGS = -fstack-protector -L${iprefix}/lib -Wl,-rpath -Wl,${iprefix}/lib:" Makefile > Makefile.tmp
+sed "s:^LDFLAGS =.*:LDFLAGS = -Wl,-E -fstack-protector -L${iprefix}/lib -Wl,-rpath -Wl,${iprefix}/lib:" Makefile > Makefile.tmp
 
 mv Makefile.tmp Makefile
 
 #sed -i.backup '/^LDDLFLAGS =/ {s/.*/& \-L\/lib64 \-L\/usr\/lib64 \-L\/opt\/sdr\/lib/ -Wl,-rpath -Wl,${iprefix}/lib}' Makefile
-sed "s:^LDDLFLAGS = -shared -O3 -L/usr/local/lib -fstack-protector:LDDLFLAGS = -shared -O3 -fstack-protector -L${iprefix}/lib -Wl,-rpath -Wl,${iprefix}/lib:" Makefile > Makefile.tmp
+#sed "s:^LDDLFLAGS = -shared -O3 -L/usr/local/lib -fstack-protector:LDDLFLAGS = -shared -O3 -fstack-protector -L${iprefix}/lib -Wl,-rpath -Wl,${iprefix}/lib:" Makefile > Makefile.tmp
+sed "s:^LDDLFLAGS =.*:LDDLFLAGS = -shared -fstack-protector -L${iprefix}/lib -Wl,-rpath -Wl,${iprefix}/lib:" Makefile > Makefile.tmp
 mv Makefile.tmp Makefile
 
 if [ $? -ne 0 ]; then
