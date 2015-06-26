@@ -290,6 +290,10 @@ elif [ "$PT_NAME" = "armv6l" ]; then
     env PATH=${iprefix}/bin:${iprefix}/perl/bin:$PATH \
      ./Configure linux-armv4 threads shared --prefix=${iprefix} \
      --openssldir=${iprefix}/openssl >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+elif [ "$PT_NAME" = "armv7l" ]; then
+    env PATH=${iprefix}/bin:${iprefix}/perl/bin:$PATH \
+     ./Configure linux-armv4 threads shared --prefix=${iprefix} \
+     --openssldir=${iprefix}/openssl >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
 else
     env PATH=${iprefix}/bin:${iprefix}/perl/bin:$PATH \
      ./Configure linux-elf threads shared --prefix=${iprefix} \
@@ -870,6 +874,18 @@ echo "Info: Step 2 - Installing recorders ..." |\
         else
             step2=1
         fi
+    elif [ "$PT_NAME" != "armv7l" ]; then
+        cp *rec ${iprefix}/bin
+        cp ../wsrec ${iprefix}/bin
+        cp ../raw2day ${iprefix}/bin
+        if [ $? -ne 0 ]; then
+            echo "Error: cannot install rec scripts !" |\
+             tee -a ${BUILD_PATH}/${BUILD_LOG}
+            rm /var/tmp/build.${module}
+            exit 3
+        else
+            step2=1
+        fi
     else
         cp sysrec cpurec diskrec nicrec hdwrec ${iprefix}/bin
         cp ../wsrec ${iprefix}/bin
@@ -1419,6 +1435,8 @@ cp changelog prerm copyright preinst postinst $pkgname/DEBIAN
 if [ "$PT_NAME" = "x86_64" ]; then
     cp control.amd64 $pkgname/DEBIAN/control
 elif [ "$PT_NAME" = "armv6l" ]; then
+    cp control.armv6l $pkgname/DEBIAN/control
+elif [ "$PT_NAME" = "armv7l" ]; then
     cp control.armv6l $pkgname/DEBIAN/control
 elif [ "$PT_NAME" = "i386" ]; then
     cp control.i386 $pkgname/DEBIAN/control
