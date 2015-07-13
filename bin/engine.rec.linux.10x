@@ -217,7 +217,8 @@ else
     step6=`expr $step6 + 1`
 fi
 
-for lib in Digest::SHA Proc::Daemon Proc::PID::File File::Tail Regexp::Common \
+for lib in Digest::SHA Proc::ProcessTable Proc::PID::File File::Tail \ 
+           Regexp::Common \
            JSON::XS JSON HTTP::Response UUID::Tiny Carp::Assert \
            Linux::Distribution Inline::MakeMaker Inline::C Date::Calc \
            Device::SerialPort
