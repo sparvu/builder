@@ -830,6 +830,14 @@ case "$module" in
         fi
     fi
 
+    if [ $procdaemon_done -eq 1 ]; then
+        echo "# proc-daemon: ok"
+    else
+        if [ $procdaemon_done -eq 90 ]; then
+            echo "# proc-daemon: failed"
+        fi
+    fi
+
     if [ $ossl_done -eq 1 ]; then
         echo "# openssl: ok"
     else
