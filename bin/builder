@@ -85,6 +85,7 @@ recs_done=0
 nrec_done=0
 tests_done=0
 wwwcurl_done=0
+procdaemon_done=0
 deviceusb_done=0
 sysstat_done=0
 tar_pkg_done=0
@@ -626,6 +627,7 @@ case "$module" in
         build_rec_pkg
     else 
         build_rec_perl
+        build_rec_procdaemon
         build_rec_ossl
         if [ "$OS_NAME" = "linux" ]; then
             build_rec_deviceusb
