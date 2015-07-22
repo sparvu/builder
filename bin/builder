@@ -86,6 +86,7 @@ nrec_done=0
 tests_done=0
 wwwcurl_done=0
 procdaemon_done=0
+perlssl_done=0
 deviceusb_done=0
 sysstat_done=0
 tar_pkg_done=0
@@ -626,9 +627,10 @@ case "$module" in
     elif [ $fbsd_pkg_sem -eq 1 ]; then
         build_rec_pkg
     else 
+        build_rec_ossl
         build_rec_perl
         build_rec_procdaemon
-        build_rec_ossl
+        build_rec_perlssl
         if [ "$OS_NAME" = "linux" ]; then
             build_rec_deviceusb
         fi
@@ -843,6 +845,14 @@ case "$module" in
     else
         if [ $ossl_done -eq 90 ]; then
             echo "# openssl: failed"
+        fi
+    fi
+
+    if [ $perlssl_done -eq 1 ]; then
+        echo "# perlssl: ok"
+    else
+        if [ $perlssl_done -eq 90 ]; then
+            echo "# perlssl: failed"
         fi
     fi
 
