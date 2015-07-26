@@ -849,10 +849,10 @@ case "$module" in
     fi
 
     if [ $perlssl_done -eq 1 ]; then
-        echo "# perlssl: ok"
+        echo "# Net-SSLeay: ok"
     else
         if [ $perlssl_done -eq 90 ]; then
-            echo "# perlssl: failed"
+            echo "# Net-SSLeay: failed"
         fi
     fi
 
