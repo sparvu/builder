@@ -406,7 +406,7 @@ fi
 
 ## final check; all 4 steps
 perlssl_done=`expr $step1 + $step2 + $step3 + $step4`
-if [ "$procdaemon_done" -eq 4 ]; then
+if [ "$perlssl_done" -eq 4 ]; then
    perlssl_done=1
 else
    perlssl_done=90
