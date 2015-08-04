@@ -634,8 +634,8 @@ case "$module" in
         if [ "$OS_NAME" = "linux" ]; then
             build_rec_deviceusb
         fi
-        #build_rec_curl
-        #build_rec_wcurl
+        build_rec_curl
+        build_rec_wcurl
         if [ "$OS_NAME" = "linux" ]; then
             build_rec_sysstat
         fi
