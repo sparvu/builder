@@ -19,7 +19,7 @@
 #
 #  (http://www.gnu.org/copyleft/gpl.html)
 
-# VERSION: 2.2
+# VERSION: 2.3
 
 # ############################################################### #
 # Engine: Linux                                                   # 
@@ -218,7 +218,7 @@ else
 fi
 
 for lib in Digest::SHA Proc::ProcessTable Proc::PID::File File::Tail \
-           Regexp::Common \
+           Regexp::Common Filesys::Df \
            JSON::XS JSON HTTP::Response UUID::Tiny Carp::Assert \
            Linux::Distribution Inline::MakeMaker Inline::C Date::Calc \
            Device::SerialPort
@@ -250,7 +250,7 @@ do
 done
 
 # there are 16 perl modules install calls
-step6=`expr $step6 / 16`
+step6=`expr $step6 / 17`
 
 # final check; all 6 steps
 perl_done=`expr $step1 + $step2 + $step3 + $step4 + $step5 + $step6`
