@@ -583,6 +583,53 @@ cd ..
 }
 
 
+### luatz
+build_kernel_luatz() {
+dir="luatz"
+step1=0
+step2=0
+step3=0
+
+cd lib
+
+# STEP 1
+init_module "$dir"
+if [ $? -eq 0 ]; then
+    step1=1
+fi
+
+# STEP 2
+
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 2 - Configure $dir ..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+cp -R luatz ${iprefix}/lualib
+if [ $? -ne 0 ]; then
+    echo "Error: make $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step2=1
+fi  
+
+# final check; all 2 steps
+kernel_luatz_done=`expr $step1 + $step2`
+if [ $kernel_luatz_done -eq 3 ]; then
+   kernel_luatz_done=1
+else
+   kernel_luatz_done=90
+fi
+
+clean_module
+
+# back to root
+cd ..
+
+}
+
+
 ### configuration settings
 build_kernel_config() {
 
