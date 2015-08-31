@@ -1424,10 +1424,10 @@ if [ "$buildno" -ne 0 ]; then
     # Version: 1.0.0
     # Release: b10
     # get control file fixed correct build and version
-    sed "s/^Version.*/Version: ${krmxver}/" SPECS/kronometrix > SPECS/kronometrix.tmp
-    mv SPECS/kronometrix.tmp SPECS/kronometrix
-    sed "s/^Release.*/Release: b${buildno}/" SPECS/kronometrix > SPECS/kronometrix.tmp
-    mv SPECS/kronometrix.tmp SPECS/kronometrix
+    sed "s/^Version.*/Version: ${krmxver}/" SPECS/kdr > SPECS/kdr.tmp
+    mv SPECS/kdr.tmp SPECS/kdr
+    sed "s/^Release.*/Release: b${buildno}/" SPECS/kdr > SPECS/kdr.tmp
+    mv SPECS/kdr.tmp SPECS/kdr
 
 
     if [ -f /var/tmp/kdr-${krmxver}b${buildno}-${DIST_ID}.${PT_NAME}.tar.bz2 ]; then
@@ -1444,10 +1444,10 @@ if [ "$buildno" -ne 0 ]; then
     fi
 else
 
-    sed "s/^Version.*/Version: ${krmxver}/" SPECS/kronometrix > SPECS/kronometrix.tmp
-    mv SPECS/kronometrix.tmp SPECS/kronometrix
-    sed "s/^Release.*/Release: 0/" SPECS/kronometrix > SPECS/kronometrix.tmp
-    mv SPECS/kronometrix.tmp SPECS/kronometrix
+    sed "s/^Version.*/Version: ${krmxver}/" SPECS/kdr > SPECS/kdr.tmp
+    mv SPECS/kdr.tmp SPECS/kdr
+    sed "s/^Release.*/Release: 0/" SPECS/kdr > SPECS/kdr.tmp
+    mv SPECS/kdr.tmp SPECS/kdr
 
     if [ -f /var/tmp/kdr-${krmxver}-${DIST_ID}.${PT_NAME}.tar.bz2 ]; then
         cp /var/tmp/kdr-${krmxver}-${DIST_ID}.${PT_NAME}.tar.bz2 \
@@ -1478,9 +1478,9 @@ else
 fi
 
 
-if [ -f SPECS/kronometrix ]; then
+if [ -f SPECS/kdr ]; then
 
-    rpmbuild -bb ./SPECS/kronometrix >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+    rpmbuild -bb ./SPECS/kdr >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
     if [ $? -ne 0 ]; then
         echo "Error: cannot build rpm, rpmbuild error !" |\
             tee -a ${BUILD_PATH}/${BUILD_LOG}
@@ -1681,7 +1681,7 @@ mv ${pkgname}.deb /var/tmp
 if [ "$buildno" -ne 0 ]; then
     if [ "$PT_NAME" = "x86_64" ]; then
         mv /var/tmp/kdr-${krmxver}-amd64.deb \
-         /var/tmp/kronometrix-${krmxver}b${buildno}-${DIST_ID}${RELOS}-amd64.deb
+         /var/tmp/kdr-${krmxver}b${buildno}-${DIST_ID}${RELOS}-amd64.deb
     elif [ "$PT_NAME" = "i686" ]; then
         mv /var/tmp/kdr-${krmxver}-i386.deb \
          /var/tmp/kdr-${krmxver}b${buildno}-${DIST_ID}${RELOS}-i386.deb
