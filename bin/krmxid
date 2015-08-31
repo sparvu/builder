@@ -50,11 +50,11 @@ local $| = 1;
 # $osname = "centos";
 
 my $stringid = lc <<"STRING_MSG";
-Enterprise Appliance Debian
-Thu May 28 14:55:33 EEST 2015
+x86-64
+Wed Jul 29 10:42:47 EEST 2015
 SDR Dynamics Oy, Helsinki, Finland
-50
-F-Solutions Oy
+250
+GENERIC
 STRING_MSG
 
 # print "stringid: $stringid";

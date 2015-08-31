@@ -220,7 +220,8 @@ fi
 
 for lib in Digest::SHA Proc::ProcessTable Proc::PID::File File::Tail \
            JSON::XS JSON HTTP::Response UUID::Tiny Carp::Assert \
-           Inline::MakeMaker Inline::C Date::Calc Device::SerialPort
+           Inline::MakeMaker Inline::C Date::Calc Device::SerialPort \
+           Filesys::Df
 do
     if  [ "$lib" = "JSON::XS" -o "$lib" = "Inline::MakeMaker" ]; then
         env PERL_MM_USE_DEFAULT=1 \
@@ -248,8 +249,8 @@ do
     fi
 done
 
-# there are 14 perl modules install calls
-step6=`expr $step6 / 14`
+# there are 15 perl modules install calls
+step6=`expr $step6 / 15`
 
 # final check; all 6 steps
 perl_done=`expr $step1 + $step2 + $step3 + $step4 + $step5 + $step6`

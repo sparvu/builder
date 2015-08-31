@@ -118,6 +118,7 @@ auth_fbsd_pkg_done=0
 ##kernel
 kernel_openresty_done=0
 kernel_luafs_done=0
+kernel_luatz_done=0
 kernel_lua_resty_template_done=0
 kernel_lua_router_done=0
 kernel_lua_resty_http_simple_done=0
@@ -779,6 +780,7 @@ case "$module" in
         build_kernel_router
         build_kernel_libdate
         build_kernel_httpsimple
+        build_kernel_luatz
 
         if [ ! -z "$build_num" ]; then
             build_kernel_inspect
@@ -1237,6 +1239,16 @@ case "$module" in
         else
             if [ $kernel_lua_resty_http_simple_done -eq 90 ]; then
                 echo  "# lib simple.lua: not integrated"
+            fi
+        fi
+    fi
+
+    if [ $kernel_luatz_done -ne 0 ]; then
+        if [ $kernel_luatz_done -eq 1 ]; then
+            echo  "# lib luatz: built and integrated"
+        else
+            if [ $kernel_luatz_done -eq 90 ]; then
+                echo  "# lib luatz: not integrated"
             fi
         fi
     fi
