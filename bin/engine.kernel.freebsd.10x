@@ -21,7 +21,7 @@
 #
 #  (http://www.gnu.org/copyleft/gpl.html)
 
-# VERSION: 2.2
+# VERSION: 3
 
 # ############################################################### #
 # Analytics Kernel FreeBSD                                        #
@@ -818,7 +818,7 @@ echo "Info: Step 2 - Installing kernel startup services ..." |\
 
 cp kernel db_aux db_stats http ${iprefix}/etc/
 mkdir ${iprefix}/etc/rc
-cp ${OS_NAME}/kronometrix* ${iprefix}/etc/rc
+cp ${OS_NAME}/k* ${iprefix}/etc/rc
 if [ $enterprise_sem -eq 1 ]; then
     cp stats.conf.maas ${iprefix}/etc/stats.conf
     cp aux.conf.maas ${iprefix}/etc/aux.conf
@@ -894,9 +894,9 @@ echo "Info: Step 1 - Create stage directory" |\
  tee -a ${BUILD_PATH}/${BUILD_LOG}
 
 if [ "$PT_NAME" = "x86_64" ]; then
-    pkgname="kronometrix-kernel-${krmxver}-amd64"
+    pkgname="kkernel-${krmxver}-amd64"
 else
-    pkgname="kronometrix-kernel-${krmxver}-${PT_NAME}"
+    pkgname="kkernel-${krmxver}-${PT_NAME}"
 fi
 
 if [ ! -d $pkgname ]; then
@@ -995,9 +995,9 @@ REL=`echo $KERNEL | sed 's/\-.*//'`
 
 # copy config files
 if [ "$buildno" -ne 0 ]; then
-    mv /var/tmp/kronometrix-kernel-${krmxver}b${buildno}.txz /var/tmp/kronometrix-kernel-${krmxver}b${buildno}-${OS_NAME}${REL}-${PT_NAME}.txz
+    mv /var/tmp/kkernel-${krmxver}b${buildno}.txz /var/tmp/kkernel-${krmxver}b${buildno}-${OS_NAME}${REL}-${PT_NAME}.txz
 else
-    cp /var/tmp/kronometrix-kernel-${krmxver}.txz /var/tmp/kronometrix-kernel-${krmxver}-${OS_NAME}${REL}-${PT_NAME}.txz
+    cp /var/tmp/kkernel-${krmxver}.txz /var/tmp/kkernel-${krmxver}-${OS_NAME}${REL}-${PT_NAME}.txz
 fi
 
 

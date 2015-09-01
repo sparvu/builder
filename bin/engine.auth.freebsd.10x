@@ -631,7 +631,7 @@ echo "Info: Step 2 - Installing auth startup services ..." |\
 
 cp auth db http ${iprefix}/etc/
 mkdir ${iprefix}/etc/rc
-cp ${OS_NAME}/kronometrix* ${iprefix}/etc/rc
+cp ${OS_NAME}/k* ${iprefix}/etc/rc
 if [ $enterprise_sem -eq 1 ]; then
     cp redis.conf.maas ${iprefix}/etc/redis.conf
 elif [ $rbpi_sem -eq 1 ]; then
