@@ -21,7 +21,7 @@
 #
 #  (http://www.gnu.org/copyleft/gpl.html)
 
-# VERSION: 2.1
+# VERSION: 3
 
 # ############################################################### #
 # Analytics Authentication FreeBSD                                #
@@ -708,9 +708,9 @@ echo "Info: Step 1 - Create stage directory" |\
  tee -a ${BUILD_PATH}/${BUILD_LOG}
 
 if [ "$PT_NAME" = "x86_64" ]; then
-    pkgname="kronometrix-auth-${krmxver}-amd64"
+    pkgname="kauth-${krmxver}-amd64"
 else
-    pkgname="kronometrix-auth-${krmxver}-${PT_NAME}"
+    pkgname="kauth-${krmxver}-${PT_NAME}"
 fi
 
 if [ ! -d $pkgname ]; then
@@ -805,9 +805,9 @@ REL=`echo $KERNEL | sed 's/\-.*//'`
 
 # copy config files
 if [ "$buildno" -ne 0 ]; then
-    mv /var/tmp/kronometrix-auth-${krmxver}b${buildno}.txz /var/tmp/kronometrix-auth-${krmxver}b${buildno}-${OS_NAME}${REL}-${PT_NAME}.txz
+    mv /var/tmp/kauth-${krmxver}b${buildno}.txz /var/tmp/kauth-${krmxver}b${buildno}-${OS_NAME}${REL}-${PT_NAME}.txz
 else
-    cp /var/tmp/kronometrix-auth-${krmxver}.txz /var/tmp/kronometrix-auth-${krmxver}-${OS_NAME}${REL}-${PT_NAME}.txz
+    cp /var/tmp/kauth-${krmxver}.txz /var/tmp/kauth-${krmxver}-${OS_NAME}${REL}-${PT_NAME}.txz
 fi
 
 
