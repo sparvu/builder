@@ -21,7 +21,7 @@
 #
 #  (http://www.gnu.org/copyleft/gpl.html)
 
-# VERSION: 2.1
+# VERSION: 3
 
 # ############################################################### #
 # Analytics Messenger FreeBSD                                     #
@@ -517,7 +517,7 @@ echo "Info: Step 2 - Installing auth startup services ..." |\
 
 cp mesg db http ${iprefix}/etc/
 mkdir ${iprefix}/etc/rc
-cp ${OS_NAME}/kronometrix* ${iprefix}/etc/rc
+cp ${OS_NAME}/k* ${iprefix}/etc/rc
 if [ $? -ne 0 ]; then
     echo "Error: cannot install mesg startup services !" |\
      tee -a ${BUILD_PATH}/${BUILD_LOG}
@@ -588,9 +588,9 @@ echo "Info: Step 1 - Create stage directory" |\
  tee -a ${BUILD_PATH}/${BUILD_LOG}
 
 if [ "$PT_NAME" = "x86_64" ]; then
-    pkgname="kronometrix-mesg-${krmxver}-amd64"
+    pkgname="kmesg-${krmxver}-amd64"
 else
-    pkgname="kronometrix-mesg-${krmxver}-${PT_NAME}"
+    pkgname="kmesg-${krmxver}-${PT_NAME}"
 fi
 
 if [ ! -d $pkgname ]; then
@@ -686,9 +686,9 @@ REL=`echo $KERNEL | sed 's/\-.*//'`
 
 # copy config files
 if [ "$buildno" -ne 0 ]; then
-    mv /var/tmp/kronometrix-mesg-${krmxver}b${buildno}.txz /var/tmp/kronometrix-mesg-${krmxver}b${buildno}-${OS_NAME}${REL}-${PT_NAME}.txz
+    mv /var/tmp/kmesg-${krmxver}b${buildno}.txz /var/tmp/kmesg-${krmxver}b${buildno}-${OS_NAME}${REL}-${PT_NAME}.txz
 else
-    cp /var/tmp/kronometrix-mesg-${krmxver}.txz /var/tmp/kronometrix-mesg-${krmxver}-${OS_NAME}${REL}-${PT_NAME}.txz
+    cp /var/tmp/kmesg-${krmxver}.txz /var/tmp/kmesg-${krmxver}-${OS_NAME}${REL}-${PT_NAME}.txz
 fi
 
 
