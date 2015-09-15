@@ -411,7 +411,7 @@ echo "" >> ${BUILD_PATH}/${BUILD_LOG}
 echo "Info: Step 5 - Install IO::Socket::SSL..." |\
  tee -a ${BUILD_PATH}/${BUILD_LOG}
 
-lib='IO-Socket-SSL'
+lib='IO::Socket::SSL'
 env PERL_MM_USE_DEFAULT=1 \
   ${iprefix}/perl/bin/perl -MCPAN -e 'install "'$lib'"' >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
 if [ $? -ne 0 ]; then
