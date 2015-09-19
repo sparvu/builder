@@ -403,9 +403,27 @@ else
     step4=1
 fi
 
-## final check; all 4 steps
-perlssl_done=`expr $step1 + $step2 + $step3 + $step4`
-if [ "$perlssl_done" -eq 4 ]; then
+
+# STEP 5
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 5 - Install IO::Socket::SSL..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+lib='IO::Socket::SSL'
+env PERL_MM_USE_DEFAULT=1 \
+  ${iprefix}/perl/bin/perl -MCPAN -e 'install "'$lib'"' >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if [ $? -ne 0 ]; then
+    echo "Error: $lib installation failed !" |\
+    tee -a ${BUILD_LOG}/${module}.${version}.log
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step5=`expr $step5 + 1`
+fi
+
+## final check; all 5 steps
+perlssl_done=`expr $step1 + $step2 + $step3 + $step4 + $step5`
+if [ "$perlssl_done" -eq 5 ]; then
    perlssl_done=1
 else
    perlssl_done=90
