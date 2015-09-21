@@ -349,6 +349,7 @@ step1=0
 step2=0
 step3=0
 step4=0
+step5=0
 
 cd lib
 init_module "$dir"
