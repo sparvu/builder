@@ -150,7 +150,9 @@ mesg_fbsd_pkg_done=0
 
 ##mon
 mon_perl_done=0
-
+mon_procdaemon_done=0
+mon_tests_done=0
+mon_done=0
 
 
 
@@ -831,7 +833,9 @@ case "$module" in
         build_mon_pkg 
     else 
         build_mon_perl
-        build_mon_config
+        build_mon_procdaemon
+        build_mon_scripts
+        #build_mon_config
         build_mon_pkg
 
     fi
