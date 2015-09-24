@@ -29,7 +29,7 @@ Usage: $0 [-ht] [-p prefix_path]
           [-b build_number] [-m module_name] 
           [-a appliance_name] pkg version
 pkg:
-   recording, auth, kernel, mesg
+   recording, auth, kernel, mesg, mon
 version:
    1.0.0
 
@@ -45,6 +45,7 @@ OPTIONS
       builder auth 1.0.0             # build analytics auth 1.0.0
       builder -a rbpi auth 1.0.0     # build rbpi analytics auth 1.0.0
       builder kernel 1.0.0           # build analytics kernel 1.0.0
+      builder mon 1.0.17             # build appliance mon 1.0.17
 
 Notes:
    Make sure you have defined WORKSPACE_PREFIX variable before running
@@ -146,6 +147,12 @@ mesg_deb_pkg_done=0
 mesg_rpm_pkg_done=0
 mesg_fbsd_pkg_done=0
 ##
+
+##mon
+mon_perl_done=0
+
+
+
 
 # Source Global SDR Settings
 PWD=`dirname $0`
@@ -466,7 +473,6 @@ case "$OS_NAME" in
              esac
          ;;
 
-
          auth)
 
              # default appliance
@@ -539,7 +545,7 @@ case "$OS_NAME" in
              fi
       
              iprefix=${iprefix:-/opt/kronometrix/kernel}
-             iuser=sdr
+             iuser=krmx
              
              WORKSPACE="${WORKSPACE_PREFIX}/kronometrix"
 
@@ -554,9 +560,29 @@ case "$OS_NAME" in
              esac
          ;;
 
+         mon)
+
+             iprefix=${iprefix:-/opt/kronometrix/mon}
+             iuser=krmx
+
+             WORKSPACE="${WORKSPACE_PREFIX}/kronometrix"
+
+             case "$version" in
+                 1.0*)
+                  . ${PWD}/engine.mon.freebsd.10x
+                  ;;
+
+                 *)
+                   usage
+                 ;;
+             esac
+         ;;
+
+
          *)
             usage
          ;;
+
         esac
 
     ;;
@@ -795,6 +821,19 @@ case "$module" in
              "$OS_NAME" = "freebsd"  ]; then
             build_kernel_pkg
         fi
+    fi
+    ;;
+
+ mon)
+    echo "" > ${BUILD_PATH}/${BUILD_LOG}
+
+    if [ $fbsd_pkg_sem -eq 1 ]; then
+        build_mon_pkg 
+    else 
+        build_mon_perl
+        build_mon_config
+        build_mon_pkg
+
     fi
     ;;
 
