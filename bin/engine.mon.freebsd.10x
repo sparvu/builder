@@ -455,6 +455,10 @@ echo "" >> ${BUILD_PATH}/${BUILD_LOG}
 echo "Info: Step 1 - Installing setenv ..." |\
  tee -a ${BUILD_PATH}/${BUILD_LOG}
 
+if [ ! -d ${iprefix}/bin ]; then
+    mkdir ${iprefix}/bin
+fi
+
 if [ -f setenv ]; then
     cp setenv  ${iprefix}/bin
     if [ $? -ne 0 ]; then
