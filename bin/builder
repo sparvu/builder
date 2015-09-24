@@ -151,6 +151,8 @@ mesg_fbsd_pkg_done=0
 ##mon
 mon_perl_done=0
 mon_procdaemon_done=0
+mon_pkg_done=0
+mon_tar_pkg_done=0
 mon_tests_done=0
 mon_done=0
 
@@ -1115,6 +1117,51 @@ case "$module" in
 
  ;;
 
+
+ mon)
+
+    if [ $mon_perl_done -ne 0 ]; then
+        if [ $mon_perl_done -eq 1 ]; then
+            echo "# perl: built and integrated"
+        else
+            if [ $mon_perl_done -eq 90 ]; then
+                echo "# perl: not integrated"
+            fi
+        fi
+    fi
+
+    if [ $mon_procdaemon_done -eq 1 ]; then
+        echo "# proc-daemon: ok"
+    else
+        if [ $mon_procdaemon_done -eq 90 ]; then
+            echo "# proc-daemon: failed"
+        fi
+    fi
+        
+    if [ $mon_tar_pkg_done -eq 1 ]; then
+        echo "# tar pkg: ok"
+    else
+        if [ $mon_tar_pkg_done -eq 90 ]; then
+            echo "# tar pkg: failed"
+        fi
+    fi
+
+    if [ $mon_pkg_done -eq 1 ]; then
+        echo "# freebsd pkg: ok"
+    else
+        if [ $mon_pkg_done -eq 90 ]; then
+            echo "# freebsd pkg: failed"
+        fi
+    fi
+
+    if [ $mon_tests_done -eq 1 ]; then
+        echo "# tests: ok"
+    else
+        if [ $mon_tests_done -eq 90 ]; then
+            echo "# tests: failed"
+        fi
+    fi      
+ ;;
 
  mesg)
 

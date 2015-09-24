@@ -675,11 +675,11 @@ fi
 cd ${iprefix}/..
 
 if [ "$buildno" -ne 0 ]; then
-    tar cf /var/tmp/kdr-${krmxver}b${buildno}-${DIST_ID}.${PT_NAME}.tar kronometrix/
-    if [ -f /var/tmp/kdr-${krmxver}b${buildno}-${DIST_ID}.${PT_NAME}.tar.bz2 ]; then
-        rm /var/tmp/kdr-${krmxver}b${buildno}-${DIST_ID}.${PT_NAME}.tar.bz2
+    tar cf /var/tmp/kmon-${krmxver}b${buildno}-${DIST_ID}.${PT_NAME}.tar kronometrix/
+    if [ -f /var/tmp/kmon-${krmxver}b${buildno}-${DIST_ID}.${PT_NAME}.tar.bz2 ]; then
+        rm /var/tmp/kmon-${krmxver}b${buildno}-${DIST_ID}.${PT_NAME}.tar.bz2
     fi
-    bzip2 /var/tmp/kdr-${krmxver}b${buildno}-${DIST_ID}.${PT_NAME}.tar
+    bzip2 /var/tmp/kmon-${krmxver}b${buildno}-${DIST_ID}.${PT_NAME}.tar
     if [ $? -ne 0 ]; then
         echo "Error: cannot create kronometrix data recording package !" |\
          tee -a ${BUILD_PATH}/${BUILD_LOG}
@@ -690,11 +690,11 @@ if [ "$buildno" -ne 0 ]; then
     fi
 else
     # GA General Release
-    tar cf /var/tmp/kdr-${krmxver}-${DIST_ID}.${PT_NAME}.tar kronometrix/
-    if [ -f /var/tmp/kdr-${krmxver}-${DIST_ID}.${PT_NAME}.tar.bz2 ]; then
-        rm /var/tmp/kdr-${krmxver}-${DIST_ID}.${PT_NAME}.tar.bz2
+    tar cf /var/tmp/kmon-${krmxver}-${DIST_ID}.${PT_NAME}.tar kronometrix/
+    if [ -f /var/tmp/kmon-${krmxver}-${DIST_ID}.${PT_NAME}.tar.bz2 ]; then
+        rm /var/tmp/kmon-${krmxver}-${DIST_ID}.${PT_NAME}.tar.bz2
     fi
-    bzip2 /var/tmp/kdr-${krmxver}-${DIST_ID}.${PT_NAME}.tar
+    bzip2 /var/tmp/kmon-${krmxver}-${DIST_ID}.${PT_NAME}.tar
     if [ $? -ne 0 ]; then
         echo "Error: cannot create kronometrix data recording package !" |\
          tee -a ${BUILD_PATH}/${BUILD_LOG}
@@ -706,11 +706,11 @@ else
 fi
 
 # final check; 1 step
-tar_pkg_done=$step1
-if [ "$tar_pkg_done" -eq 1 ]; then
-   tar_pkg_done=1
+mon_tar_pkg_done=$step1
+if [ "$mon_tar_pkg_done" -eq 1 ]; then
+   mon_tar_pkg_done=1
 else
-   tar_pkg_done=90
+   mon_tar_pkg_done=90
 fi
 
 cd ${WORKSPACE}/${module}
