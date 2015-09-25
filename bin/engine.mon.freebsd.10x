@@ -519,6 +519,7 @@ cp etc/*.start ${iprefix}/etc
 cp etc/kronometrix.json ${iprefix}/etc
 cp etc/agents ${iprefix}/etc
 cp etc/transport ${iprefix}/etc
+cp etc/mon ${iprefix}/etc
 cp etc/${OS_NAME}/kronometrix.newsyslog ${iprefix}/etc
 mkdir ${iprefix}/etc/rc
 cp etc/${OS_NAME}/k* ${iprefix}/etc/rc
@@ -657,7 +658,7 @@ cd ..
 
 
 ### tar package
-build_rec_tar_pkg() {
+build_mon_tar_pkg() {
 
 step1=0
 
@@ -675,7 +676,7 @@ fi
 cd ${iprefix}/..
 
 if [ "$buildno" -ne 0 ]; then
-    tar cf /var/tmp/kmon-${krmxver}b${buildno}-${DIST_ID}.${PT_NAME}.tar kronometrix/
+    tar cf /var/tmp/kmon-${krmxver}b${buildno}-${DIST_ID}.${PT_NAME}.tar kronometrix/mon
     if [ -f /var/tmp/kmon-${krmxver}b${buildno}-${DIST_ID}.${PT_NAME}.tar.bz2 ]; then
         rm /var/tmp/kmon-${krmxver}b${buildno}-${DIST_ID}.${PT_NAME}.tar.bz2
     fi
@@ -690,7 +691,7 @@ if [ "$buildno" -ne 0 ]; then
     fi
 else
     # GA General Release
-    tar cf /var/tmp/kmon-${krmxver}-${DIST_ID}.${PT_NAME}.tar kronometrix/
+    tar cf /var/tmp/kmon-${krmxver}-${DIST_ID}.${PT_NAME}.tar kronometrix/mon
     if [ -f /var/tmp/kmon-${krmxver}-${DIST_ID}.${PT_NAME}.tar.bz2 ]; then
         rm /var/tmp/kmon-${krmxver}-${DIST_ID}.${PT_NAME}.tar.bz2
     fi
