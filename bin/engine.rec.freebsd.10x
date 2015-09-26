@@ -917,6 +917,7 @@ fi
 cd ../..
 cp etc/*.start ${iprefix}/etc
 cp etc/kronometrix.json ${iprefix}/etc
+cp etc/webrec.json ${iprefix}/etc
 cp etc/agents ${iprefix}/etc
 cp etc/transport ${iprefix}/etc
 cp etc/${OS_NAME}/kronometrix.newsyslog ${iprefix}/etc
