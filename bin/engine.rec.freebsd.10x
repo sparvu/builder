@@ -882,6 +882,7 @@ echo "Info: Step 2 - Installing recorders ..." |\
 
 cp sysrec cpurec diskrec nicrec hdwrec ${iprefix}/bin
 cp ../wsrec ${iprefix}/bin
+cp ../webrec ${iprefix}/bin
 cp ../raw2day ${iprefix}/bin
 if [ $? -ne 0 ]; then
     echo "Error: cannot install rec scripts !" |\
