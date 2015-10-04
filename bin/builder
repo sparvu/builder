@@ -659,8 +659,8 @@ case "$module" in
     elif [ $fbsd_pkg_sem -eq 1 ]; then
         build_rec_pkg
     else 
-        build_rec_ossl
         build_rec_perl
+        build_rec_ossl
         build_rec_procdaemon
         build_rec_perlssl
         if [ "$OS_NAME" = "linux" ]; then
