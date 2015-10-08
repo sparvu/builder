@@ -1029,17 +1029,10 @@ echo "Info: Step 2 - Installing recorders ..." |\
  tee -a ${BUILD_PATH}/${BUILD_LOG}
 
 
-#nrecs=`ls *rec | wc -l`
-
-#if [ "$nrecs" -ne 10 ]; then
-#    echo "Error: wrong no. of recorders, check workspace !" |\
-#     tee -a ${BUILD_PATH}/${BUILD_LOG}
-#    rm /var/tmp/build.${module}
-#    exit 3
-#else
     if [ "$PT_NAME" != "armv6l" ]; then
         cp *rec ${iprefix}/bin
         cp ../wsrec ${iprefix}/bin
+        cp ../webrec ${iprefix}/bin
         cp ../raw2day ${iprefix}/bin
         if [ $? -ne 0 ]; then
             echo "Error: cannot install rec scripts !" |\
@@ -1052,6 +1045,7 @@ echo "Info: Step 2 - Installing recorders ..." |\
     elif [ "$PT_NAME" != "armv7l" ]; then
         cp *rec ${iprefix}/bin
         cp ../wsrec ${iprefix}/bin
+        cp ../webrec ${iprefix}/bin
         cp ../raw2day ${iprefix}/bin
         if [ $? -ne 0 ]; then
             echo "Error: cannot install rec scripts !" |\
