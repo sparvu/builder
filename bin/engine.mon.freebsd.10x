@@ -780,6 +780,8 @@ if [ "$PT_NAME" = "amd64" ]; then
     cp MANIFEST.amd64 $pkgname/MANIFEST
 elif [ "$PT_NAME" = "i386" ]; then
     cp MANIFEST.i386 $pkgname/MANIFEST
+elif [ "$PT_NAME" = "arm" ]; then
+    cp MANIFEST.arm $pkgname/MANIFEST
 fi
 
 cd ${pkgname}
