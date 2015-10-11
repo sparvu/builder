@@ -482,7 +482,7 @@ case "$OS_NAME" in
 
              # default appliance
              if [ -z "$appliance" ]; then
-                 if [ "$PT_NAME" = "armv6l" ]; then
+                 if [ "$PT_NAME" = "armv" ]; then
                      appliance="rbpi"
                      enterprise_sem=1
                  else
