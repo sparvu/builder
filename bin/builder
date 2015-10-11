@@ -325,7 +325,7 @@ case "$OS_NAME" in
 
              WORKSPACE="${WORKSPACE_PREFIX}/kronometrix"
              case "$version" in
-                 1.0*)
+                 1.[0-3]*)
                   . ${PWD}/engine.rec.solaris.10x
                   ;;
                
@@ -352,7 +352,7 @@ case "$OS_NAME" in
              WORKSPACE="${WORKSPACE_PREFIX}/kronometrix"
 
              case "$version" in
-                 1.0*)
+                 1.[0-3]*)
                   . ${PWD}/engine.rec.linux.10x
                   ;;
 
@@ -381,7 +381,7 @@ case "$OS_NAME" in
              WORKSPACE="${WORKSPACE_PREFIX}/kronometrix"
 
              case "$version" in
-                 1.0*)
+                 1.[0-3]*)
                   . ${PWD}/engine.auth.linux.10x
                   ;;
 
@@ -410,7 +410,7 @@ case "$OS_NAME" in
              WORKSPACE="${WORKSPACE_PREFIX}/kronometrix"
 
              case "$version" in
-                 1.0*)
+                 1.[0-3]*)
                   . ${PWD}/engine.mesg.linux.10x
                   ;;
 
@@ -439,7 +439,7 @@ case "$OS_NAME" in
              WORKSPACE="${WORKSPACE_PREFIX}/kronometrix"
 
              case "$version" in
-                 1.0*)
+                 1.[0-3]*)
                   . ${PWD}/engine.kernel.linux.10x
                   ;;
 
