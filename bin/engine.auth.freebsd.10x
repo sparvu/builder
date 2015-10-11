@@ -21,7 +21,7 @@
 #
 #  (http://www.gnu.org/copyleft/gpl.html)
 
-# VERSION: 3
+# VERSION: 3.1
 
 # ############################################################### #
 # Analytics Authentication FreeBSD                                #
@@ -833,6 +833,10 @@ if [ -d $pkgname ]; then
         step3=1
     fi
 fi
+
+echo "Step 1: $step1\n"
+echo "Step 2: $step2\n"
+echo "Step 3: $step3\n"
 
 
 # final check; 3 steps
