@@ -27,25 +27,25 @@ usage() {
 cat << END
 Usage: $0 [-ht] [-p prefix_path]
           [-b build_number] [-m module_name] 
-          [-a appliance_name] pkg version
+          [-a appliance] pkg version
 pkg:
    recording, auth, kernel, mesg, mon
 version:
    1.0.0
 
 OPTIONS
-  -a appliance_name: enterprise, rbpi
+  -a appliance: x64, arm
   -b build_number: 01, 10, 102
   -m module_name: perl, openssl, idn, curl,  wcurl, sysstat, scripts
   -p prefix_path: /opt/kronometrix
   -t test_mode
   -h help
 
-  eg, builder recording 1.0.0        # build recording 0.73
-      builder auth 1.0.0             # build analytics auth 1.0.0
-      builder -a rbpi auth 1.0.0     # build rbpi analytics auth 1.0.0
-      builder kernel 1.0.0           # build analytics kernel 1.0.0
-      builder mon 1.0.17             # build appliance mon 1.0.17
+  eg, builder recording 1.0.0       # build recording 0.73
+      builder auth 1.0.0            # build analytics auth 1.0.0
+      builder -a arm auth 1.0.0     # build arm analytics auth 1.0.0
+      builder kernel 1.0.0          # build analytics kernel 1.0.0
+      builder mon 1.0.17            # build appliance mon 1.0.17
 
 Notes:
    Make sure you have defined WORKSPACE_PREFIX variable before running
@@ -97,8 +97,8 @@ fbsd_pkg_done=0
 ##
 
 ##appliance
-enterprise_sem=0
-rbpi_sem=0
+x64_sem=0
+arm_sem=0
 ##
 
 ##auth
@@ -171,12 +171,12 @@ do
         appliance=$OPTARG
 
         case "$appliance" in
-            enterprise)
-                enterprise_sem=1
+            x64)
+                x64_sem=1
             ;;
 
-            rbpi)
-                rbpi_sem=1
+            arm)
+                arm_sem=1
             ;;
 
             *)
@@ -367,11 +367,11 @@ case "$OS_NAME" in
              # default appliance
              if [ -z "$appliance" ]; then
                  if [ "$PT_NAME" = "armv6l" ]; then
-                     appliance="rbpi"
-                     enterprise_sem=1
+                     appliance="arm"
+                     arm_sem=1
                  else
-                     appliance="enterprise"
-                     enterprise_sem=1
+                     appliance="x64"
+                     x64_sem=1
                  fi
              fi
 
@@ -396,11 +396,11 @@ case "$OS_NAME" in
              # default appliance
              if [ -z "$appliance" ]; then
                  if [ "$PT_NAME" = "armv6l" ]; then
-                     appliance="rbpi"
-                     enterprise_sem=1
+                     appliance="arm"
+                     arm_sem=1
                  else
-                     appliance="enterprise"
-                     enterprise_sem=1
+                     appliance="x64"
+                     x64_sem=1
                  fi
              fi
 
@@ -425,11 +425,11 @@ case "$OS_NAME" in
              # default appliance
              if [ -z "$appliance" ]; then
                  if [ "$PT_NAME" = "armv6l" ]; then
-                     appliance="rbpi"
-                     enterprise_sem=1
+                     appliance="arm"
+                     arm_sem=1
                  else
-                     appliance="enterprise"
-                     enterprise_sem=1
+                     appliance="x64"
+                     x64_sem=1
                  fi
              fi
       
@@ -482,12 +482,12 @@ case "$OS_NAME" in
 
              # default appliance
              if [ -z "$appliance" ]; then
-                 if [ "$PT_NAME" = "armv" ]; then
-                     appliance="rbpi"
-                     enterprise_sem=1
+                 if [ "$PT_NAME" = "arm" ]; then
+                     appliance="arm"
+                     arm_sem=1
                  else
-                     appliance="enterprise"
-                     enterprise_sem=1
+                     appliance="x64"
+                     x64_sem=1
                  fi
              fi
       
@@ -512,11 +512,11 @@ case "$OS_NAME" in
              # default appliance
              if [ -z "$appliance" ]; then
                  if [ "$PT_NAME" = "armv6l" ]; then
-                     appliance="rbpi"
-                     enterprise_sem=1
+                     appliance="arm"
+                     arm_sem=1
                  else
-                     appliance="enterprise"
-                     enterprise_sem=1
+                     appliance="x64"
+                     x64_sem=1
                  fi
              fi
 
@@ -541,11 +541,11 @@ case "$OS_NAME" in
              # default appliance
              if [ -z "$appliance" ]; then
                  if [ "$PT_NAME" = "armv6l" ]; then
-                     appliance="rbpi"
-                     enterprise_sem=1
+                     appliance="arm"
+                     arm_sem=1
                  else
-                     appliance="enterprise"
-                     enterprise_sem=1
+                     appliance="x64"
+                     x64_sem=1
                  fi
              fi
       
@@ -663,7 +663,7 @@ case "$module" in
         build_rec_ossl
         build_rec_procdaemon
         build_rec_perlssl
-        if [ "$OS_NAME" = "linux" ]; then
+        if [ "$PT_NAME" = "arm" ]; then
             build_rec_deviceusb
         fi
         build_rec_curl

@@ -695,10 +695,10 @@ echo "" >> ${BUILD_PATH}/${BUILD_LOG}
 echo "Info: Step 1 - Installing nginx wrappers ..." |\
  tee -a ${BUILD_PATH}/${BUILD_LOG}
 
-if [ $enterprise_sem -eq 1 ]; then
-    cp nginx.conf.maas ${iprefix}/nginx/conf/nginx.conf
-elif [ $rbpi_sem -eq 1 ]; then
-    cp nginx.conf.rbpi ${iprefix}/nginx/conf/nginx.conf
+if [ $x64_sem -eq 1 ]; then
+    cp nginx.conf.x64 ${iprefix}/nginx/conf/nginx.conf
+elif [ $arm_sem -eq 1 ]; then
+    cp nginx.conf.arm ${iprefix}/nginx/conf/nginx.conf
 fi
 
 if [ $? -ne 0 ]; then
@@ -866,12 +866,12 @@ echo "Info: Step 2 - Installing kernel startup services ..." |\
 cp kernel db_aux db_stats http ${iprefix}/etc/
 mkdir ${iprefix}/etc/rc
 cp ${OS_NAME}/k* ${iprefix}/etc/rc
-if [ $enterprise_sem -eq 1 ]; then
-    cp stats.conf.maas ${iprefix}/etc/stats.conf
-    cp aux.conf.maas ${iprefix}/etc/aux.conf
-elif [ $rbpi_sem -eq 1 ]; then
-    cp stats.conf.rbpi ${iprefix}/etc/stats.conf
-    cp aux.conf.rbpi ${iprefix}/etc/aux.conf
+if [ $x64_sem -eq 1 ]; then
+    cp stats.conf.x64 ${iprefix}/etc/stats.conf
+    cp aux.conf.x64 ${iprefix}/etc/aux.conf
+elif [ $arm_sem -eq 1 ]; then
+    cp stats.conf.arm ${iprefix}/etc/stats.conf
+    cp aux.conf.arm ${iprefix}/etc/aux.conf
 fi
 
 if [ $? -ne 0 ]; then

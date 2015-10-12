@@ -392,10 +392,10 @@ echo "" >> ${BUILD_PATH}/${BUILD_LOG}
 echo "Info: Step 1 - Installing nginx wrappers ..." |\
  tee -a ${BUILD_PATH}/${BUILD_LOG}
 
-if [ $enterprise_sem -eq 1 ]; then
-    cp nginx.conf.maas ${iprefix}/nginx/conf/nginx.conf
-elif [ $rbpi_sem -eq 1 ]; then
-    cp nginx.conf.rbpi ${iprefix}/nginx/conf/nginx.conf
+if [ $x64_sem -eq 1 ]; then
+    cp nginx.conf.x64 ${iprefix}/nginx/conf/nginx.conf
+elif [ $arm_sem -eq 1 ]; then
+    cp nginx.conf.arm ${iprefix}/nginx/conf/nginx.conf
 fi
 
 if [ $? -ne 0 ]; then
