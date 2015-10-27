@@ -696,9 +696,11 @@ echo "Info: Step 1 - Installing nginx configs..." |\
  tee -a ${BUILD_PATH}/${BUILD_LOG}
 
 if [ $x64_sem -eq 1 ]; then
-    cp nginx.*.x64 ${iprefix}/nginx/conf/
+    cp nginx.stats.conf.x64 ${iprefix}/nginx/conf/nginx.stats.conf
+    cp nginx.agg.conf.x64 ${iprefix}/nginx/conf/nginx.agg.conf
 elif [ $arm_sem -eq 1 ]; then
-    cp nginx.*.arm ${iprefix}/nginx/conf/
+    cp nginx.stats.conf.arm ${iprefix}/nginx/conf/nginx.stats.conf
+    cp nginx.agg.conf.arm ${iprefix}/nginx/conf/nginx.agg.conf
 fi
 
 if [ $? -ne 0 ]; then
