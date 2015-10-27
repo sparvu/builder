@@ -692,13 +692,13 @@ echo "Submodule: $dir ${OS_NAME}" | tee -a ${BUILD_PATH}/${BUILD_LOG}
 
 # STEP 1
 echo "" >> ${BUILD_PATH}/${BUILD_LOG}
-echo "Info: Step 1 - Installing nginx wrappers ..." |\
+echo "Info: Step 1 - Installing nginx configs..." |\
  tee -a ${BUILD_PATH}/${BUILD_LOG}
 
 if [ $x64_sem -eq 1 ]; then
-    cp nginx.conf.x64 ${iprefix}/nginx/conf/nginx.conf
+    cp nginx.*.x64 ${iprefix}/nginx/conf/
 elif [ $arm_sem -eq 1 ]; then
-    cp nginx.conf.arm ${iprefix}/nginx/conf/nginx.conf
+    cp nginx.*.arm ${iprefix}/nginx/conf/
 fi
 
 if [ $? -ne 0 ]; then
@@ -854,8 +854,23 @@ if [ ! -d ${iprefix}/data/events ]; then
     step1=`expr $step1 + 1`
 fi
 
-# there are 7 steps
-step1=`expr $step1 / 7`
+
+if [ ! -d ${iprefix}/data/appliance ]; then
+    mkdir ${iprefix}/data/appliance
+    if [ $? -ne 0 ]; then
+        echo "Error: cannot setup appliance directory !" |\
+         tee -a ${BUILD_PATH}/${BUILD_LOG}
+        rm /var/tmp/build.${module}
+        exit 3
+    else
+        step1=`expr $step1 + 1`
+    fi
+
+    step1=`expr $step1 + 1`
+fi
+
+# there are 8 steps
+step1=`expr $step1 / 8`
 
 
 # STEP 2
@@ -863,15 +878,17 @@ echo "" >> ${BUILD_PATH}/${BUILD_LOG}
 echo "Info: Step 2 - Installing kernel startup services ..." |\
  tee -a ${BUILD_PATH}/${BUILD_LOG}
 
-cp kernel db_aux db_stats http ${iprefix}/etc/
+cp kernel db_aux db_stats db_agg http_stats http_agg ${iprefix}/etc/
 mkdir ${iprefix}/etc/rc
 cp ${OS_NAME}/k* ${iprefix}/etc/rc
 if [ $x64_sem -eq 1 ]; then
     cp stats.conf.x64 ${iprefix}/etc/stats.conf
     cp aux.conf.x64 ${iprefix}/etc/aux.conf
+    cp agg.conf.x64 ${iprefix}/etc/agg.conf
 elif [ $arm_sem -eq 1 ]; then
     cp stats.conf.arm ${iprefix}/etc/stats.conf
     cp aux.conf.arm ${iprefix}/etc/aux.conf
+    cp agg.conf.arm ${iprefix}/etc/agg.conf
 fi
 
 if [ $? -ne 0 ]; then
