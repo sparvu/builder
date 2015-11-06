@@ -104,6 +104,7 @@ arm_sem=0
 ##auth
 auth_redis_done=0
 auth_openresty_done=0
+auth_luatz_done=0
 auth_lua_resty_template_done=0
 auth_lua_inspect_done=0
 auth_lua_router_done=0
@@ -719,6 +720,7 @@ case "$module" in
         build_auth_template
         build_auth_router
         build_auth_httpsimple
+        build_auth_luatz
 
         if [ ! -z "$build_num" ]; then
             build_auth_inspect
@@ -1042,6 +1044,17 @@ case "$module" in
             fi
         fi
     fi
+
+    if [ $auth_luatz_done -ne 0 ]; then
+        if [ $auth_luatz_done -eq 1 ]; then
+            echo  "# lib luatz: built and integrated"
+        else
+            if [ $auth_luatz_done -eq 90 ]; then
+                echo  "# lib luatz: not integrated"
+            fi
+        fi
+    fi
+
 
     if [ ! -z "$build_num" ]; then
         if [ $auth_lua_inspect_done -ne 0 ]; then
