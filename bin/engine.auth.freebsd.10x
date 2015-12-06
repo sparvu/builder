@@ -881,10 +881,6 @@ if [ -d $pkgname ]; then
     fi
 fi
 
-echo "Step 1: $step1\n"
-echo "Step 2: $step2\n"
-echo "Step 3: $step3\n"
-
 
 # final check; 3 steps
 auth_fbsd_pkg_done=`expr $step1 + $step2 + $step3`
