@@ -1047,7 +1047,7 @@ fi
 mv MANIFEST \+MANIFEST
 (cd /opt/kronometrix ; tar cf - kernel)|(mkdir -p opt/kronometrix; cd opt/kronometrix; tar xpf -)
 
-pkg create -m . -r . -o /var/tmp >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+pkg create -m . -r . -o ${HOME} >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
 if [ $? -ne 0 ]; then
     echo "Error: cannot build FreeBSD pkg, pkg create error !" |\
         tee -a ${BUILD_PATH}/${BUILD_LOG}
@@ -1063,9 +1063,9 @@ REL=`echo $KERNEL | sed 's/\-.*//'`
 
 # copy config files
 if [ "$buildno" -ne 0 ]; then
-    mv /var/tmp/kkernel-${krmxver}b${buildno}.txz /var/tmp/kkernel-${krmxver}b${buildno}-${OS_NAME}${REL}-${PT_NAME}.txz
+    mv ${HOME}/kkernel-${krmxver}b${buildno}.txz ${HOME}/kkernel-${krmxver}b${buildno}-${OS_NAME}${REL}-${PT_NAME}.txz
 else
-    cp /var/tmp/kkernel-${krmxver}.txz /var/tmp/kkernel-${krmxver}-${OS_NAME}${REL}-${PT_NAME}.txz
+    cp ${HOME}/kkernel-${krmxver}.txz ${HOME}/kkernel-${krmxver}-${OS_NAME}${REL}-${PT_NAME}.txz
 fi
 
 
