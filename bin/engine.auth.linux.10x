@@ -181,8 +181,8 @@ echo "Info: Step 2 - Configure $dir ..." |\
 
 
 env PATH=/sbin:$PATH \
-     ./configure --prefix=${iprefix} --with-luajit \
-     >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+     ./configure --prefix=${iprefix} --with-cc-opt="-O0" --with-debug \
+       --with-luajit >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
 
 if [ $? -ne 0 ]; then
     echo "Error: configure $dir failed !" |\
@@ -830,18 +830,18 @@ else
 fi
 
 # prepare SOURCES
-if [ ! -d "SOURCES/kronometrix-auth-${krmxver}" ]; then
-    mkdir "SOURCES/kronometrix-auth-${krmxver}"
+if [ ! -d "SOURCES/kauth-${krmxver}" ]; then
+    mkdir "SOURCES/kauth-${krmxver}"
 fi
 
 if [ "$buildno" -ne 0 ]; then
     # Version: 1.0.0
     # Release: b10
     # get control file fixed correct build and version
-    sed "s/^Version.*/Version: ${krmxver}/" SPECS/kronometrix-auth > SPECS/kronometrix-auth.tmp
-    mv SPECS/kronometrix-auth.tmp SPECS/kronometrix-auth
-    sed "s/^Release.*/Release: b${buildno}/" SPECS/kronometrix-auth > SPECS/kronometrix-auth.tmp
-    mv SPECS/kronometrix-auth.tmp SPECS/kronometrix-auth
+    sed "s/^Version.*/Version: ${krmxver}/" SPECS/kauth > SPECS/kauth.tmp
+    mv SPECS/kauth.tmp SPECS/kauth
+    sed "s/^Release.*/Release: b${buildno}/" SPECS/kauth > SPECS/kauth.tmp
+    mv SPECS/kauth.tmp SPECS/kauth
 
 
     if [ -f /var/tmp/kauth-${krmxver}b${buildno}-${DIST_ID}.${PT_NAME}.tar.bz2 ]; then
@@ -859,13 +859,13 @@ if [ "$buildno" -ne 0 ]; then
 else
 
     sed "s/^Version.*/Version: ${krmxver}/" SPECS/kronometrix-auth > SPECS/kronometrix-auth.tmp
-    mv SPECS/kronometrix-auth.tmp SPECS/kronometrix-auth
-    sed "s/^Release.*/Release: 0/" SPECS/kronometrix-auth > SPECS/kronometrix-auth.tmp
-    mv SPECS/kronometrix-auth.tmp SPECS/kronometrix-auth
+    mv SPECS/kauth.tmp SPECS/kauth
+    sed "s/^Release.*/Release: 0/" SPECS/kauth > SPECS/kauth.tmp
+    mv SPECS/kauth.tmp SPECS/kauth
 
     if [ -f /var/tmp/kauth-${krmxver}-${DIST_ID}.${PT_NAME}.tar.bz2 ]; then
         cp /var/tmp/kauth-${krmxver}-${DIST_ID}.${PT_NAME}.tar.bz2 \
-            SOURCES/kauth-${krmxver}/kronometrix-auth-${krmxver}-${PT_NAME}.tar.bz2
+            SOURCES/kauth-${krmxver}/kauth-${krmxver}-${PT_NAME}.tar.bz2
         if [ $? -ne 0 ]; then
             echo "Error: cannot copy tar archive to SOURCE directory !" |\
               tee -a ${BUILD_PATH}/${BUILD_LOG}
@@ -892,7 +892,7 @@ else
 fi
 
 
-if [ -f SPECS/kauth ]; then
+if [ -f SPECS/kronometrix-auth ]; then
     rpmbuild -bb ./SPECS/kauth >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
     if [ $? -ne 0 ]; then
         echo "Error: cannot build rpm, rpmbuild error !" |\
@@ -1094,7 +1094,7 @@ fi
 
 mv ${pkgname}.deb /var/tmp
 
-# kronometrix-auth-1.0.0b41-armv6l.deb
+# kauth-1.0.0b41-armv6l.deb
 if [ "$buildno" -ne 0 ]; then
     if [ "$PT_NAME" = "x86_64" ]; then
         mv /var/tmp/kauth-${krmxver}b${buildno}-amd64.deb /var/tmp/kauth-${krmxver}b${buildno}-${DIST_ID}${RELOS}-amd64.deb
