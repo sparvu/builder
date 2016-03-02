@@ -2,7 +2,7 @@
 #
 #  Kronometrix Development tools, FreeBSD Mon engine 
 #
-#  Copyright (c) 2015 Stefan Parvu (www.kronometrix.org).
+#  Copyright (c) 2016 Stefan Parvu (www.kronometrix.org).
 #
 #  This program is free software; you can redistribute it and/or
 #  modify it under the terms of the GNU General Public License
@@ -20,7 +20,7 @@
 #
 #  (http://www.gnu.org/copyleft/gpl.html)
 
-# VERSION: 2.4
+# VERSION: 3
 
 # ############################################################### #
 # Engine: FreeBSD                                                 # 
