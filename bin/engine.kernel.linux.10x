@@ -21,7 +21,7 @@
 #
 #  (http://www.gnu.org/copyleft/gpl.html)
 
-# VERSION: 2.1
+# VERSION: 3.1
 
 # ############################################################### #
 # Kernel Linux                                                    #
@@ -128,8 +128,8 @@ echo "Info: Step 2 - Configure $dir ..." |\
  tee -a ${BUILD_PATH}/${BUILD_LOG}
 
 env PATH=/sbin:$PATH \
-     ./configure --prefix=${iprefix} --with-luajit \
-     >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+     ./configure --prefix=${iprefix} --with-cc-opt="-O0" --with-debug \
+     --with-luajit >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
 
 if [ $? -ne 0 ]; then
     echo "Error: configure $dir failed !" |\
@@ -390,6 +390,54 @@ cd ..
 }
 
 
+### lua-resty-session
+build_kernel_session() {
+dir="lua-resty-session"
+step1=0
+step2=0
+step3=0
+
+
+cd lib
+
+# STEP 1
+init_module "$dir"
+if [ $? -eq 0 ]; then
+    step1=1
+fi
+
+# STEP 2
+
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 2 - Install session.lua ..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+cp lib/resty/session.lua ${iprefix}/lualib/resty
+if [ $? -ne 0 ]; then
+    echo "Error: cannot install session.lua script !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+     rm /var/tmp/build.${module}
+     exit 3
+else
+    step2=1
+fi
+
+# final check; all 2 steps
+kernel_lua_resty_session_done=`expr $step1 + $step2`
+if [ $kernel_lua_resty_session_done -eq 2 ]; then
+   kernel_lua_resty_session_done=1
+else
+   kernel_lua_resty_session_done=90
+fi
+
+clean_module
+
+# back to root
+cd ..
+
+}
+
+
 ### router.lua
 build_kernel_router() {
 dir="router.lua"
@@ -532,6 +580,100 @@ cd ..
 }
 
 
+### luatz
+build_kernel_luatz() {
+dir="luatz"
+step1=0
+step2=0
+step3=0
+
+cd lib
+
+# STEP 1
+init_module "$dir"
+if [ $? -eq 0 ]; then
+    step1=1
+fi
+
+# STEP 2
+
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 2 - Configure $dir ..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+cp -R luatz ${iprefix}/lualib
+if [ $? -ne 0 ]; then
+    echo "Error: make $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step2=1
+fi  
+
+# final check; all 2 steps
+kernel_luatz_done=`expr $step1 + $step2`
+if [ $kernel_luatz_done -eq 2 ]; then
+   kernel_luatz_done=1
+else
+   kernel_luatz_done=90
+fi
+
+clean_module
+
+# back to root
+cd ..
+
+}
+
+
+### lua-resty-prettycjson
+build_kernel_prettycjson() {
+dir="lua-resty-prettycjson"
+step1=0
+step2=0
+step3=0
+
+cd lib
+
+# STEP 1
+init_module "$dir"
+if [ $? -eq 0 ]; then
+    step1=1
+fi
+
+# STEP 2
+
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 2 - Install prettycjson.lua ..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+cp lib/resty/prettycjson.lua ${iprefix}/lualib/resty
+if [ $? -ne 0 ]; then
+    echo "Error: cannot install prettycjson.lua script !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+     rm /var/tmp/build.${module}
+     exit 3
+else
+    step2=1
+fi
+
+# final check; all 2 steps
+kernel_lua_resty_prettycjson_done=`expr $step1 + $step2`
+if [ $kernel_lua_resty_prettycjson_done -eq 2 ]; then
+   kernel_lua_resty_prettycjson_done=1
+else
+   kernel_lua_resty_prettycjson_done=90
+fi
+
+clean_module
+
+# back to root
+cd ..
+
+}
+
+
 ### configuration settings
 build_kernel_config() {
 
@@ -547,13 +689,15 @@ echo "Submodule: $dir ${OS_NAME}" | tee -a ${BUILD_PATH}/${BUILD_LOG}
 
 # STEP 1
 echo "" >> ${BUILD_PATH}/${BUILD_LOG}
-echo "Info: Step 1 - Installing nginx wrappers ..." |\
+echo "Info: Step 1 - Installing nginx configs..." |\
  tee -a ${BUILD_PATH}/${BUILD_LOG}
 
-if [ $enterprise_sem -eq 1 ]; then
-    cp nginx.conf.maas ${iprefix}/nginx/conf/nginx.conf
-elif [ $rbpi_sem -eq 1 ]; then
-    cp nginx.conf.rbpi ${iprefix}/nginx/conf/nginx.conf
+if [ $x64_sem -eq 1 ]; then
+    cp nginx.stats.conf.x64 ${iprefix}/nginx/conf/nginx.stats.conf
+    cp nginx.agg.conf.x64 ${iprefix}/nginx/conf/nginx.agg.conf
+elif [ $arm_sem -eq 1 ]; then
+    cp nginx.stats.conf.arm ${iprefix}/nginx/conf/nginx.stats.conf
+    cp nginx.agg.conf.arm ${iprefix}/nginx/conf/nginx.agg.conf
 fi
 
 if [ $? -ne 0 ]; then
@@ -582,12 +726,13 @@ cd ../..
 
 ### finalize
 build_kernel_fin() {
-
 dir=etc
 step1=0
 step2=0
 step3=0
 step4=0
+
+krmxver=$version
 
 # export iprefix
 export iprefix=${iprefix}
@@ -709,9 +854,22 @@ if [ ! -d ${iprefix}/data/events ]; then
 fi
 
 
+if [ ! -d ${iprefix}/data/appliance ]; then
+    mkdir ${iprefix}/data/appliance
+    if [ $? -ne 0 ]; then
+        echo "Error: cannot setup appliance directory !" |\
+         tee -a ${BUILD_PATH}/${BUILD_LOG}
+        rm /var/tmp/build.${module}
+        exit 3
+    else
+        step1=`expr $step1 + 1`
+    fi
 
-# there are 7 settings
-step1=`expr $step1 / 7`
+    step1=`expr $step1 + 1`
+fi
+
+# there are 8 steps
+step1=`expr $step1 / 8`
 
 
 # STEP 2
@@ -719,15 +877,17 @@ echo "" >> ${BUILD_PATH}/${BUILD_LOG}
 echo "Info: Step 2 - Installing kernel startup services ..." |\
  tee -a ${BUILD_PATH}/${BUILD_LOG}
 
-cp kernel db_stats db_aux http ${iprefix}/etc/
+cp kernel db_aux db_stats db_agg http_stats http_agg ${iprefix}/etc/
 mkdir ${iprefix}/etc/rc
-cp ${OS_NAME}/kronometrix* ${iprefix}/etc/rc
-if [ $enterprise_sem -eq 1 ]; then
-    cp stats.conf.maas ${iprefix}/etc/stats.conf
-    cp aux.conf.maas ${iprefix}/etc/aux.conf
-elif [ $rbpi_sem -eq 1 ]; then
-    cp stats.conf.rbpi ${iprefix}/etc/stats.conf
-    cp aux.conf.rbpi ${iprefix}/etc/aux.conf
+cp ${OS_NAME}/k* ${iprefix}/etc/rc
+if [ $x64_sem -eq 1 ]; then
+    cp stats.conf.x64 ${iprefix}/etc/stats.conf
+    cp aux.conf.x64 ${iprefix}/etc/aux.conf
+    cp agg.conf.x64 ${iprefix}/etc/agg.conf
+elif [ $arm_sem -eq 1 ]; then
+    cp stats.conf.arm ${iprefix}/etc/stats.conf
+    cp aux.conf.arm ${iprefix}/etc/aux.conf
+    cp agg.conf.arm ${iprefix}/etc/agg.conf
 fi
 
 if [ $? -ne 0 ]; then
@@ -742,12 +902,12 @@ fi
 
 # STEP 3
 echo "" >> ${BUILD_PATH}/${BUILD_LOG}
-echo "Info: Step 3 - Installing RELEASENOTES and README  ..." |\
+echo "Info: Step 3 - Installing RELEASENOTES and README ..." |\
  tee -a ${BUILD_PATH}/${BUILD_LOG}
 cd ..
 cp RELEASENOTES README TUNING ${iprefix}/
 if [ $? -ne 0 ]; then
-    echo "Error: cannot install RELEASENOTES and README !" |\
+    echo "Error: cannot install RELEASENOTES README !" |\
      tee -a ${BUILD_PATH}/${BUILD_LOG}
     rm /var/tmp/build.${module}
     exit 3
@@ -755,19 +915,15 @@ else
     step3=1
 fi
 
-
 # final check; all 3 steps
 kernel_fin_done=`expr $step1 + $step2 + $step3`
-if [ "$kernel_fin_done" -eq 4 ]; then
+if [ "$kernel_fin_done" -eq 3 ]; then
    kernel_fin_done=1
 else
    kernel_fin_done=90
 fi
 
-cd ..
-
 }
-
 
 ## rpm macro configuration file
 make_rpmmacro() {
@@ -807,11 +963,11 @@ fi
 cd ${iprefix}/../..
 
 if [ "$buildno" -ne 0 ]; then
-    tar cf /var/tmp/kronometrix-kernel-${krmxver}b${buildno}-${DIST_ID}.${PT_NAME}.tar kronometrix/kernel
-    if [ -f /var/tmp/kronometrix-kernel-${krmxver}b${buildno}-${DIST_ID}.${PT_NAME}.tar.bz2 ]; then
-        rm /var/tmp/kronometrix-kernel-${krmxver}b${buildno}-${DIST_ID}.${PT_NAME}.tar.bz2
+    tar cf /var/tmp/kkernel-${krmxver}b${buildno}-${DIST_ID}.${PT_NAME}.tar kronometrix/kernel
+    if [ -f /var/tmp/kkernel-${krmxver}b${buildno}-${DIST_ID}.${PT_NAME}.tar.bz2 ]; then
+        rm /var/tmp/kkernel-${krmxver}b${buildno}-${DIST_ID}.${PT_NAME}.tar.bz2
     fi
-    bzip2 /var/tmp/kronometrix-kernel-${krmxver}b${buildno}-${DIST_ID}.${PT_NAME}.tar
+    bzip2 /var/tmp/kkernel-${krmxver}b${buildno}-${DIST_ID}.${PT_NAME}.tar
     if [ $? -ne 0 ]; then
         echo "Error: cannot create kronometrix kernel data recording package !" |\
          tee -a ${BUILD_PATH}/${BUILD_LOG}
@@ -822,11 +978,11 @@ if [ "$buildno" -ne 0 ]; then
     fi
 else
     # GA General Release
-    tar cf /var/tmp/kronometrix-kernel-${krmxver}-${DIST_ID}.${PT_NAME}.tar kronometrix/kernel
-    if [ -f /var/tmp/kronometrix-kernel-${krmxver}-${DIST_ID}.${PT_NAME}.tar.bz2 ]; then
-        rm /var/tmp/kronometrix-kernel-${krmxver}-${DIST_ID}.${PT_NAME}.tar.bz2
+    tar cf /var/tmp/kkernel-${krmxver}-${DIST_ID}.${PT_NAME}.tar kronometrix/kernel
+    if [ -f /var/tmp/kkernel-${krmxver}-${DIST_ID}.${PT_NAME}.tar.bz2 ]; then
+        rm /var/tmp/kkernel-${krmxver}-${DIST_ID}.${PT_NAME}.tar.bz2
     fi
-    bzip2 /var/tmp/kronometrix-kernel-${krmxver}-${DIST_ID}.${PT_NAME}.tar
+    bzip2 /var/tmp/kkernel-${krmxver}-${DIST_ID}.${PT_NAME}.tar
     if [ $? -ne 0 ]; then
         echo "Error: cannot create kronometrix kernel data recording package !" |\
          tee -a ${BUILD_PATH}/${BUILD_LOG}
@@ -924,8 +1080,8 @@ else
 fi
 
 # prepare SOURCES
-if [ ! -d "SOURCES/kronometrix-kernel-${krmxver}" ]; then
-    mkdir "SOURCES/kronometrix-kernel-${krmxver}"
+if [ ! -d "SOURCES/kkernel-${krmxver}" ]; then
+    mkdir "SOURCES/kkernel-${krmxver}"
 fi
 
 
@@ -933,14 +1089,14 @@ if [ "$buildno" -ne 0 ]; then
     # Version: 1.0.0
     # Release: b10
     # get control file fixed correct build and version
-    sed "s/^Version.*/Version: ${krmxver}/" SPECS/kronometrix-kernel > SPECS/kronometrix-kernel.tmp
-    mv SPECS/kronometrix-kernel.tmp SPECS/kronometrix-kernel
-    sed "s/^Release.*/Release: b${buildno}/" SPECS/kronometrix-kernel > SPECS/kronometrix-kernel.tmp
-    mv SPECS/kronometrix-kernel.tmp SPECS/kronometrix-kernel
+    sed "s/^Version.*/Version: ${krmxver}/" SPECS/kkernel > SPECS/kronometrix-kernel.tmp
+    mv SPECS/kkernel.tmp SPECS/kkernel
+    sed "s/^Release.*/Release: b${buildno}/" SPECS/kkernel > SPECS/kkernel.tmp
+    mv SPECS/kkernel.tmp SPECS/kkernel
 
-    if [ -f /var/tmp/kronometrix-kernel-${krmxver}b${buildno}-${DIST_ID}.${PT_NAME}.tar.bz2 ]; then
-        cp /var/tmp/kronometrix-kernel-${krmxver}b${buildno}-${DIST_ID}.${PT_NAME}.tar.bz2 \
-           SOURCES/kronometrix-kernel-${krmxver}/kronometrix-kernel-${krmxver}-${PT_NAME}.tar.bz2
+    if [ -f /var/tmp/kkernel-${krmxver}b${buildno}-${DIST_ID}.${PT_NAME}.tar.bz2 ]; then
+        cp /var/tmp/kkernel-${krmxver}b${buildno}-${DIST_ID}.${PT_NAME}.tar.bz2 \
+           SOURCES/kkernel-${krmxver}/kkernel-${krmxver}-${PT_NAME}.tar.bz2
         if [ $? -ne 0 ]; then
             echo "Error: cannot copy tar archive to SOURCE directory !" |\
               tee -a ${BUILD_PATH}/${BUILD_LOG}
@@ -952,14 +1108,14 @@ if [ "$buildno" -ne 0 ]; then
     fi
 else
 
-    sed "s/^Version.*/Version: ${krmxver}/" SPECS/kronometrix-kernel > SPECS/kronometrix-kernel.tmp
-    mv SPECS/kronometrix-kernel.tmp SPECS/kronometrix-kernel
-    sed "s/^Release.*/Release: 0/" SPECS/kronometrix-kernel > SPECS/kronometrix-kernel.tmp
-    mv SPECS/kronometrix-kernel.tmp SPECS/kronometrix-kernel
+    sed "s/^Version.*/Version: ${krmxver}/" SPECS/kkernel > SPECS/kkernel.tmp
+    mv SPECS/kkernel.tmp SPECS/kkernel
+    sed "s/^Release.*/Release: 0/" SPECS/kkernel > SPECS/kkernel.tmp
+    mv SPECS/kkernel.tmp SPECS/kkernel
 
-    if [ -f /var/tmp/kronometrix-kernel-${krmxver}-${DIST_ID}.${PT_NAME}.tar.bz2 ]; then
-        cp /var/tmp/kronometrix-kernel-${krmxver}-${DIST_ID}.${PT_NAME}.tar.bz2 \
-            SOURCES/kronometrix-kernel-${krmxver}/kronometrix-kernel-${krmxver}-${PT_NAME}.tar.bz2
+    if [ -f /var/tmp/kkernel-${krmxver}-${DIST_ID}.${PT_NAME}.tar.bz2 ]; then
+        cp /var/tmp/kkernel-${krmxver}-${DIST_ID}.${PT_NAME}.tar.bz2 \
+            SOURCES/kkernel-${krmxver}/kkernel-${krmxver}-${PT_NAME}.tar.bz2
         if [ $? -ne 0 ]; then
             echo "Error: cannot copy tar archive to SOURCE directory !" |\
               tee -a ${BUILD_PATH}/${BUILD_LOG}
@@ -986,9 +1142,9 @@ else
 fi
 
 
-if [ -f SPECS/kronometrix-kernel ]; then
+if [ -f SPECS/kkernel ]; then
 
-    rpmbuild -bb ./SPECS/kronometrix-kernel >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+    rpmbuild -bb ./SPECS/kkernel >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
     if [ $? -ne 0 ]; then
         echo "Error: cannot build rpm, rpmbuild error !" |\
             tee -a ${BUILD_PATH}/${BUILD_LOG}
@@ -1005,8 +1161,8 @@ echo "" >> ${BUILD_PATH}/${BUILD_LOG}
 echo "Info: Step 3 - Cleanup rpm stage directories" |\
  tee -a ${BUILD_PATH}/${BUILD_LOG}
 
-if [ -f RPMS/kronometrix-kernel-${krmxver}-${PT_NAME}.rpm ]; then
-    cp RPMS/kronometrix-kernel-${krmxver}-${PT_NAME}.rpm /var/tmp
+if [ -f RPMS/kkernel-${krmxver}-${PT_NAME}.rpm ]; then
+    cp RPMS/kkernel-${krmxver}-${PT_NAME}.rpm /var/tmp
 
     if [ $? -eq 0 ]; then
         rm -rf RPMS SOURCES SRPMS BUILD tmp
@@ -1018,10 +1174,10 @@ if [ -f RPMS/kronometrix-kernel-${krmxver}-${PT_NAME}.rpm ]; then
     fi
 
     if [ "$buildno" -ne 0 ]; then
-        mv /var/tmp/kronometrix-kernel-${krmxver}-${PT_NAME}.rpm \
-         /var/tmp/kronometrix-kernel-${krmxver}b${buildno}-${DIST_ID}${RELOS}-${PT_NAME}.rpm
+        mv /var/tmp/kkernel-${krmxver}-${PT_NAME}.rpm \
+         /var/tmp/kkernel-${krmxver}b${buildno}-${DIST_ID}${RELOS}-${PT_NAME}.rpm
     else
-        mv /var/tmp/kronometrix-kernel-${krmxver}-${PT_NAME}.rpm /var/tmp/kronometrix-kernel-${krmxver}-${DIST_ID}${RELOS}-${PT_NAME}.rpm
+        mv /var/tmp/kkernel-${krmxver}-${PT_NAME}.rpm /var/tmp/kkernel-${krmxver}-${DIST_ID}${RELOS}-${PT_NAME}.rpm
     fi
 fi
 
@@ -1073,15 +1229,15 @@ echo "Info: Step 1 - Create stage directory" |\
 
 if [ "$PT_NAME" = "x86_64" ]; then
     if [ "$buildno" -ne 0 ]; then
-        pkgname="kronometrix-kernel-${krmxver}b${buildno}-amd64"
+        pkgname="kkernel-${krmxver}b${buildno}-amd64"
     else
-        pkgname="kronometrix-kernel-${krmxver}-amd64"
+        pkgname="kkernel-${krmxver}-amd64"
     fi
 else
     if [ "$buildno" -ne 0 ]; then
-        pkgname="kronometrix-kernel-${krmxver}b${buildno}-${PT_NAME}"
+        pkgname="kkernel-${krmxver}b${buildno}-${PT_NAME}"
     else
-        pkgname="kronometrix-kernel-${krmxver}-${PT_NAME}"
+        pkgname="kkernel-${krmxver}-${PT_NAME}"
     fi
 fi
 
@@ -1110,6 +1266,8 @@ if [ "$PT_NAME" = "x86_64" ]; then
     cp control.amd64 $pkgname/DEBIAN/control
 elif [ "$PT_NAME" = "armv6l" ]; then
     cp control.armv6l $pkgname/DEBIAN/control
+elif [ "$PT_NAME" = "armv7l" ]; then
+    cp control.armv7l $pkgname/DEBIAN/control
 elif [ "$PT_NAME" = "i386" ]; then
     cp control.i386 $pkgname/DEBIAN/control
 fi
@@ -1124,8 +1282,8 @@ if [ "$buildno" -ne 0 ]; then
     sed "s/^Version.*/Version:${krmxver}-b${buildno}/" ../../$pkgname/DEBIAN/control > ../../$pkgname/DEBIAN/control.tmp
     mv ../../${pkgname}/DEBIAN/control.tmp ../../${pkgname}/DEBIAN/control
 
-    if [ -f /var/tmp/kronometrix-kernel-${krmxver}b${buildno}-${DIST_ID}.${PT_NAME}.tar.bz2 ]; then
-        bzcat /var/tmp/kronometrix-kernel-${krmxver}b${buildno}-${DIST_ID}.${PT_NAME}.tar.bz2 | tar xf -
+    if [ -f /var/tmp/kkernel-${krmxver}b${buildno}-${DIST_ID}.${PT_NAME}.tar.bz2 ]; then
+        bzcat /var/tmp/kkernel-${krmxver}b${buildno}-${DIST_ID}.${PT_NAME}.tar.bz2 | tar xf -
         if [ $? -ne 0 ]; then
             echo "Error: cannot untar archive !" |\
               tee -a ${BUILD_PATH}/${BUILD_LOG}
@@ -1141,8 +1299,8 @@ else
     sed "s/^Version.*/Version:${krmxver}/" ../../$pkgname/DEBIAN/control > ../../$pkgname/DEBIAN/control.tmp
     mv ../../${pkgname}/DEBIAN/control.tmp ../../${pkgname}/DEBIAN/control
 
-    if [ -f /var/tmp/kronometrix-kernel-${krmxver}-${DIST_ID}.${PT_NAME}.tar.bz2 ]; then
-        bzcat /var/tmp/kronometrix-kernel-${krmxver}-${DIST_ID}.${PT_NAME}.tar.bz2 | tar xf -
+    if [ -f /var/tmp/kkernel-${krmxver}-${DIST_ID}.${PT_NAME}.tar.bz2 ]; then
+        bzcat /var/tmp/kkernel-${krmxver}-${DIST_ID}.${PT_NAME}.tar.bz2 | tar xf -
         if [ $? -ne 0 ]; then
             echo "Error: cannot untar archive !" |\
               tee -a ${BUILD_PATH}/${BUILD_LOG}
@@ -1191,15 +1349,15 @@ mv ${pkgname}.deb /var/tmp
 # kronometrix-kernel-1.0.0b31-armv6l.deb
 if [ "$buildno" -ne 0 ]; then
     if [ "$PT_NAME" = "x86_64" ]; then
-        mv /var/tmp/kronometrix-kernel-${krmxver}b${buildno}-amd64.deb /var/tmp/kronometrix-kernel-${krmxver}b${buildno}-${DIST_ID}${RELOS}-amd64.deb
+        mv /var/tmp/kkernel-${krmxver}b${buildno}-amd64.deb /var/tmp/kkernel-${krmxver}b${buildno}-${DIST_ID}${RELOS}-amd64.deb
     else
-        mv /var/tmp/kronometrix-kernel-${krmxver}b${buildno}-${PT_NAME}.deb /var/tmp/kronometrix-kernel-${krmxver}b${buildno}-${DIST_ID}${RELOS}-${PT_NAME}.deb
+        mv /var/tmp/kkernel-${krmxver}b${buildno}-${PT_NAME}.deb /var/tmp/kkernel-${krmxver}b${buildno}-${DIST_ID}${RELOS}-${PT_NAME}.deb
     fi
 else
     if [ "$PT_NAME" = "x86_64" ]; then
-        mv /var/tmp/kronometrix-kernel-${krmxver}-amd64.deb /var/tmp/kronometrix-kernel-${krmxver}-${DIST_ID}${RELOS}-amd64.deb
+        mv /var/tmp/kkernel-${krmxver}-amd64.deb /var/tmp/kkernel-${krmxver}-${DIST_ID}${RELOS}-amd64.deb
     else
-        mv /var/tmp/kronometrix-kernel-${krmxver}-${PT_NAME}.deb /var/tmp/kronometrix-kernel-${krmxver}-${DIST_ID}${RELOS}-${PT_NAME}.deb
+        mv /var/tmp/kkernel-${krmxver}-${PT_NAME}.deb /var/tmp/kkernel-${krmxver}-${DIST_ID}${RELOS}-${PT_NAME}.deb
     fi
 fi
 

@@ -21,7 +21,7 @@
 #
 #  (http://www.gnu.org/copyleft/gpl.html)
 
-# VERSION: 2.2
+# VERSION: 3.1
 
 # ############################################################### #
 # Analytics Authentication Linux                                  #
@@ -181,8 +181,8 @@ echo "Info: Step 2 - Configure $dir ..." |\
 
 
 env PATH=/sbin:$PATH \
-     ./configure --prefix=${iprefix} --with-luajit \
-     >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+     ./configure --prefix=${iprefix} --with-cc-opt="-O0" --with-debug \
+       --with-luajit >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
 
 if [ $? -ne 0 ]; then
     echo "Error: configure $dir failed !" |\
@@ -365,6 +365,53 @@ if [ $auth_router_done -eq 2 ]; then
    auth_router_done=1
 else
    auth_router_done=90
+fi
+
+clean_module
+
+# back to root
+cd ..
+
+}
+
+
+### luatz
+build_auth_luatz() {
+dir="luatz"
+step1=0
+step2=0
+step3=0
+
+cd lib
+
+# STEP 1
+init_module "$dir"
+if [ $? -eq 0 ]; then
+    step1=1
+fi
+
+# STEP 2
+
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 2 - Configure $dir ..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+cp -R luatz ${iprefix}/lualib
+if [ $? -ne 0 ]; then
+    echo "Error: make $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step2=1
+fi
+
+# final check; all 2 steps
+auth_luatz_done=`expr $step1 + $step2`
+if [ $auth_luatz_done -eq 2 ]; then
+   auth_luatz_done=1
+else
+   auth_luatz_done=90
 fi
 
 clean_module
@@ -666,11 +713,11 @@ fi
 cd ${iprefix}/../..
 
 if [ "$buildno" -ne 0 ]; then
-    tar cf /var/tmp/kronometrix-auth-${krmxver}b${buildno}-${DIST_ID}.${PT_NAME}.tar kronometrix/auth
-    if [ -f /var/tmp/kronometrix-auth-${krmxver}b${buildno}-${DIST_ID}.${PT_NAME}.tar.bz2 ]; then
-        rm /var/tmp/kronometrix-auth-${krmxver}b${buildno}-${DIST_ID}.${PT_NAME}.tar.bz2
+    tar cf /var/tmp/kauth-${krmxver}b${buildno}-${DIST_ID}.${PT_NAME}.tar kronometrix/auth
+    if [ -f /var/tmp/kauth-${krmxver}b${buildno}-${DIST_ID}.${PT_NAME}.tar.bz2 ]; then
+        rm /var/tmp/kauth-${krmxver}b${buildno}-${DIST_ID}.${PT_NAME}.tar.bz2
     fi
-    bzip2 /var/tmp/kronometrix-auth-${krmxver}b${buildno}-${DIST_ID}.${PT_NAME}.tar
+    bzip2 /var/tmp/kauth-${krmxver}b${buildno}-${DIST_ID}.${PT_NAME}.tar
     if [ $? -ne 0 ]; then
         echo "Error: cannot create kronometrix auth data recording package !" |\
          tee -a ${BUILD_PATH}/${BUILD_LOG}
@@ -681,11 +728,11 @@ if [ "$buildno" -ne 0 ]; then
     fi
 else
     # GA General Release
-    tar cf /var/tmp/kronometrix-auth-${krmxver}-${DIST_ID}.${PT_NAME}.tar kronometrix/auth
-    if [ -f /var/tmp/kronometrix-auth-${krmxver}-${DIST_ID}.${PT_NAME}.tar.bz2 ]; then
-        rm /var/tmp/kronometrix-auth-${krmxver}-${DIST_ID}.${PT_NAME}.tar.bz2
+    tar cf /var/tmp/kauth-${krmxver}-${DIST_ID}.${PT_NAME}.tar kronometrix/auth
+    if [ -f /var/tmp/kauth-${krmxver}-${DIST_ID}.${PT_NAME}.tar.bz2 ]; then
+        rm /var/tmp/kauth-${krmxver}-${DIST_ID}.${PT_NAME}.tar.bz2
     fi
-    bzip2 /var/tmp/kronometrix-auth-${krmxver}-${DIST_ID}.${PT_NAME}.tar
+    bzip2 /var/tmp/kauth-${krmxver}-${DIST_ID}.${PT_NAME}.tar
     if [ $? -ne 0 ]; then
         echo "Error: cannot create kronometrix auth data recording package !" |\
          tee -a ${BUILD_PATH}/${BUILD_LOG}
@@ -783,23 +830,23 @@ else
 fi
 
 # prepare SOURCES
-if [ ! -d "SOURCES/kronometrix-auth-${krmxver}" ]; then
-    mkdir "SOURCES/kronometrix-auth-${krmxver}"
+if [ ! -d "SOURCES/kauth-${krmxver}" ]; then
+    mkdir "SOURCES/kauth-${krmxver}"
 fi
 
 if [ "$buildno" -ne 0 ]; then
     # Version: 1.0.0
     # Release: b10
     # get control file fixed correct build and version
-    sed "s/^Version.*/Version: ${krmxver}/" SPECS/kronometrix-auth > SPECS/kronometrix-auth.tmp
-    mv SPECS/kronometrix-auth.tmp SPECS/kronometrix-auth
-    sed "s/^Release.*/Release: b${buildno}/" SPECS/kronometrix-auth > SPECS/kronometrix-auth.tmp
-    mv SPECS/kronometrix-auth.tmp SPECS/kronometrix-auth
+    sed "s/^Version.*/Version: ${krmxver}/" SPECS/kauth > SPECS/kauth.tmp
+    mv SPECS/kauth.tmp SPECS/kauth
+    sed "s/^Release.*/Release: b${buildno}/" SPECS/kauth > SPECS/kauth.tmp
+    mv SPECS/kauth.tmp SPECS/kauth
 
 
-    if [ -f /var/tmp/kronometrix-auth-${krmxver}b${buildno}-${DIST_ID}.${PT_NAME}.tar.bz2 ]; then
-        cp /var/tmp/kronometrix-auth-${krmxver}b${buildno}-${DIST_ID}.${PT_NAME}.tar.bz2 \
-           SOURCES/kronometrix-auth-${krmxver}/kronometrix-auth-${krmxver}-${PT_NAME}.tar.bz2
+    if [ -f /var/tmp/kauth-${krmxver}b${buildno}-${DIST_ID}.${PT_NAME}.tar.bz2 ]; then
+        cp /var/tmp/kauth-${krmxver}b${buildno}-${DIST_ID}.${PT_NAME}.tar.bz2 \
+           SOURCES/kauth-${krmxver}/kauth-${krmxver}-${PT_NAME}.tar.bz2
         if [ $? -ne 0 ]; then
             echo "Error: cannot copy tar archive to SOURCE directory !" |\
               tee -a ${BUILD_PATH}/${BUILD_LOG}
@@ -812,13 +859,13 @@ if [ "$buildno" -ne 0 ]; then
 else
 
     sed "s/^Version.*/Version: ${krmxver}/" SPECS/kronometrix-auth > SPECS/kronometrix-auth.tmp
-    mv SPECS/kronometrix-auth.tmp SPECS/kronometrix-auth
-    sed "s/^Release.*/Release: 0/" SPECS/kronometrix-auth > SPECS/kronometrix-auth.tmp
-    mv SPECS/kronometrix-auth.tmp SPECS/kronometrix-auth
+    mv SPECS/kauth.tmp SPECS/kauth
+    sed "s/^Release.*/Release: 0/" SPECS/kauth > SPECS/kauth.tmp
+    mv SPECS/kauth.tmp SPECS/kauth
 
-    if [ -f /var/tmp/kronometrix-auth-${krmxver}-${DIST_ID}.${PT_NAME}.tar.bz2 ]; then
-        cp /var/tmp/kronometrix-auth-${krmxver}-${DIST_ID}.${PT_NAME}.tar.bz2 \
-            SOURCES/kronometrix-auth-${krmxver}/kronometrix-auth-${krmxver}-${PT_NAME}.tar.bz2
+    if [ -f /var/tmp/kauth-${krmxver}-${DIST_ID}.${PT_NAME}.tar.bz2 ]; then
+        cp /var/tmp/kauth-${krmxver}-${DIST_ID}.${PT_NAME}.tar.bz2 \
+            SOURCES/kauth-${krmxver}/kauth-${krmxver}-${PT_NAME}.tar.bz2
         if [ $? -ne 0 ]; then
             echo "Error: cannot copy tar archive to SOURCE directory !" |\
               tee -a ${BUILD_PATH}/${BUILD_LOG}
@@ -846,7 +893,7 @@ fi
 
 
 if [ -f SPECS/kronometrix-auth ]; then
-    rpmbuild -bb ./SPECS/kronometrix-auth >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+    rpmbuild -bb ./SPECS/kauth >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
     if [ $? -ne 0 ]; then
         echo "Error: cannot build rpm, rpmbuild error !" |\
             tee -a ${BUILD_PATH}/${BUILD_LOG}
@@ -863,8 +910,8 @@ echo "" >> ${BUILD_PATH}/${BUILD_LOG}
 echo "Info: Step 3 - Cleanup rpm stage directories" |\
  tee -a ${BUILD_PATH}/${BUILD_LOG}
 
-if [ -f RPMS/kronometrix-auth-${krmxver}-${PT_NAME}.rpm ]; then
-    cp RPMS/kronometrix-auth-${krmxver}-${PT_NAME}.rpm /var/tmp
+if [ -f RPMS/kauth-${krmxver}-${PT_NAME}.rpm ]; then
+    cp RPMS/kauth-${krmxver}-${PT_NAME}.rpm /var/tmp
 
     if [ $? -eq 0 ]; then
         rm -rf RPMS SOURCES SRPMS BUILD tmp
@@ -876,10 +923,10 @@ if [ -f RPMS/kronometrix-auth-${krmxver}-${PT_NAME}.rpm ]; then
     fi
 
     if [ "$buildno" -ne 0 ]; then
-        mv /var/tmp/kronometrix-auth-${krmxver}-${PT_NAME}.rpm \
-         /var/tmp/kronometrix-auth-${krmxver}b${buildno}-${DIST_ID}${RELOS}-${PT_NAME}.rpm
+        mv /var/tmp/kauth-${krmxver}-${PT_NAME}.rpm \
+         /var/tmp/kauth-${krmxver}b${buildno}-${DIST_ID}${RELOS}-${PT_NAME}.rpm
     else
-        mv /var/tmp/kronometrix-auth-${krmxver}-${PT_NAME}.rpm /var/tmp/kronometrix-auth-${krmxver}-${DIST_ID}${RELOS}-${PT_NAME}.rpm
+        mv /var/tmp/kauth-${krmxver}-${PT_NAME}.rpm /var/tmp/kauth-${krmxver}-${DIST_ID}${RELOS}-${PT_NAME}.rpm
     fi
 fi
 
@@ -930,15 +977,15 @@ echo "Info: Step 1 - Create stage directory" |\
 
 if [ "$PT_NAME" = "x86_64" ]; then
     if [ "$buildno" -ne 0 ]; then
-        pkgname="kronometrix-auth-${krmxver}b${buildno}-amd64"
+        pkgname="kauth-${krmxver}b${buildno}-amd64"
     else
-        pkgname="kronometrix-auth-${krmxver}-amd64"
+        pkgname="kauth-${krmxver}-amd64"
     fi
 else
     if [ "$buildno" -ne 0 ]; then
-        pkgname="kronometrix-auth-${krmxver}b${buildno}-${PT_NAME}"
+        pkgname="kauth-${krmxver}b${buildno}-${PT_NAME}"
     else
-        pkgname="kronometrix-auth-${krmxver}-${PT_NAME}"
+        pkgname="kauth-${krmxver}-${PT_NAME}"
     fi
 fi
 
@@ -967,6 +1014,8 @@ if [ "$PT_NAME" = "x86_64" ]; then
     cp control.amd64 $pkgname/DEBIAN/control
 elif [ "$PT_NAME" = "armv6l" ]; then
     cp control.armv6l $pkgname/DEBIAN/control
+elif [ "$PT_NAME" = "armv7l" ]; then
+    cp control.armv7l $pkgname/DEBIAN/control
 elif [ "$PT_NAME" = "i386" ]; then
     cp control.i386 $pkgname/DEBIAN/control
 fi
@@ -981,8 +1030,8 @@ if [ "$buildno" -ne 0 ]; then
     sed "s/^Version.*/Version:${krmxver}-b${buildno}/" ../../$pkgname/DEBIAN/control > ../../$pkgname/DEBIAN/control.tmp
     mv ../../${pkgname}/DEBIAN/control.tmp ../../${pkgname}/DEBIAN/control
 
-    if [ -f /var/tmp/kronometrix-auth-${krmxver}b${buildno}-${DIST_ID}.${PT_NAME}.tar.bz2 ]; then
-        bzcat /var/tmp/kronometrix-auth-${krmxver}b${buildno}-${DIST_ID}.${PT_NAME}.tar.bz2 | tar xf -
+    if [ -f /var/tmp/kauth-${krmxver}b${buildno}-${DIST_ID}.${PT_NAME}.tar.bz2 ]; then
+        bzcat /var/tmp/kauth-${krmxver}b${buildno}-${DIST_ID}.${PT_NAME}.tar.bz2 | tar xf -
         if [ $? -ne 0 ]; then
             echo "Error: cannot untar archive !" |\
               tee -a ${BUILD_PATH}/${BUILD_LOG}
@@ -998,8 +1047,8 @@ else
     sed "s/^Version.*/Version:${krmxver}/" ../../$pkgname/DEBIAN/control > ../../$pkgname/DEBIAN/control.tmp
     mv ../../${pkgname}/DEBIAN/control.tmp ../../${pkgname}/DEBIAN/control
 
-    if [ -f /var/tmp/kronometrix-auth-${krmxver}-${DIST_ID}.${PT_NAME}.tar.bz2 ]; then
-        bzcat /var/tmp/kronometrix-auth-${krmxver}-${DIST_ID}.${PT_NAME}.tar.bz2 | tar xf -
+    if [ -f /var/tmp/kauth-${krmxver}-${DIST_ID}.${PT_NAME}.tar.bz2 ]; then
+        bzcat /var/tmp/kauth-${krmxver}-${DIST_ID}.${PT_NAME}.tar.bz2 | tar xf -
         if [ $? -ne 0 ]; then
             echo "Error: cannot untar archive !" |\
               tee -a ${BUILD_PATH}/${BUILD_LOG}
@@ -1045,18 +1094,18 @@ fi
 
 mv ${pkgname}.deb /var/tmp
 
-# kronometrix-auth-1.0.0b41-armv6l.deb
+# kauth-1.0.0b41-armv6l.deb
 if [ "$buildno" -ne 0 ]; then
     if [ "$PT_NAME" = "x86_64" ]; then
-        mv /var/tmp/kronometrix-auth-${krmxver}b${buildno}-amd64.deb /var/tmp/kronometrix-auth-${krmxver}b${buildno}-${DIST_ID}${RELOS}-amd64.deb
+        mv /var/tmp/kauth-${krmxver}b${buildno}-amd64.deb /var/tmp/kauth-${krmxver}b${buildno}-${DIST_ID}${RELOS}-amd64.deb
     else
-        mv /var/tmp/kronometrix-auth-${krmxver}b${buildno}-${PT_NAME}.deb /var/tmp/kronometrix-auth-${krmxver}b${buildno}-${DIST_ID}${RELOS}-${PT_NAME}.deb
+        mv /var/tmp/kauth-${krmxver}b${buildno}-${PT_NAME}.deb /var/tmp/kauth-${krmxver}b${buildno}-${DIST_ID}${RELOS}-${PT_NAME}.deb
     fi
 else
     if [ "$PT_NAME" = "x86_64" ]; then
-        mv /var/tmp/kronometrix-auth-${krmxver}-amd64.deb /var/tmp/kronometrix-auth-${krmxver}-${DIST_ID}${RELOS}-amd64.deb
+        mv /var/tmp/kauth-${krmxver}-amd64.deb /var/tmp/kauth-${krmxver}-${DIST_ID}${RELOS}-amd64.deb
     else
-        mv /var/tmp/kronometrix-auth-${krmxver}-${PT_NAME}.deb /var/tmp/kronometrix-auth-${krmxver}-${DIST_ID}${RELOS}-${PT_NAME}.deb
+        mv /var/tmp/kauth-${krmxver}-${PT_NAME}.deb /var/tmp/kauth-${krmxver}-${DIST_ID}${RELOS}-${PT_NAME}.deb
     fi
 fi
 
