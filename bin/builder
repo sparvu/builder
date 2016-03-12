@@ -20,7 +20,7 @@
 #
 #  (http://www.gnu.org/copyleft/gpl.html)
 
-# VERSION: 2.3
+# VERSION: 3
 
 usage() {
 
@@ -639,6 +639,8 @@ case "$module" in
 
     if [ $libusb_sem -eq 1 ]; then
         build_rec_deviceusb
+    elif [ $ossl_sem -eq 1 ]; then
+        build_rec_ossl
     elif [ $rpm_sem -eq 1 ]; then
         if [ "x${DIST_ID}" = "xrhel" -o "x${DIST_ID}" = "xcentos" ]; then
             build_rec_pkg
