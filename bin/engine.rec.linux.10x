@@ -469,6 +469,10 @@ elif [ "$PT_NAME" = "armv7l" ]; then
     env PATH=${iprefix}/bin:${iprefix}/perl/bin:$PATH \
      ./Configure linux-armv4 threads shared --prefix=${iprefix} \
      --openssldir=${iprefix}/openssl >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+elif [ "$PT_NAME" = "ppc64" ]; then
+    env PATH=${iprefix}/bin:${iprefix}/perl/bin:$PATH \
+     ./Configure linux-ppc64 threads shared --prefix=${iprefix} \
+     --openssldir=${iprefix}/openssl >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
 else
     env PATH=${iprefix}/bin:${iprefix}/perl/bin:$PATH \
      ./Configure linux-elf threads shared --prefix=${iprefix} \
