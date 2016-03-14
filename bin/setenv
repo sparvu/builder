@@ -44,7 +44,7 @@ case "$OS_NAME" in
         KERNEL=`uname -r`
         USER_ID=`/usr/bin/id -u`
         if [ -f /etc/os-release ]; then
-            DIST_ID=`grep '^ID=' /etc/os-release | sed 's/^.*=//'`
+            DIST_ID=`grep '^ID=' /etc/os-release | sed 's/^.*=//' | sed 's/"//g'`
         elif [ -f /etc/system-release ]; then
             DIST_ID=`sed 's/ release.*$//' /etc/system-release | tr '[A-Z]' '[a-z]'`
         elif [ -f /etc/redhat-release ]; then

@@ -642,7 +642,7 @@ case "$module" in
     elif [ $ossl_sem -eq 1 ]; then
         build_rec_ossl
     elif [ $rpm_sem -eq 1 ]; then
-        if [ "x${DIST_ID}" = "xrhel" -o "x${DIST_ID}" = "xcentos" ]; then
+        if [ "x${DIST_ID}" = "xrhel" -o "x${DIST_ID}" = "xcentos" -o "x${DIST_ID}" = "xsles" ]; then
             build_rec_pkg
         else
             echo "Error: not a RPM installation, cannot build rpm pkg"
