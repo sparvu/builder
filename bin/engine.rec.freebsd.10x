@@ -20,7 +20,7 @@
 #
 #  (http://www.gnu.org/copyleft/gpl.html)
 
-# VERSION: 2.4
+# VERSION: 3.0
 
 # ############################################################### #
 # Engine: FreeBSD                                                 # 
@@ -224,7 +224,7 @@ fi
 for lib in Digest::SHA Proc::ProcessTable Proc::PID::File File::Tail \
            JSON::XS JSON HTTP::Response UUID::Tiny Carp::Assert \
            Inline::MakeMaker Inline::C Date::Calc Device::SerialPort \
-           Filesys::Df Tie::IxHash
+           Filesys::Df Tie::IxHash IO::Interface
 do
     if  [ "$lib" = "JSON::XS" -o "$lib" = "Inline::MakeMaker" ]; then
         env PERL_MM_USE_DEFAULT=1 \
@@ -255,8 +255,8 @@ done
 
 
 
-# there are 16 perl modules install calls
-step6=`expr $step6 / 16`
+# there are 17 perl modules install calls
+step6=`expr $step6 / 17`
 
 # final check; all 6 steps
 perl_done=`expr $step1 + $step2 + $step3 + $step4 + $step5 + $step6`
