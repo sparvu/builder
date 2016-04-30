@@ -1038,11 +1038,11 @@ echo "" >> ${BUILD_PATH}/${BUILD_LOG}
 echo "Info: Step 2 - Installing recorders ..." |\
  tee -a ${BUILD_PATH}/${BUILD_LOG}
 
-
     if [ "$PT_NAME" != "armv6l" ]; then
         cp *rec ${iprefix}/bin
         cp ../wsrec ${iprefix}/bin
         cp ../webrec ${iprefix}/bin
+        cp ../ntprec ${iprefix}/bin
         cp ../raw2day ${iprefix}/bin
         if [ $? -ne 0 ]; then
             echo "Error: cannot install rec scripts !" |\
@@ -1056,6 +1056,7 @@ echo "Info: Step 2 - Installing recorders ..." |\
         cp *rec ${iprefix}/bin
         cp ../wsrec ${iprefix}/bin
         cp ../webrec ${iprefix}/bin
+        cp ../ntprec ${iprefix}/bin
         cp ../raw2day ${iprefix}/bin
         if [ $? -ne 0 ]; then
             echo "Error: cannot install rec scripts !" |\
@@ -1069,6 +1070,7 @@ echo "Info: Step 2 - Installing recorders ..." |\
         cp sysrec cpurec diskrec nicrec hdwrec ${iprefix}/bin
         cp ../wsrec ${iprefix}/bin
         cp ../webrec ${iprefix}/bin
+        cp ../ntprec ${iprefix}/bin
         cp ../raw2day ${iprefix}/bin
         if [ $? -ne 0 ]; then
             echo "Error: cannot install rec scripts !" |\
@@ -1097,6 +1099,7 @@ cd ../..
 cp etc/*.start ${iprefix}/etc
 cp etc/kronometrix.json ${iprefix}/etc
 cp etc/webrec.json ${iprefix}/etc
+cp etc/ntprec.json ${iprefix}/etc
 cp etc/agents ${iprefix}/etc
 cp etc/transport ${iprefix}/etc
 cp etc/${OS_NAME}/logrotate.krmx ${iprefix}/etc
