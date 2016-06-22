@@ -3,7 +3,7 @@
 #  Kronometrix Development tools
 #  FreeBSD Analytics Kernel Engine
 #
-#  Copyright (c) 2015 Stefan Parvu (www.kronometrix.org).
+#  Copyright (c) 2016 Stefan Parvu (www.kronometrix.org).
 #
 #  This program is free software; you can redistribute it and/or
 #  modify it under the terms of the GNU General Public License
@@ -21,7 +21,7 @@
 #
 #  (http://www.gnu.org/copyleft/gpl.html)
 
-# VERSION: 3
+# VERSION: 3.1
 
 # ############################################################### #
 # Analytics Kernel FreeBSD                                        #
@@ -236,6 +236,176 @@ fi
 
 clean_module
 
+}
+
+
+### struct
+build_kernel_struct() {
+dir="struct"
+step1=0
+step2=0
+step3=0
+
+cd lib
+
+# STEP 1
+init_module "$dir"
+if [ $? -eq 0 ]; then
+    step1=1
+fi
+
+# STEP 2
+
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 2 - Configure $dir ..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+make >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if [ $? -ne 0 ]; then
+    echo "Error: make $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step2=1
+fi
+
+# STEP 3
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 3 - Make $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+cp struct.so ${iprefix}/lualib >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if [ $? -ne 0 ]; then
+    echo "Error: make install struct $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step3=1
+fi
+
+
+# final check; all 3 steps
+kernel_struct_done=`expr $step1 + $step2 + $step3`
+if [ $kernel_struct_done -eq 3 ]; then
+   kernel_struct_done=1
+else
+   kernel_struct_done=90
+fi
+
+clean_module
+
+# back to root
+cd ..
+
+
+}
+
+
+
+### lua-zlib
+build_kernel_zlib() {
+dir="lua-zlib"
+step1=0
+step2=0
+step3=0
+step4=0
+
+cd lib
+
+# STEP 1
+init_module "$dir"
+if [ $? -eq 0 ]; then
+    step1=1
+fi
+
+# STEP 2
+
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 2 - Configure $dir ..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+    
+make bsd >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if [ $? -ne 0 ]; then
+    echo "Error: make $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step2=1
+fi
+
+# STEP 3
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 3 - Make $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+make install >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if [ $? -ne 0 ]; then
+    echo "Error: make install $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step3=1
+fi
+
+# final check; all 3 steps
+kernel_luazlib_done=`expr $step1 + $step2 + $step3`
+if [ $kernel_luazlib_done -eq 3 ]; then
+   kernel_luazlib_done=1
+else
+   kernel_luazlib_done=90
+fi
+
+clean_module
+
+# back to root
+cd ..
+
+}
+
+
+### zipwriter
+build_kernel_zip() {
+dir="zipwriter"
+step1=0
+step2=0
+
+cd lib
+
+init_module "$dir"
+if [ $? -eq 0 ]; then
+    step1=1
+fi
+
+# STEP 2
+
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 2 - Install zipwriter ..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+cp -R lua/ZipWriter* ${iprefix}/lualib/
+if [ $? -ne 0 ]; then
+    echo "Error: cannot install zipwriter script !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+     rm /var/tmp/build.${module}
+     exit 3
+else
+    step2=1
+fi
+
+# final check; all 2 steps
+kernel_zipwriter_done=`expr $step1 + $step2`
+if [ $kernel_zipwriter_done -eq 2 ]; then
+   kernel_zipwriter_done=1
+else
+   kernel_zipwriter_done=90
+fi
+    
+clean_module
+
+# back to root
+cd ..
 }
 
 
@@ -892,7 +1062,6 @@ elif [ $arm_sem -eq 1 ]; then
     cp aux.conf.arm ${iprefix}/etc/aux.conf
     cp agg.conf.arm ${iprefix}/etc/agg.conf
 fi
-
 if [ $? -ne 0 ]; then
     echo "Error: cannot install kernel startup services !" |\
      tee -a ${BUILD_PATH}/${BUILD_LOG}
@@ -918,15 +1087,33 @@ else
     step3=1
 fi
 
-# final check; all 3 steps
-kernel_fin_done=`expr $step1 + $step2 + $step3`
-if [ "$kernel_fin_done" -eq 3 ]; then
+
+# STEP 4
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 4 - Installing luajit.so.2 symlink ..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+ln -s ${iprefix}/luajit/lib/libluajit-5.1.so.2.1.0 ${iprefix}/luajit/lib/libluajit-5.1.so.2
+if [ $? -ne 0 ]; then
+    echo "Error: cannot install luajit.so.2 symlink !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step4=1
+fi
+
+
+
+# final check; all 4 steps
+kernel_fin_done=`expr $step1 + $step2 + $step3 + $step4`
+if [ "$kernel_fin_done" -eq 4 ]; then
    kernel_fin_done=1
 else
    kernel_fin_done=90
 fi
 
 }
+
 
 ### freebsd package
 build_kernel_freebsd_pkg() {
@@ -1047,7 +1234,7 @@ fi
 mv MANIFEST \+MANIFEST
 (cd /opt/kronometrix ; tar cf - kernel)|(mkdir -p opt/kronometrix; cd opt/kronometrix; tar xpf -)
 
-pkg create -m . -r . -o ${HOME} >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+pkg create -m . -r . -o /var/tmp >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
 if [ $? -ne 0 ]; then
     echo "Error: cannot build FreeBSD pkg, pkg create error !" |\
         tee -a ${BUILD_PATH}/${BUILD_LOG}
@@ -1063,9 +1250,9 @@ REL=`echo $KERNEL | sed 's/\-.*//'`
 
 # copy config files
 if [ "$buildno" -ne 0 ]; then
-    mv ${HOME}/kkernel-${krmxver}b${buildno}.txz ${HOME}/kkernel-${krmxver}b${buildno}-${OS_NAME}${REL}-${PT_NAME}.txz
+    mv /var/tmp/kkernel-${krmxver}b${buildno}.txz /var/tmp/kkernel-${krmxver}b${buildno}-${OS_NAME}${REL}-${PT_NAME}.txz
 else
-    cp ${HOME}/kkernel-${krmxver}.txz ${HOME}/kkernel-${krmxver}-${OS_NAME}${REL}-${PT_NAME}.txz
+    cp /var/tmp/kkernel-${krmxver}.txz /var/tmp/kkernel-${krmxver}-${OS_NAME}${REL}-${PT_NAME}.txz
 fi
 
 

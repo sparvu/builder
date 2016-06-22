@@ -120,6 +120,9 @@ auth_fbsd_pkg_done=0
 ##kernel
 kernel_openresty_done=0
 kernel_luafs_done=0
+kernel_luazlib_done=0
+kernel_struct_done=0
+kernel_zipwriter_done=0
 kernel_luatz_done=0
 kernel_lua_resty_template_done=0
 kernel_lua_router_done=0
@@ -817,6 +820,9 @@ case "$module" in
         build_kernel_httpsimple
         build_kernel_luatz
         build_kernel_prettycjson
+        build_kernel_zlib
+        build_kernel_struct
+        build_kernel_zip
 
         if [ ! -z "$build_num" ]; then
             build_kernel_inspect
@@ -1366,6 +1372,36 @@ case "$module" in
         else
             if [ $kernel_luatz_done -eq 90 ]; then
                 echo  "# lib luatz: not integrated"
+            fi
+        fi
+    fi
+
+    if [ $kernel_luazlib_done -ne 0 ]; then
+        if [ $kernel_luazlib_done -eq 1 ]; then
+            echo  "# lib lua-zlib: built and integrated"
+        else
+            if [ $kernel_luazlib_done -eq 90 ]; then
+                echo  "# lib luazlib: not integrated"
+            fi
+        fi
+    fi
+
+    if [ $kernel_struct_done -ne 0 ]; then
+        if [ $kernel_struct_done -eq 1 ]; then
+            echo  "# lib struct: built and integrated"
+        else
+            if [ $kernel_struct_done -eq 90 ]; then
+                echo  "# lib struct: not integrated"
+            fi
+        fi
+    fi
+
+    if [ $kernel_zipwriter_done -ne 0 ]; then
+        if [ $kernel_zipwriter_done -eq 1 ]; then
+            echo  "# lib zipwriter: built and integrated"
+        else
+            if [ $kernel_zipwriter_done -eq 90 ]; then
+                echo  "# lib zipwriter: not integrated"
             fi
         fi
     fi
