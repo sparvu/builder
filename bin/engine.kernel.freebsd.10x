@@ -518,13 +518,63 @@ cd ..
 }
 
 
+
+### lua-resty-gettext
+build_kernel_gettext() {
+dir="lua-resty-gettext"
+step1=0
+step2=0
+step3=0
+
+cd lib
+
+# STEP 1
+init_module "$dir"
+if [ $? -eq 0 ]; then
+    step1=1
+fi
+
+# STEP 2
+
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 2 - Install gettext.lua ..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+cp lib/resty/gettext.lua ${iprefix}/lualib/resty
+if [ $? -ne 0 ]; then
+    echo "Error: cannot install gettext.lua script !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+     rm /var/tmp/build.${module}
+     exit 3
+else
+    step2=1
+fi
+
+# final check; all 2 steps
+kernel_lua_resty_gettext_done=`expr $step1 + $step2`
+if [ $kernel_lua_resty_gettext_done -eq 2 ]; then
+   kernel_lua_resty_gettext_done=1
+else
+   kernel_lua_resty_gettext_done=90
+fi
+
+clean_module
+
+# back to root
+cd ..
+
+}
+
+
+
+
+
 ### lua-resty-session
 build_kernel_session() {
 dir="lua-resty-session"
 step1=0
 step2=0
 step3=0
-
 
 cd lib
 
@@ -1209,6 +1259,12 @@ if [ -d /opt/kronometrix/kernel ]; then
     do
         echo "$f: \"`sha256 -q $f`\"," >> files.txt
     done
+
+    for f in `find /opt/kronometrix/kernel -type l`
+    do
+        echo "$f: - ," >> files.txt
+    done
+
     echo "files: {" >> MANIFEST
     cat files.txt >> MANIFEST
     echo "}" >> MANIFEST

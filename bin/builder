@@ -108,6 +108,7 @@ auth_luatz_done=0
 auth_lua_resty_template_done=0
 auth_lua_inspect_done=0
 auth_lua_router_done=0
+auth_lua_resty_gettext_done=0
 auth_lua_resty_http_simple_done=0
 auth_fin_done=0
 auth_config_done=0
@@ -126,6 +127,7 @@ kernel_zipwriter_done=0
 kernel_luatz_done=0
 kernel_lua_resty_template_done=0
 kernel_lua_router_done=0
+kernel_lua_resty_gettext_done=0
 kernel_lua_resty_http_simple_done=0
 kernel_lua_resty_prettycjson_done=0
 kernel_lua_inspect_done=0
@@ -726,6 +728,7 @@ case "$module" in
         build_auth_router
         build_auth_httpsimple
         build_auth_luatz
+        build_auth_gettext
 
         if [ ! -z "$build_num" ]; then
             build_auth_inspect
@@ -823,6 +826,7 @@ case "$module" in
         build_kernel_zlib
         build_kernel_struct
         build_kernel_zip
+        build_kernel_gettext
 
         if [ ! -z "$build_num" ]; then
             build_kernel_inspect
@@ -1063,6 +1067,15 @@ case "$module" in
         fi
     fi
 
+    if [ $auth_lua_resty_gettext_done -ne 0 ]; then
+        if [ $auth_lua_resty_gettext_done -eq 1 ]; then
+            echo  "# lib lua-resty-gettext: built and integrated"
+        else
+            if [ $auth_lua_resty_gettext_done -eq 90 ]; then
+                echo  "# lib lua-resty-gettext: not integrated"
+            fi
+        fi
+    fi
 
     if [ ! -z "$build_num" ]; then
         if [ $auth_lua_inspect_done -ne 0 ]; then
@@ -1402,6 +1415,16 @@ case "$module" in
         else
             if [ $kernel_zipwriter_done -eq 90 ]; then
                 echo  "# lib zipwriter: not integrated"
+            fi
+        fi
+    fi
+
+    if [ $kernel_lua_resty_gettext_done -ne 0 ]; then
+        if [ $kernel_lua_resty_gettext_done -eq 1 ]; then
+            echo  "# lib lua-resty-gettext: built and integrated"
+        else
+            if [ $kernel_lua_resty_gettext_done -eq 90 ]; then
+                echo  "# lib lua-resty-gettext: not integrated"
             fi
         fi
     fi
