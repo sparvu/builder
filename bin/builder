@@ -2,7 +2,7 @@
 #
 #  Kronometrix Development tools, builder the master script engine 
 #
-#  Copyright (c) 2015 Stefan Parvu (www.kronometrix.org).
+#  Copyright (c) 2016 Stefan Parvu (www.kronometrix.org).
 #
 #  This program is free software; you can redistribute it and/or
 #  modify it under the terms of the GNU General Public License
@@ -20,7 +20,7 @@
 #
 #  (http://www.gnu.org/copyleft/gpl.html)
 
-# VERSION: 3
+# VERSION: 3.2
 
 usage() {
 
@@ -157,6 +157,9 @@ mesg_fbsd_pkg_done=0
 
 ##mon
 mon_perl_done=0
+mon_curl_done=0
+mon_wwwcurl_done=0
+mon_ossl_done=0
 mon_procdaemon_done=0
 mon_pkg_done=0
 mon_tar_pkg_done=0
@@ -852,10 +855,12 @@ case "$module" in
     else 
         build_mon_perl
         build_mon_procdaemon
+        build_mon_ossl
+        build_mon_curl
+        build_mon_wwwcurl
         build_mon_scripts
         #build_mon_config
         build_mon_pkg
-
     fi
     ;;
 
@@ -1171,6 +1176,30 @@ case "$module" in
     else
         if [ $mon_procdaemon_done -eq 90 ]; then
             echo "# proc-daemon: failed"
+        fi
+    fi
+
+    if [ $mon_ossl_done -eq 1 ]; then
+        echo "# openssl: ok"
+    else
+        if [ $mon_ossl_done -eq 90 ]; then
+            echo "# openssl: failed"
+        fi
+    fi
+
+    if [ $mon_curl_done -eq 1 ]; then
+        echo "# curl: ok"
+    else
+        if [ $mon_curl_done -eq 90 ]; then
+            echo "# curl: failed"
+        fi
+    fi
+
+    if [ $mon_wwwcurl_done -eq 1 ]; then
+        echo "# www-curl: ok"
+    else
+        if [ $mon_wwwcurl_done -eq 90 ]; then
+            echo "# www-curl: failed"
         fi
     fi
         
