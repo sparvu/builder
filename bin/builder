@@ -857,7 +857,7 @@ case "$module" in
         build_mon_procdaemon
         build_mon_ossl
         build_mon_curl
-        build_mon_wwwcurl
+        build_mon_wcurl
         build_mon_scripts
         #build_mon_config
         build_mon_pkg

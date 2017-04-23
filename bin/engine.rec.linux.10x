@@ -1,7 +1,7 @@
 #!/bin/sh
 #
 #  Kronometrix Development tools, Linux recording engine 
-#  Copyright (c) 2015 Stefan Parvu (www.kronometrix.org).
+#  Copyright (c) 2016 Stefan Parvu (www.kronometrix.org).
 #
 #  This program is free software; you can redistribute it and/or
 #  modify it under the terms of the GNU General Public License
@@ -19,7 +19,7 @@
 #
 #  (http://www.gnu.org/copyleft/gpl.html)
 
-# VERSION: 3.0
+# VERSION: 3.3
 
 # ############################################################### #
 # Engine: Linux                                                   # 
@@ -217,14 +217,16 @@ else
     step6=`expr $step6 + 1`
 fi
 
-for lib in Digest::SHA Proc::ProcessTable Proc::PID::File File::Tail \
-           Regexp::Common Filesys::Df Sys::Filesystem \
-           JSON::XS JSON HTTP::Response UUID::Tiny Carp::Assert \
-           Linux::Distribution Inline::MakeMaker Inline::C Date::Calc \
-           Device::SerialPort Tie::IxHash File::stat File::Stat::Bits \
-           IO::Interface Device::Modbus Net::NTP Filesys::DiskUsage
+for lib in Digest::SHA Proc::Daemon Proc::ProcessTable Proc::PID::File \
+           File::Tail Regexp::Common Filesys::Df Sys::Filesystem \
+           JSON HTTP::Response UUID::Tiny Carp::Assert \
+           DateTime::Format::ISO8601 ExtUtils::PkgConfig \
+           Inline::MakeMaker Capture::Tiny \
+           Inline::C Date::Calc Device::SerialPort Linux::Distribution \
+           Tie::IxHash IO::Interface Device::Modbus Device::Modbus::RTU \
+           File::stat File::Stat::Bits Net::NTP Filesys::DiskUsage
 do
-    if  [ "$lib" = "JSON::XS" -o "$lib" = "Inline::MakeMaker" ]; then
+    if  [ "$lib" = "Inline::MakeMaker" ]; then
         env PERL_MM_USE_DEFAULT=1 \
         ${iprefix}/perl/bin/perl -MCPAN -e 'install "'$lib'"' >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
         if [ $? -ne 0 ]; then
@@ -250,8 +252,8 @@ do
     fi
 done
 
-# there are 25 perl modules install calls
-step6=`expr $step6 / 25`
+# there are 29 perl modules install calls
+step6=`expr $step6 / 29`
 
 # final check; all 6 steps
 perl_done=`expr $step1 + $step2 + $step3 + $step4 + $step5 + $step6`
@@ -266,10 +268,10 @@ clean_module
 }
 
 
-### perl Proc::Daemon
-build_rec_procdaemon() {
+### Webrec2  
+build_rec_webrec() {
 
-dir=Proc-Daemon
+dir=Webrec
 step1=0
 step2=0
 step3=0
@@ -316,7 +318,6 @@ fi
 echo "" >> ${BUILD_PATH}/${BUILD_LOG}
 echo "Info: Step 4 - Make install $dir..." |\
  tee -a ${BUILD_PATH}/${BUILD_LOG}
-make test >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
 make install >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
 if [ $? -ne 0 ]; then
     echo "Error: make install Proc::Daemon failed !" |\
@@ -328,11 +329,11 @@ else
 fi
 
 ## final check; all 4 steps
-procdaemon_done=`expr $step1 + $step2 + $step3 + $step4`
-if [ "$procdaemon_done" -eq 4 ]; then
-   procdaemon_done=1
+webrec_done=`expr $step1 + $step2 + $step3 + $step4`
+if [ "$webrec_done" -eq 4 ]; then
+   webrec_done=1
 else
-   procdaemon_done=90
+   webrec_done=90
 fi
 
 clean_module
@@ -500,6 +501,8 @@ if [ "$PT_NAME" = "x86_64" ]; then
     sed "s:^SHARED_LDFLAGS=.*:SHARED_LDFLAGS=-m64 -L${iprefix}/lib -Wl,-rpath -Wl,${iprefix}/lib:" Makefile > Makefile.tmp
 elif [ "$PT_NAME" = "ppc64" ]; then
     sed "s:^SHARED_LDFLAGS=.*:SHARED_LDFLAGS=-m64 -L${iprefix}/lib -Wl,-rpath -Wl,${iprefix}/lib:" Makefile > Makefile.tmp
+elif [ "$PT_NAME" = "armv7l" ]; then
+    sed "s:^SHARED_LDFLAGS=.*:SHARED_LDFLAGS=-L${iprefix}/lib -Wl,-rpath -Wl,${iprefix}/lib:" Makefile > Makefile.tmp
 else
     sed "s:^SHARED_LDFLAGS=.*:SHARED_LDFLAGS=-m32 -L${iprefix}/lib -Wl,-rpath -Wl,${iprefix}/lib:" Makefile > Makefile.tmp
 fi
@@ -715,6 +718,187 @@ cd ..
 }
 
 
+### cares
+build_rec_cares() {
+dir=c-ares
+step1=0
+step2=0
+step3=0
+step4=0
+
+cd lib
+init_module "$dir"
+if [ $? -eq 0 ]; then
+    step1=1
+fi
+
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 2 - Configure $dir ..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+env CFLAGS="-O3" \
+    CPPFLAGS="-I${iprefix}/include"   \
+    LDFLAGS="-L${iprefix}/lib -Wl,-rpath -Wl,${iprefix}/lib" \
+    ./configure --prefix=${iprefix} >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if [ $? -ne 0 ]; then
+    echo "Error: configure $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step2=1
+fi
+
+
+# STEP 3
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 3 - Make $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+make >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if [ $? -ne 0 ]; then
+    echo "Error: make $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step3=1
+fi
+
+# STEP 4
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 4 - Make install $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+make install >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if [ $? -ne 0 ]; then
+    echo "Error: make install cares failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step4=1
+fi
+
+# final check; all 4 steps
+cares_done=`expr $step1 + $step2 + $step3 + $step4`
+if [ "$cares_done" -eq 4 ]; then
+   cares_done=1
+else
+   cares_done=90
+fi
+
+clean_module
+
+# back to root
+cd ..
+
+}
+
+
+# perl Crypt-OpenSSL-X509 
+build_rec_x509() {
+     
+dir=Crypt-OpenSSL-X509
+step1=0
+step2=0
+step3=0
+step4=0
+            
+# STEP 1
+cd lib
+init_module "$dir"
+if [ $? -eq 0 ]; then
+    step1=1
+fi
+    
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 2 - Configure $dir ..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+    
+     
+# STEP 2
+if [ "$PT_NAME" = "x86_64" ]; then
+    cp Makefile.x64 Makefile
+elif [ "$PT_NAME" = "armv7l" ]; then
+    cp Makefile.arm Makefile
+else
+    cp Makefile.i686 Makefile
+fi
+
+if [ $? -ne 0 ]; then
+    echo "Error: configure $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step2=1
+fi
+
+
+# STEP 3
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 3 - Make $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+make >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if [ $? -ne 0 ]; then
+    echo "Error: make $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step3=1
+fi
+
+
+# STEP 4
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 4 - Make install $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+make install >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if [ $? -ne 0 ]; then
+    echo "Error: make install $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step4=1
+fi
+
+
+# STEP 5
+lib='Net::SSL::ExpireDate'
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 5 - Install $lib ..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+env PERL_MM_USE_DEFAULT=1 \
+  ${iprefix}/perl/bin/perl -MCPAN -e 'install "'$lib'"' >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if [ $? -ne 0 ]; then
+    echo "Error: $lib installation failed !" |\
+    tee -a ${BUILD_LOG}/${module}.${version}.log
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step5=`expr $step5 + 1`
+fi
+
+
+# final check; all 5 steps
+x509_done=`expr $step1 + $step2 + $step3 + $step4 + $step5`
+if [ "$x509_done" -eq 5 ]; then
+   x509_done=1
+else
+   x509_done=90
+fi
+
+clean_module
+
+# back to root
+cd ..
+
+}
+
+
 ### curl
 build_rec_curl() {
 dir=curl
@@ -734,12 +918,19 @@ echo "Info: Step 2 - Configure $dir ..." |\
  tee -a ${BUILD_PATH}/${BUILD_LOG}
  
 #env PKG_CONFIG_PATH=${iprefix}/lib/pkgconfig:/usr/lib64/pkgconfig \
+#env CFLAGS="-O3" \
+#    CPPFLAGS="-I${iprefix}/include"   \
+#    LDFLAGS="-L${iprefix}/lib -Wl,-rpath -Wl,${iprefix}/lib" \
+#    ./configure --with-ssl=${iprefix} \
+#     --prefix=${iprefix} --enable-cookies --enable-nonblocking \
+#     --enable-threaded-resolver --without-libssh2 --enable-ares --disable-ldap --disable-ldaps >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+#    --enable-ares --without-libssh2 --disable-ldap --disable-ldaps >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
 env CFLAGS="-O3" \
     CPPFLAGS="-I${iprefix}/include"   \
     LDFLAGS="-L${iprefix}/lib -Wl,-rpath -Wl,${iprefix}/lib" \
     ./configure --with-ssl=${iprefix} \
-     --prefix=${iprefix} --enable-cookies --enable-nonblocking \
-     --without-libssh2 --disable-ldap --disable-ldaps >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+    --prefix=${iprefix} --enable-cookies --enable-nonblocking \
+    --enable-threaded-resolver --without-libssh2 --disable-ldap --disable-ldaps >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
 if [ $? -ne 0 ]; then
     echo "Error: configure $dir failed !" |\
      tee -a ${BUILD_PATH}/${BUILD_LOG}
@@ -826,6 +1017,105 @@ clean_module
 cd ..
 
 }
+
+
+# perl Net::Curl
+build_rec_ncurl() {
+     
+dir=Net-Curl
+step1=0
+step2=0
+step3=0
+step4=0
+step5=0
+step6=0
+            
+# STEP 1
+cd lib
+init_module "$dir"
+if [ $? -eq 0 ]; then
+    step1=1
+fi
+    
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 2 - Configure $dir ..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+    
+     
+# STEP 2
+env PATH=${iprefix}/bin:$PATH ${iprefix}/perl/bin/perl Makefile.PL >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if [ $? -ne 0 ]; then
+    echo "Error: configure $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step2=1
+fi
+
+
+# STEP 3
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 3 - Make $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+make >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if [ $? -ne 0 ]; then
+    echo "Error: make $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step3=1
+fi
+
+
+# STEP 4
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 4 - Make install $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+make install >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if [ $? -ne 0 ]; then
+    echo "Error: make install $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step4=1
+fi
+
+
+# STEP 5
+# AnyEvent::Net::Curl::Queued
+#lib=AnyEvent::Net::Curl::Queued
+##echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+#echo "Info: Step 5 - Install AnyEvent::Net::Curl::Queued ..." |\
+# tee -a ${BUILD_PATH}/${BUILD_LOG}
+#${iprefix}/perl/bin/perl -MCPAN -e 'install "'$lib'"' >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+#if [ $? -ne 0 ]; then
+#    echo "Error: $lib installation failed !" |\
+#        tee -a ${BUILD_LOG}/${module}.${version}.log
+#    rm /var/tmp/build.${module}
+#    exit 3
+#else
+#    step6=1
+#fi
+#
+
+# final check; all 5 steps
+netcurl_done=`expr $step1 + $step2 + $step3 + $step4`
+if [ "$netcurl_done" -eq 4 ]; then
+   netcurl_done=1
+else
+   netcurl_done=90
+fi
+
+clean_module
+
+# back to root
+cd ..
+
+}
+
 
 
 ### perl WWW::Curl
@@ -997,6 +1287,88 @@ cd ..
 }
 
 
+### perl Proc::Daemon
+build_rec_procdaemon() {
+
+dir=Proc-Daemon
+step1=0
+step2=0
+step3=0
+step4=0
+
+cd lib
+init_module "$dir"
+if [ $? -eq 0 ]; then
+    step1=1
+fi
+
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 2 - Configure $dir ..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+
+${iprefix}/perl/bin/perl Makefile.PL >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if [ $? -ne 0 ]; then
+    echo "Error: configure $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step2=1
+fi  
+
+
+# STEP 3
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 3 - Make $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+make >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if [ $? -ne 0 ]; then
+    echo "Error: make $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step3=1
+fi 
+
+
+# STEP 4
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 4 - Make install $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+make test >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+make install >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if [ $? -ne 0 ]; then
+    echo "Error: make install Proc::Daemon failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step4=1
+fi
+
+## final check; all 4 steps
+procdaemon_done=`expr $step1 + $step2 + $step3 + $step4`
+if [ "$procdaemon_done" -eq 4 ]; then
+   procdaemon_done=1
+else
+   procdaemon_done=90
+fi
+
+clean_module
+
+# back to root
+cd ..
+
+}
+
+
+
+
+
+
+
 ### configuration settings
 build_rec_scripts() {
 
@@ -1041,10 +1413,17 @@ echo "Info: Step 2 - Installing recorders ..." |\
     if [ "$PT_NAME" != "armv6l" ]; then
         cp *rec ${iprefix}/bin
         cp ../wsrec ${iprefix}/bin
-        cp ../webrec ${iprefix}/bin
+        cp ../webrec* ${iprefix}/bin
+        cp ../webinvrec ${iprefix}/bin
+        cp ../rs485rec ${iprefix}/bin
         cp ../ntprec ${iprefix}/bin
         cp ../direc ${iprefix}/bin
+        cp ../certrec ${iprefix}/bin
+        cp ../svcrec ${iprefix}/bin
         cp ../raw2day ${iprefix}/bin
+        cp ../u2htime ${iprefix}/bin
+        cp ../actmsg ${iprefix}/bin
+        cp ../httprec ${iprefix}/bin
         if [ $? -ne 0 ]; then
             echo "Error: cannot install rec scripts !" |\
              tee -a ${BUILD_PATH}/${BUILD_LOG}
@@ -1056,10 +1435,17 @@ echo "Info: Step 2 - Installing recorders ..." |\
     elif [ "$PT_NAME" != "armv7l" ]; then
         cp *rec ${iprefix}/bin
         cp ../wsrec ${iprefix}/bin
-        cp ../webrec ${iprefix}/bin
+        cp ../webrec* ${iprefix}/bin
+        cp ../webinvrec ${iprefix}/bin
+        cp ../rs485rec ${iprefix}/bin
         cp ../ntprec ${iprefix}/bin
         cp ../direc ${iprefix}/bin
+        cp ../certrec ${iprefix}/bin
+        cp ../svcrec ${iprefix}/bin
         cp ../raw2day ${iprefix}/bin
+        cp ../u2htime ${iprefix}/bin
+        cp ../actmsg ${iprefix}/bin
+        cp ../httprec ${iprefix}/bin
         if [ $? -ne 0 ]; then
             echo "Error: cannot install rec scripts !" |\
              tee -a ${BUILD_PATH}/${BUILD_LOG}
@@ -1071,10 +1457,17 @@ echo "Info: Step 2 - Installing recorders ..." |\
     else
         cp sysrec cpurec diskrec nicrec hdwrec ${iprefix}/bin
         cp ../wsrec ${iprefix}/bin
-        cp ../webrec ${iprefix}/bin
+        cp ../webrec* ${iprefix}/bin
+        cp ../webinvrec ${iprefix}/bin
+        cp ../rs485rec ${iprefix}/bin
         cp ../ntprec ${iprefix}/bin
         cp ../direc ${iprefix}/bin
+        cp ../certrec ${iprefix}/bin
+        cp ../svcrec ${iprefix}/bin
         cp ../raw2day ${iprefix}/bin
+        cp ../u2htime ${iprefix}/bin
+        cp ../actmsg ${iprefix}/bin
+        cp ../httprec ${iprefix}/bin
         if [ $? -ne 0 ]; then
             echo "Error: cannot install rec scripts !" |\
              tee -a ${BUILD_PATH}/${BUILD_LOG}
@@ -1101,9 +1494,13 @@ fi
 cd ../..
 cp etc/*.start ${iprefix}/etc
 cp etc/kronometrix.json ${iprefix}/etc
+cp etc/rs485rec.json ${iprefix}/etc
+cp etc/httprec.json ${iprefix}/etc
 cp etc/webrec.json ${iprefix}/etc
 cp etc/ntprec.json ${iprefix}/etc
 cp etc/direc.json ${iprefix}/etc
+cp etc/certrec.json ${iprefix}/etc
+cp etc/svcrec.json ${iprefix}/etc
 cp etc/agents ${iprefix}/etc
 cp etc/transport ${iprefix}/etc
 cp etc/${OS_NAME}/logrotate.krmx ${iprefix}/etc
