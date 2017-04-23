@@ -20,7 +20,7 @@
 #
 #  (http://www.gnu.org/copyleft/gpl.html)
 
-# VERSION: 3.2
+# VERSION: 3.4
 
 usage() {
 
@@ -49,7 +49,7 @@ OPTIONS
 
 Notes:
    Make sure you have defined WORKSPACE_PREFIX variable before running
-   builder.
+   builder
 END
 exit 1
 }
@@ -81,11 +81,14 @@ libusb_done=0
 perl_done=0
 ossl_done=0
 curl_done=0
+cares_done=0
 wrec_done=0
 recs_done=0
 nrec_done=0
 tests_done=0
 wwwcurl_done=0
+netcurl_done=0
+x509_done=0
 procdaemon_done=0
 perlssl_done=0
 deviceusb_done=0
@@ -108,7 +111,6 @@ auth_luatz_done=0
 auth_lua_resty_template_done=0
 auth_lua_inspect_done=0
 auth_lua_router_done=0
-auth_lua_resty_gettext_done=0
 auth_lua_resty_http_simple_done=0
 auth_fin_done=0
 auth_config_done=0
@@ -127,7 +129,7 @@ kernel_zipwriter_done=0
 kernel_luatz_done=0
 kernel_lua_resty_template_done=0
 kernel_lua_router_done=0
-kernel_lua_resty_gettext_done=0
+kernel_lua_resty_http_done=0
 kernel_lua_resty_http_simple_done=0
 kernel_lua_resty_prettycjson_done=0
 kernel_lua_inspect_done=0
@@ -160,6 +162,7 @@ mon_perl_done=0
 mon_curl_done=0
 mon_wwwcurl_done=0
 mon_ossl_done=0
+mon_netssl_done=0
 mon_procdaemon_done=0
 mon_pkg_done=0
 mon_tar_pkg_done=0
@@ -672,21 +675,20 @@ case "$module" in
     else 
         build_rec_perl
         build_rec_ossl
-        build_rec_procdaemon
         build_rec_perlssl
-        if [ "$PT_NAME" = "arm" ]; then
+        if [ "$PT_NAME" = "armv7l" ]; then
             build_rec_deviceusb
         fi
+        #build_rec_cares
         build_rec_curl
         build_rec_wcurl
+        build_rec_ncurl
         if [ "$OS_NAME" = "linux" ]; then
+            build_rec_x509
             build_rec_sysstat
         fi
+        build_rec_webrec
   
-        #if [ "$PT_NAME" != "armv6l" ]; then 
-        #    build_rec_webrec
-        #fi
-
         build_rec_scripts
         
         if [ "$OS_NAME" != "freebsd" ]; then 
@@ -731,7 +733,6 @@ case "$module" in
         build_auth_router
         build_auth_httpsimple
         build_auth_luatz
-        build_auth_gettext
 
         if [ ! -z "$build_num" ]; then
             build_auth_inspect
@@ -829,7 +830,7 @@ case "$module" in
         build_kernel_zlib
         build_kernel_struct
         build_kernel_zip
-        build_kernel_gettext
+        build_kernel_http
 
         if [ ! -z "$build_num" ]; then
             build_kernel_inspect
@@ -856,8 +857,9 @@ case "$module" in
         build_mon_perl
         build_mon_procdaemon
         build_mon_ossl
-        build_mon_curl
-        build_mon_wcurl
+        build_mon_netssl
+        #build_mon_curl
+        #build_mon_wwwcurl
         build_mon_scripts
         #build_mon_config
         build_mon_pkg
@@ -932,6 +934,14 @@ case "$module" in
         fi
     fi
 
+    if [ $cares_done -eq 1 ]; then
+        echo "# cares: ok"
+    else
+        if [ $cares_done -eq 90 ]; then
+            echo "# cares: failed"
+        fi
+    fi
+
     if [ $curl_done -eq 1 ]; then
         echo "# curl: ok"
     else
@@ -958,6 +968,21 @@ case "$module" in
         fi
     fi
 
+    if [ $x509_done -eq 1 ]; then
+        echo "# X509: ok"
+    else
+        if [ $x509_done -eq 90 ]; then
+            echo "# X509: failed"
+        fi
+    fi
+
+    if [ $webrec_done -eq 1 ]; then
+        echo "# webrec2: ok"
+    else
+        if [ $webrec_done -eq 90 ]; then
+            echo "# webrec2: failed"
+        fi
+    fi
 
     if [ $wrec_done -eq 1 ]; then
         echo "# webrec: ok"
@@ -1068,16 +1093,6 @@ case "$module" in
         else
             if [ $auth_luatz_done -eq 90 ]; then
                 echo  "# lib luatz: not integrated"
-            fi
-        fi
-    fi
-
-    if [ $auth_lua_resty_gettext_done -ne 0 ]; then
-        if [ $auth_lua_resty_gettext_done -eq 1 ]; then
-            echo  "# lib lua-resty-gettext: built and integrated"
-        else
-            if [ $auth_lua_resty_gettext_done -eq 90 ]; then
-                echo  "# lib lua-resty-gettext: not integrated"
             fi
         fi
     fi
@@ -1448,12 +1463,12 @@ case "$module" in
         fi
     fi
 
-    if [ $kernel_lua_resty_gettext_done -ne 0 ]; then
-        if [ $kernel_lua_resty_gettext_done -eq 1 ]; then
-            echo  "# lib lua-resty-gettext: built and integrated"
+    if [ $kernel_lua_resty_http_done -ne 0 ]; then
+        if [ $kernel_lua_resty_http_done -eq 1 ]; then
+            echo  "# lib lua-resty-http: built and integrated"
         else
-            if [ $kernel_lua_resty_gettext_done -eq 90 ]; then
-                echo  "# lib lua-resty-gettext: not integrated"
+            if [ $kernel_lua_resty_http_done -eq 90 ]; then
+                echo  "# lib lua-resty-http: not integrated"
             fi
         fi
     fi
