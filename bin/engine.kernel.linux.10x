@@ -21,7 +21,7 @@
 #
 #  (http://www.gnu.org/copyleft/gpl.html)
 
-# VERSION: 3.1
+# VERSION: 3.3
 
 # ############################################################### #
 # Kernel Linux                                                    #
@@ -128,8 +128,8 @@ echo "Info: Step 2 - Configure $dir ..." |\
  tee -a ${BUILD_PATH}/${BUILD_LOG}
 
 env PATH=/sbin:$PATH \
-     ./configure --prefix=${iprefix} --with-cc-opt="-O0" --with-debug \
-     --with-luajit >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+     ./configure --prefix=${iprefix} --with-luajit \
+     >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
 
 if [ $? -ne 0 ]; then
     echo "Error: configure $dir failed !" |\
@@ -390,54 +390,6 @@ cd ..
 }
 
 
-### lua-resty-session
-build_kernel_session() {
-dir="lua-resty-session"
-step1=0
-step2=0
-step3=0
-
-
-cd lib
-
-# STEP 1
-init_module "$dir"
-if [ $? -eq 0 ]; then
-    step1=1
-fi
-
-# STEP 2
-
-echo "" >> ${BUILD_PATH}/${BUILD_LOG}
-echo "Info: Step 2 - Install session.lua ..." |\
- tee -a ${BUILD_PATH}/${BUILD_LOG}
-
-cp lib/resty/session.lua ${iprefix}/lualib/resty
-if [ $? -ne 0 ]; then
-    echo "Error: cannot install session.lua script !" |\
-     tee -a ${BUILD_PATH}/${BUILD_LOG}
-     rm /var/tmp/build.${module}
-     exit 3
-else
-    step2=1
-fi
-
-# final check; all 2 steps
-kernel_lua_resty_session_done=`expr $step1 + $step2`
-if [ $kernel_lua_resty_session_done -eq 2 ]; then
-   kernel_lua_resty_session_done=1
-else
-   kernel_lua_resty_session_done=90
-fi
-
-clean_module
-
-# back to root
-cd ..
-
-}
-
-
 ### router.lua
 build_kernel_router() {
 dir="router.lua"
@@ -521,55 +473,6 @@ if [ $kernel_libdate_done -eq 2 ]; then
    kernel_libdate_done=1
 else
    kernel_libdate_done=90
-fi
-
-clean_module
-
-# back to root
-cd ..
-
-}
-
-
-### inspect.lua
-build_kernel_inspect() {
-dir="inspect.lua"
-step1=0
-step2=0
-step3=0
-
-
-cd lib
-
-# STEP 1
-init_module "$dir"
-if [ $? -eq 0 ]; then
-    step1=1
-fi
-
-
-# STEP 2
-
-echo "" >> ${BUILD_PATH}/${BUILD_LOG}
-echo "Info: Step 2 - Install inspect.lua ..." |\
- tee -a ${BUILD_PATH}/${BUILD_LOG}
-
-cp inspect.lua ${iprefix}/lualib
-if [ $? -ne 0 ]; then
-    echo "Error: cannot install inspect.lua script !" |\
-     tee -a ${BUILD_PATH}/${BUILD_LOG}
-     rm /var/tmp/build.${module}
-     exit 3
-else
-    step2=1
-fi
-
-# final check; all 2 steps
-kernel_lua_inspect_done=`expr $step1 + $step2`
-if [ $kernel_lua_inspect_done -eq 2 ]; then
-   kernel_lua_inspect_done=1
-else
-   kernel_lua_inspect_done=90
 fi
 
 clean_module
@@ -674,6 +577,272 @@ cd ..
 }
 
 
+### lua-zlib
+build_kernel_zlib() {
+dir="lua-zlib"
+step1=0
+step2=0
+step3=0
+step4=0
+
+cd lib
+
+# STEP 1
+init_module "$dir"
+if [ $? -eq 0 ]; then
+    step1=1
+fi
+
+# STEP 2
+
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 2 - Configure $dir ..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+    
+make bsd >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if [ $? -ne 0 ]; then
+    echo "Error: make $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step2=1
+fi
+
+# STEP 3
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 3 - Make $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+make install >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if [ $? -ne 0 ]; then
+    echo "Error: make install $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step3=1
+fi
+
+# final check; all 3 steps
+kernel_luazlib_done=`expr $step1 + $step2 + $step3`
+if [ $kernel_luazlib_done -eq 3 ]; then
+   kernel_luazlib_done=1
+else
+   kernel_luazlib_done=90
+fi
+
+clean_module
+
+# back to root
+cd ..
+
+}
+
+
+### struct
+build_kernel_struct() {
+dir="struct"
+step1=0
+step2=0
+step3=0
+
+cd lib
+
+# STEP 1
+init_module "$dir"
+if [ $? -eq 0 ]; then
+    step1=1
+fi
+
+# STEP 2
+
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 2 - Configure $dir ..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+make >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if [ $? -ne 0 ]; then
+    echo "Error: make $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step2=1
+fi
+
+# STEP 3
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 3 - Make $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+cp struct.so ${iprefix}/lualib >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if [ $? -ne 0 ]; then
+    echo "Error: make install struct $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step3=1
+fi
+
+
+# final check; all 3 steps
+kernel_struct_done=`expr $step1 + $step2 + $step3`
+if [ $kernel_struct_done -eq 3 ]; then
+   kernel_struct_done=1
+else
+   kernel_struct_done=90
+fi
+
+clean_module
+
+# back to root
+cd ..
+
+
+}
+
+
+### zipwriter
+build_kernel_zip() {
+dir="zipwriter"
+step1=0
+step2=0
+
+cd lib
+
+init_module "$dir"
+if [ $? -eq 0 ]; then
+    step1=1
+fi
+
+# STEP 2
+
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 2 - Install zipwriter ..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+cp -R lua/ZipWriter* ${iprefix}/lualib/
+if [ $? -ne 0 ]; then
+    echo "Error: cannot install zipwriter script !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+     rm /var/tmp/build.${module}
+     exit 3
+else
+    step2=1
+fi
+
+# final check; all 2 steps
+kernel_zipwriter_done=`expr $step1 + $step2`
+if [ $kernel_zipwriter_done -eq 2 ]; then
+   kernel_zipwriter_done=1
+else
+   kernel_zipwriter_done=90
+fi
+    
+clean_module
+
+# back to root
+cd ..
+}
+
+
+### lua-resty-http
+build_kernel_http() {
+dir="lua-resty-http"
+step1=0
+step2=0
+step3=0
+
+cd lib
+
+# STEP 1
+init_module "$dir"
+if [ $? -eq 0 ]; then
+    step1=1
+fi
+
+# STEP 2
+
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 2 - Install http.lua ..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+cp lib/resty/http* ${iprefix}/lualib/resty
+if [ $? -ne 0 ]; then
+    echo "Error: cannot install http.lua script !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+     rm /var/tmp/build.${module}
+     exit 3
+else
+    step2=1
+fi
+
+# final check; all 2 steps
+kernel_lua_resty_http_done=`expr $step1 + $step2`
+if [ $kernel_lua_resty_http_done -eq 2 ]; then
+   kernel_lua_resty_http_done=1
+else
+   kernel_lua_resty_http_done=90
+fi
+
+clean_module
+
+# back to root
+cd ..
+
+}
+
+
+
+### inspect.lua
+build_kernel_inspect() {
+dir="inspect.lua"
+step1=0
+step2=0
+step3=0
+
+
+cd lib
+
+# STEP 1
+init_module "$dir"
+if [ $? -eq 0 ]; then
+    step1=1
+fi
+
+
+# STEP 2
+
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 2 - Install inspect.lua ..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+cp inspect.lua ${iprefix}/lualib
+if [ $? -ne 0 ]; then
+    echo "Error: cannot install inspect.lua script !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+     rm /var/tmp/build.${module}
+     exit 3
+else
+    step2=1
+fi
+
+# final check; all 2 steps
+kernel_lua_inspect_done=`expr $step1 + $step2`
+if [ $kernel_lua_inspect_done -eq 2 ]; then
+   kernel_lua_inspect_done=1
+else
+   kernel_lua_inspect_done=90
+fi
+
+clean_module
+
+# back to root
+cd ..
+
+}
+
+
 ### configuration settings
 build_kernel_config() {
 
@@ -726,6 +895,7 @@ cd ../..
 
 ### finalize
 build_kernel_fin() {
+
 dir=etc
 step1=0
 step2=0
@@ -854,10 +1024,10 @@ if [ ! -d ${iprefix}/data/events ]; then
 fi
 
 
-if [ ! -d ${iprefix}/data/appliance ]; then
-    mkdir ${iprefix}/data/appliance
+if [ ! -d ${iprefix}/data/platform ]; then
+    mkdir ${iprefix}/data/platform
     if [ $? -ne 0 ]; then
-        echo "Error: cannot setup appliance directory !" |\
+        echo "Error: cannot setup platform directory !" |\
          tee -a ${BUILD_PATH}/${BUILD_LOG}
         rm /var/tmp/build.${module}
         exit 3
@@ -877,7 +1047,7 @@ echo "" >> ${BUILD_PATH}/${BUILD_LOG}
 echo "Info: Step 2 - Installing kernel startup services ..." |\
  tee -a ${BUILD_PATH}/${BUILD_LOG}
 
-cp kernel db_aux db_stats db_agg http_stats http_agg ${iprefix}/etc/
+cp kkernel db_aux db_stats db_agg http_stats http_agg ${iprefix}/etc/
 mkdir ${iprefix}/etc/rc
 cp ${OS_NAME}/k* ${iprefix}/etc/rc
 if [ $x64_sem -eq 1 ]; then
@@ -889,7 +1059,6 @@ elif [ $arm_sem -eq 1 ]; then
     cp aux.conf.arm ${iprefix}/etc/aux.conf
     cp agg.conf.arm ${iprefix}/etc/agg.conf
 fi
-
 if [ $? -ne 0 ]; then
     echo "Error: cannot install kernel startup services !" |\
      tee -a ${BUILD_PATH}/${BUILD_LOG}
@@ -915,6 +1084,7 @@ else
     step3=1
 fi
 
+
 # final check; all 3 steps
 kernel_fin_done=`expr $step1 + $step2 + $step3`
 if [ "$kernel_fin_done" -eq 3 ]; then
@@ -923,7 +1093,9 @@ else
    kernel_fin_done=90
 fi
 
+
 }
+
 
 ## rpm macro configuration file
 make_rpmmacro() {
@@ -1089,14 +1261,14 @@ if [ "$buildno" -ne 0 ]; then
     # Version: 1.0.0
     # Release: b10
     # get control file fixed correct build and version
-    sed "s/^Version.*/Version: ${krmxver}/" SPECS/kkernel > SPECS/kronometrix-kernel.tmp
-    mv SPECS/kkernel.tmp SPECS/kkernel
-    sed "s/^Release.*/Release: b${buildno}/" SPECS/kkernel > SPECS/kkernel.tmp
-    mv SPECS/kkernel.tmp SPECS/kkernel
+    sed "s/^Version.*/Version: ${krmxver}/" SPECS/kronometrix-kernel > SPECS/kronometrix-kernel.tmp
+    mv SPECS/kronometrix-kernel.tmp SPECS/kronometrix-kernel
+    sed "s/^Release.*/Release: b${buildno}/" SPECS/kronometrix-kernel > SPECS/kronometrix-kernel.tmp
+    mv SPECS/kronometrix-kernel.tmp SPECS/kronometrix-kernel
 
     if [ -f /var/tmp/kkernel-${krmxver}b${buildno}-${DIST_ID}.${PT_NAME}.tar.bz2 ]; then
         cp /var/tmp/kkernel-${krmxver}b${buildno}-${DIST_ID}.${PT_NAME}.tar.bz2 \
-           SOURCES/kkernel-${krmxver}/kkernel-${krmxver}-${PT_NAME}.tar.bz2
+           SOURCES/kkernel-${krmxver}/kronometrix-kernel-${krmxver}-${PT_NAME}.tar.bz2
         if [ $? -ne 0 ]; then
             echo "Error: cannot copy tar archive to SOURCE directory !" |\
               tee -a ${BUILD_PATH}/${BUILD_LOG}
@@ -1108,14 +1280,14 @@ if [ "$buildno" -ne 0 ]; then
     fi
 else
 
-    sed "s/^Version.*/Version: ${krmxver}/" SPECS/kkernel > SPECS/kkernel.tmp
-    mv SPECS/kkernel.tmp SPECS/kkernel
-    sed "s/^Release.*/Release: 0/" SPECS/kkernel > SPECS/kkernel.tmp
-    mv SPECS/kkernel.tmp SPECS/kkernel
+    sed "s/^Version.*/Version: ${krmxver}/" SPECS/kronometrix-kernel > SPECS/kronometrix-kernel.tmp
+    mv SPECS/kronometrix-kernel.tmp SPECS/kronometrix-kernel
+    sed "s/^Release.*/Release: 0/" SPECS/kronometrix-kernel > SPECS/kronometrix-kernel.tmp
+    mv SPECS/kronometrix-kernel.tmp SPECS/kronometrix-kernel
 
-    if [ -f /var/tmp/kkernel-${krmxver}-${DIST_ID}.${PT_NAME}.tar.bz2 ]; then
-        cp /var/tmp/kkernel-${krmxver}-${DIST_ID}.${PT_NAME}.tar.bz2 \
-            SOURCES/kkernel-${krmxver}/kkernel-${krmxver}-${PT_NAME}.tar.bz2
+    if [ -f /var/tmp/kronometrix-kernel-${krmxver}-${DIST_ID}.${PT_NAME}.tar.bz2 ]; then
+        cp /var/tmp/kronometrix-kernel-${krmxver}-${DIST_ID}.${PT_NAME}.tar.bz2 \
+            SOURCES/kronometrix-kernel-${krmxver}/kronometrix-kernel-${krmxver}-${PT_NAME}.tar.bz2
         if [ $? -ne 0 ]; then
             echo "Error: cannot copy tar archive to SOURCE directory !" |\
               tee -a ${BUILD_PATH}/${BUILD_LOG}
@@ -1142,9 +1314,9 @@ else
 fi
 
 
-if [ -f SPECS/kkernel ]; then
+if [ -f SPECS/kronometrix-kernel ]; then
 
-    rpmbuild -bb ./SPECS/kkernel >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+    rpmbuild -bb ./SPECS/kronometrix-kernel >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
     if [ $? -ne 0 ]; then
         echo "Error: cannot build rpm, rpmbuild error !" |\
             tee -a ${BUILD_PATH}/${BUILD_LOG}
@@ -1161,8 +1333,8 @@ echo "" >> ${BUILD_PATH}/${BUILD_LOG}
 echo "Info: Step 3 - Cleanup rpm stage directories" |\
  tee -a ${BUILD_PATH}/${BUILD_LOG}
 
-if [ -f RPMS/kkernel-${krmxver}-${PT_NAME}.rpm ]; then
-    cp RPMS/kkernel-${krmxver}-${PT_NAME}.rpm /var/tmp
+if [ -f RPMS/kronometrix-kernel-${krmxver}-${PT_NAME}.rpm ]; then
+    cp RPMS/kronometrix-kernel-${krmxver}-${PT_NAME}.rpm /var/tmp
 
     if [ $? -eq 0 ]; then
         rm -rf RPMS SOURCES SRPMS BUILD tmp
@@ -1174,10 +1346,10 @@ if [ -f RPMS/kkernel-${krmxver}-${PT_NAME}.rpm ]; then
     fi
 
     if [ "$buildno" -ne 0 ]; then
-        mv /var/tmp/kkernel-${krmxver}-${PT_NAME}.rpm \
-         /var/tmp/kkernel-${krmxver}b${buildno}-${DIST_ID}${RELOS}-${PT_NAME}.rpm
+        mv /var/tmp/kronometrix-kernel-${krmxver}-${PT_NAME}.rpm \
+         /var/tmp/kronometrix-kernel-${krmxver}b${buildno}-${DIST_ID}${RELOS}-${PT_NAME}.rpm
     else
-        mv /var/tmp/kkernel-${krmxver}-${PT_NAME}.rpm /var/tmp/kkernel-${krmxver}-${DIST_ID}${RELOS}-${PT_NAME}.rpm
+        mv /var/tmp/kronometrix-kernel-${krmxver}-${PT_NAME}.rpm /var/tmp/kronometrix-kernel-${krmxver}-${DIST_ID}${RELOS}-${PT_NAME}.rpm
     fi
 fi
 
@@ -1251,6 +1423,8 @@ if [ ! -d $pkgname ]; then
         exit 3
     else
         step1=1
+        echo "Info: Step 1 - step1=1" |\
+           tee -a ${BUILD_PATH}/${BUILD_LOG}
     fi
 fi
 
@@ -1291,6 +1465,9 @@ if [ "$buildno" -ne 0 ]; then
             exit 3
         else
             step2=1
+            echo "Info: Step 2 - step2=1" |\
+               tee -a ${BUILD_PATH}/${BUILD_LOG}
+
         fi
     fi
 else
@@ -1308,6 +1485,9 @@ else
             exit 3
         else
             step2=1
+            echo "Info: Step 2 - step2=1" |\
+              tee -a ${BUILD_PATH}/${BUILD_LOG}
+
         fi
     fi
 fi
@@ -1325,6 +1505,9 @@ else
 fi
 
 step2=`expr $step2 / 2`
+echo "Info: Step 2 - step2=$step2" |\
+    tee -a ${BUILD_PATH}/${BUILD_LOG}
+
 
 
 # STEP 3
@@ -1341,12 +1524,15 @@ if [ -d $pkgname ]; then
         exit 3
     else
         step3=1
+        echo "Info: Step 3 - step3=1" |\
+           tee -a ${BUILD_PATH}/${BUILD_LOG}
+
     fi
 fi
 
 mv ${pkgname}.deb /var/tmp
 
-# kronometrix-kernel-1.0.0b31-armv6l.deb
+# kkernel-1.0.0b41-armv6l.deb
 if [ "$buildno" -ne 0 ]; then
     if [ "$PT_NAME" = "x86_64" ]; then
         mv /var/tmp/kkernel-${krmxver}b${buildno}-amd64.deb /var/tmp/kkernel-${krmxver}b${buildno}-${DIST_ID}${RELOS}-amd64.deb

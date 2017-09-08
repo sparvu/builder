@@ -2,7 +2,7 @@
 #
 #  Kronometrix Development tools, builder the master script engine 
 #
-#  Copyright (c) 2016 Stefan Parvu (www.kronometrix.org).
+#  Copyright (c) 2017 Stefan Parvu (www.kronometrix.org).
 #
 #  This program is free software; you can redistribute it and/or
 #  modify it under the terms of the GNU General Public License
@@ -20,7 +20,7 @@
 #
 #  (http://www.gnu.org/copyleft/gpl.html)
 
-# VERSION: 3.4
+# VERSION: 3.5
 
 usage() {
 
@@ -29,7 +29,7 @@ Usage: $0 [-ht] [-p prefix_path]
           [-b build_number] [-m module_name] 
           [-a appliance] pkg version
 pkg:
-   recording, auth, kernel, mesg, mon
+   recording, auth, avimet, kernel, mesg, mon
 version:
    1.0.0
 
@@ -92,6 +92,7 @@ x509_done=0
 procdaemon_done=0
 perlssl_done=0
 deviceusb_done=0
+deviceserial_done=0
 sysstat_done=0
 tar_pkg_done=0
 deb_pkg_done=0
@@ -118,6 +119,21 @@ auth_tar_pkg_done=0
 auth_deb_pkg_done=0
 auth_rpm_pkg_done=0
 auth_fbsd_pkg_done=0
+##
+
+##avimet
+avimet_openresty_done=0
+avimet_luatz_done=0
+avimet_lua_resty_template_done=0
+avimet_lua_inspect_done=0
+avimet_lua_router_done=0
+avimet_lua_resty_http_simple_done=0
+avimet_fin_done=0
+avimet_config_done=0
+avimet_tar_pkg_done=0
+avimet_deb_pkg_done=0
+avimet_rpm_pkg_done=0
+avimet_fbsd_pkg_done=0
 ##
 
 ##kernel
@@ -226,18 +242,10 @@ do
                 ossl_sem=1
             ;;
 
-            idn)
-                lidn_sem=1
-            ;;
-
             curl)
                 lcrl_sem=1
             ;;
  
-            wcurl)
-                lwcl_sem=1
-            ;;
-
             nrec)
                 nrec_sem=1
             ;;
@@ -248,10 +256,6 @@ do
                 exit 1
               fi
               syss_sem=1
-            ;;
-
-            webrec)
-                wrec_sem=1
             ;;
 
             scripts)
@@ -403,6 +407,35 @@ case "$OS_NAME" in
              esac
          ;;
 
+         avimet)
+   
+             # default appliance
+             if [ -z "$appliance" ]; then
+                 if [ "$PT_NAME" = "armv6l" ]; then
+                     appliance="arm"
+                     arm_sem=1
+                 else
+                     appliance="x64"
+                     x64_sem=1
+                 fi
+             fi
+
+             iprefix=${iprefix:-/opt/kronometrix/avimet}
+             iuser=krmx
+
+             WORKSPACE="${WORKSPACE_PREFIX}/kronometrix"
+            
+             case "$version" in
+                 1.[0-4]*)
+                  . ${PWD}/engine.avimet.linux.10x
+                  ;;
+             
+                 *)
+                   usage
+                 ;;
+             esac
+         ;;
+
          mesg)
 
              # default appliance
@@ -480,7 +513,7 @@ case "$OS_NAME" in
              WORKSPACE="${WORKSPACE_PREFIX}/kronometrix"
 
              case "$version" in
-                 1.[0-4]*)
+                 1.[0-6]*)
                   . ${PWD}/engine.rec.freebsd.10x
                   ;;
 
@@ -509,7 +542,7 @@ case "$OS_NAME" in
              WORKSPACE="${WORKSPACE_PREFIX}/kronometrix"
 
              case "$version" in
-                 1.[0-4]*)
+                 1.[0-6]*)
                   . ${PWD}/engine.auth.freebsd.10x
                   ;;
 
@@ -518,6 +551,37 @@ case "$OS_NAME" in
                  ;;
              esac
          ;;
+
+         avimet)
+            
+             # default appliance
+             if [ -z "$appliance" ]; then
+                 if [ "$PT_NAME" = "arm" ]; then
+                     appliance="arm"
+                     arm_sem=1
+                 else
+                     appliance="x64"
+                     x64_sem=1
+                 fi
+             fi
+
+             iprefix=${iprefix:-/opt/kronometrix/avimet}
+             iuser=krmx
+
+             WORKSPACE="${WORKSPACE_PREFIX}/kronometrix"
+
+             case "$version" in
+                 1.[0-6]*)
+                  . ${PWD}/engine.avimet.freebsd.10x
+                  ;;
+
+                 *)
+                   usage
+                 ;;
+             esac
+         ;;
+
+
 
          mesg)
 
@@ -538,7 +602,7 @@ case "$OS_NAME" in
              WORKSPACE="${WORKSPACE_PREFIX}/kronometrix"
 
              case "$version" in
-                 1.[0-4]*)
+                 1.[0-6]*)
                   . ${PWD}/engine.mesg.freebsd.10x
                   ;;
 
@@ -567,7 +631,7 @@ case "$OS_NAME" in
              WORKSPACE="${WORKSPACE_PREFIX}/kronometrix"
 
              case "$version" in
-                 1.[0-4]*)
+                 1.[0-6]*)
                   . ${PWD}/engine.kernel.freebsd.10x
                   ;;
 
@@ -585,7 +649,7 @@ case "$OS_NAME" in
              WORKSPACE="${WORKSPACE_PREFIX}/kronometrix"
 
              case "$version" in
-                 1.[0-4]*)
+                 1.[0-6]*)
                   . ${PWD}/engine.mon.freebsd.10x
                   ;;
 
@@ -676,7 +740,9 @@ case "$module" in
         build_rec_perl
         build_rec_ossl
         build_rec_perlssl
-        if [ "$PT_NAME" = "armv7l" ]; then
+        build_rec_deviceserial
+        if [ "$PT_NAME" = "armv7l" -o \
+             "$PT_NAME" = "armv"  ]; then
             build_rec_deviceusb
         fi
         #build_rec_cares
@@ -687,7 +753,7 @@ case "$module" in
             build_rec_x509
             build_rec_sysstat
         fi
-        build_rec_webrec
+        build_rec_klib
   
         build_rec_scripts
         
@@ -750,6 +816,52 @@ case "$module" in
 
     fi
     ;;
+
+ avimet)
+    echo "" > ${BUILD_PATH}/${BUILD_LOG}
+
+    if [ $rpm_sem -eq 1 ]; then
+        if [ "x${DIST_ID}" = "xrhel" -o "x${DIST_ID}" = "xcentos" ]; then
+            build_avimet_pkg
+        else
+            echo "Error: not a RPM installation, cannot build rpm pkg"
+            rm /var/tmp/${STATFILE}
+            exit 3
+        fi
+    elif [ $deb_sem -eq 1 ]; then
+        if [ "x${DIST_ID}" = "xdebian" -o \
+             "x${DIST_ID}" = "xubuntu" -o \
+             "x${DIST_ID}" = "xraspbian" ]; then
+            build_auth_pkg
+        else
+            echo "Error: not a DEB installation, cannot build deb pkg"
+            rm /var/tmp/${STATFILE}
+            exit 3
+        fi
+    elif [ $fbsd_pkg_sem -eq 1 ]; then
+        build_avimet_pkg
+    else
+        build_avimet_openresty
+        build_avimet_template
+        build_avimet_router
+        build_avimet_luatz
+
+        if [ ! -z "$build_num" ]; then
+            build_avimet_inspect
+        fi
+
+        build_avimet_config
+        build_avimet_fin
+
+        # currently we support Linux(deb,rpm), FreeBSD(pkg)
+        if [ "$OS_NAME" = "linux" -o \
+             "$OS_NAME" = "freebsd"  ]; then
+            build_avimet_pkg
+        fi
+
+    fi
+    ;;
+
 
  mesg)
     echo "" > ${BUILD_PATH}/${BUILD_LOG}
@@ -855,7 +967,7 @@ case "$module" in
         build_mon_pkg 
     else 
         build_mon_perl
-        build_mon_procdaemon
+        # build_mon_procdaemon
         build_mon_ossl
         build_mon_netssl
         #build_mon_curl
@@ -926,6 +1038,14 @@ case "$module" in
         fi
     fi
 
+    if [ $deviceserial_done -eq 1 ]; then
+        echo "# deviceserial: ok"
+    else
+        if [ $deviceserial_done -eq 90 ]; then
+            echo "# deviceserial: failed"
+        fi
+    fi
+
     if [ $deviceusb_done -eq 1 ]; then
         echo "# deviceusb: ok"
     else
@@ -976,11 +1096,11 @@ case "$module" in
         fi
     fi
 
-    if [ $webrec_done -eq 1 ]; then
-        echo "# webrec2: ok"
+    if [ $klib_done -eq 1 ]; then
+        echo "# webrec, svcrec: ok"
     else
-        if [ $webrec_done -eq 90 ]; then
-            echo "# webrec2: failed"
+        if [ $klib_done -eq 90 ]; then
+            echo "# webrec, svcrec: failed"
         fi
     fi
 
@@ -1172,6 +1292,132 @@ case "$module" in
     fi
 
  ;;
+
+
+ avimet)
+
+    if [ $avimet_openresty_done -ne 0 ]; then
+        if [ $avimet_openresty_done -eq 1 ]; then
+            echo "# openresty: built and integrated"
+        else
+            if [ $avimet_openresty_done -eq 90 ]; then
+                echo "# openresty: not integrated"
+            fi
+        fi
+    fi
+
+    if [ $avimet_lua_resty_template_done -ne 0 ]; then
+        if [ $avimet_lua_resty_template_done -eq 1 ]; then
+            echo  "# lib lua-resty-template: built and integrated"
+        else
+            if [ $avimet_lua_resty_template_done -eq 90 ]; then
+                echo  "# lib lua-resty-template: not integrated"
+            fi
+        fi
+    fi
+
+    if [ $avimet_lua_router_done -ne 0 ]; then
+        if [ $avimet_lua_router_done -eq 1 ]; then
+            echo  "# lib router.lua: built and integrated"
+        else
+            if [ $avimet_lua_router_done -eq 90 ]; then
+                echo  "# lib router.lua: not integrated"
+            fi
+        fi
+    fi
+
+    if [ $avimet_lua_resty_http_simple_done -ne 0 ]; then
+        if [ $avimet_lua_resty_http_simple_done -eq 1 ]; then
+            echo  "# lib simple.lua: built and integrated"
+        else
+            if [ $avimet_lua_resty_http_simple_done -eq 90 ]; then
+                echo  "# lib simple.lua: not integrated"
+            fi
+        fi
+    fi
+
+    if [ $avimet_luatz_done -ne 0 ]; then
+        if [ $avimet_luatz_done -eq 1 ]; then
+            echo  "# lib luatz: built and integrated"
+        else
+            if [ $avimet_luatz_done -eq 90 ]; then
+                echo  "# lib luatz: not integrated"
+            fi
+        fi
+    fi
+
+    if [ ! -z "$build_num" ]; then
+        if [ $avimet_lua_inspect_done -ne 0 ]; then
+            if [ $avimet_lua_inspect_done -eq 1 ]; then
+                echo  "# lib inspect.lua: built and integrated"
+            else
+                if [ $avimet_lua_inspect_done -eq 90 ]; then
+                    echo  "# lib inspect.lua: not integrated"
+                fi
+            fi
+        fi
+    fi
+
+    if [ $avimet_config_done -ne 0 ]; then
+        if [ $avimet_config_done -eq 1 ]; then
+            echo  "# analytics-avimet nginx.conf: done"
+        else
+            if [ $avimet_config_done -eq 90 ]; then
+                echo  "# analytics-avimet nginx.conf: not done"
+            fi
+        fi
+    fi
+
+    if [ $avimet_tar_pkg_done -eq 1 ]; then
+        echo "# tar pkg: ok"
+    else
+        if [ $avimet_tar_pkg_done -eq 90 ]; then
+            echo "# tar pkg: failed"
+        fi
+    fi
+
+    if [ $avimet_rpm_pkg_done -eq 1 ]; then
+        echo "# rpm pkg: ok"
+    else
+        if [ $avimet_rpm_pkg_done -eq 90 ]; then
+            echo "# rpm pkg: failed"
+        fi
+    fi
+
+    if [ $avimet_deb_pkg_done -eq 1 ]; then
+        echo "# deb pkg: ok"
+    else
+        if [ $avimet_deb_pkg_done -eq 90 ]; then
+            echo "# deb pkg: failed"
+        fi
+    fi
+
+    if [ $avimet_fbsd_pkg_done -eq 1 ]; then
+        echo "# freebsd pkg: ok"
+    else
+        if [ $avimet_fbsd_pkg_done -eq 90 ]; then
+            echo "# freebsd pkg: failed"
+        fi
+    fi
+
+    if [ $avimet_fin_done -ne 0 ]; then
+        if [ $avimet_fin_done -eq 1 ]; then
+            echo  "# FINALIZE: done"
+        else
+            if [ $avimet_fin_done -eq 90 ]; then
+                echo  "# FINALIZE: not done"
+            fi
+        fi
+    fi
+
+ ;;
+
+
+
+
+
+
+
 
 
  mon)
@@ -1532,7 +1778,7 @@ case "$module" in
     if [ $kernel_fbsd_pkg_done -eq 1 ]; then
         echo "# freebsd pkg: ok"
     else
-        if [ $auth_fbsd_pkg_done -eq 90 ]; then
+        if [ $kernel_fbsd_pkg_done -eq 90 ]; then
             echo "# freebsd pkg: failed"
         fi
     fi

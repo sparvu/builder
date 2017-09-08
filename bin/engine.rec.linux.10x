@@ -19,7 +19,7 @@
 #
 #  (http://www.gnu.org/copyleft/gpl.html)
 
-# VERSION: 3.3
+# VERSION: 3.4
 
 # ############################################################### #
 # Engine: Linux                                                   # 
@@ -207,24 +207,24 @@ echo "Info: Step 6 - CPAN modules" | tee -a ${BUILD_PATH}/${BUILD_LOG}
 
 cp ${BUILDER_PREFIX}/etc/Config.pm ${iprefix}/perl/lib/${cpanver}/CPAN
 
-${iprefix}/perl/bin/perl -MCPAN -e 'install Sys::Statistics::Linux' >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
-if [ $? -ne 0 ]; then
-    echo "Error: Sys::Statistics::Linux installation failed !" |\
-     tee -a ${BUILD_PATH}/${BUILD_LOG}
-    rm /var/tmp/build.${module}
-    exit 3
-else
-    step6=`expr $step6 + 1`
-fi
+#${iprefix}/perl/bin/perl -MCPAN -e 'install Sys::Statistics::Linux' >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+#if [ $? -ne 0 ]; then
+#    echo "Error: Sys::Statistics::Linux installation failed !" |\
+#     tee -a ${BUILD_PATH}/${BUILD_LOG}
+#    rm /var/tmp/build.${module}
+#    exit 3
+#else
+#    step6=`expr $step6 + 1`
+#fi
 
 for lib in Digest::SHA Proc::Daemon Proc::ProcessTable Proc::PID::File \
-           File::Tail Regexp::Common Filesys::Df Sys::Filesystem \
-           JSON HTTP::Response UUID::Tiny Carp::Assert \
-           DateTime::Format::ISO8601 ExtUtils::PkgConfig \
-           Inline::MakeMaker Capture::Tiny \
+           File::Tail Regexp::Common Filesys::Df Sys::Filesystem HTML::TableExtract \
+           JSON HTTP::Response UUID::Tiny Carp::Assert Net::Domain::TLD \
+           DateTime::Format::ISO8601 ExtUtils::PkgConfig Email::Valid \
+           Inline::MakeMaker Capture::Tiny Text::Template Linux::Info \
            Inline::C Date::Calc Device::SerialPort Linux::Distribution \
            Tie::IxHash IO::Interface Device::Modbus Device::Modbus::RTU \
-           File::stat File::Stat::Bits Net::NTP Filesys::DiskUsage
+           File::stat File::Stat::Bits Net::NTP Filesys::DiskUsage Net::Ping
 do
     if  [ "$lib" = "Inline::MakeMaker" ]; then
         env PERL_MM_USE_DEFAULT=1 \
@@ -252,8 +252,8 @@ do
     fi
 done
 
-# there are 29 perl modules install calls
-step6=`expr $step6 / 29`
+# there are 34 perl modules install calls
+step6=`expr $step6 / 34`
 
 # final check; all 6 steps
 perl_done=`expr $step1 + $step2 + $step3 + $step4 + $step5 + $step6`
@@ -268,17 +268,16 @@ clean_module
 }
 
 
-### Webrec2  
-build_rec_webrec() {
+### klib 
+build_rec_klib() {
 
-dir=Webrec
+dir=Kronometrix
 step1=0
 step2=0
 step3=0
 step4=0
 
-cd lib
-init_module "$dir"
+cd lib/${dir}
 if [ $? -eq 0 ]; then
     step1=1
 fi
@@ -328,18 +327,21 @@ else
     step4=1
 fi
 
+cp script/svcrec ${iprefix}/bin/svcrec
+cp script/webrec ${iprefix}/bin/webrec
+
 ## final check; all 4 steps
-webrec_done=`expr $step1 + $step2 + $step3 + $step4`
-if [ "$webrec_done" -eq 4 ]; then
-   webrec_done=1
+klib_done=`expr $step1 + $step2 + $step3 + $step4`
+if [ "$klib_done" -eq 4 ]; then
+   klib_done=1
 else
-   webrec_done=90
+   klib_done=90
 fi
 
-clean_module
+make distclean >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
 
 # back to root
-cd ..
+cd ../..
 
 }
 
@@ -817,13 +819,17 @@ echo "Info: Step 2 - Configure $dir ..." |\
     
      
 # STEP 2
-if [ "$PT_NAME" = "x86_64" ]; then
-    cp Makefile.x64 Makefile
-elif [ "$PT_NAME" = "armv7l" ]; then
-    cp Makefile.arm Makefile
-else
-    cp Makefile.i686 Makefile
-fi
+#if [ "$PT_NAME" = "x86_64" ]; then
+#    cp Makefile.x64 Makefile
+#elif [ "$PT_NAME" = "armv7l" ]; then
+#    cp Makefile.arm Makefile
+#else
+#    cp Makefile.i686 Makefile
+#fi
+
+
+${iprefix}/perl/bin/perl Makefile.PL
+
 
 if [ $? -ne 0 ]; then
     echo "Error: configure $dir failed !" |\
@@ -1419,7 +1425,7 @@ echo "Info: Step 2 - Installing recorders ..." |\
         cp ../ntprec ${iprefix}/bin
         cp ../direc ${iprefix}/bin
         cp ../certrec ${iprefix}/bin
-        cp ../svcrec ${iprefix}/bin
+        cp ../svcrec* ${iprefix}/bin
         cp ../raw2day ${iprefix}/bin
         cp ../u2htime ${iprefix}/bin
         cp ../actmsg ${iprefix}/bin
@@ -1441,7 +1447,7 @@ echo "Info: Step 2 - Installing recorders ..." |\
         cp ../ntprec ${iprefix}/bin
         cp ../direc ${iprefix}/bin
         cp ../certrec ${iprefix}/bin
-        cp ../svcrec ${iprefix}/bin
+        cp ../svcrec* ${iprefix}/bin
         cp ../raw2day ${iprefix}/bin
         cp ../u2htime ${iprefix}/bin
         cp ../actmsg ${iprefix}/bin
@@ -1463,7 +1469,7 @@ echo "Info: Step 2 - Installing recorders ..." |\
         cp ../ntprec ${iprefix}/bin
         cp ../direc ${iprefix}/bin
         cp ../certrec ${iprefix}/bin
-        cp ../svcrec ${iprefix}/bin
+        cp ../svcrec* ${iprefix}/bin
         cp ../raw2day ${iprefix}/bin
         cp ../u2htime ${iprefix}/bin
         cp ../actmsg ${iprefix}/bin

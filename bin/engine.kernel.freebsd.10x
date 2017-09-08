@@ -3,7 +3,7 @@
 #  Kronometrix Development tools
 #  FreeBSD Analytics Kernel Engine
 #
-#  Copyright (c) 2016 Stefan Parvu (www.kronometrix.org).
+#  Copyright (c) 2017 Stefan Parvu (www.kronometrix.org).
 #
 #  This program is free software; you can redistribute it and/or
 #  modify it under the terms of the GNU General Public License
@@ -21,7 +21,7 @@
 #
 #  (http://www.gnu.org/copyleft/gpl.html)
 
-# VERSION: 3.1
+# VERSION: 3.3
 
 # ############################################################### #
 # Analytics Kernel FreeBSD                                        #
@@ -170,9 +170,23 @@ else
     step4=1
 fi
 
-# final check; all 4 steps
-kernel_openresty_done=`expr $step1 + $step2 + $step3 + $step4`
-if [ $kernel_openresty_done -eq 4 ]; then
+# STEP 5
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 5 - Installing luajit.so.2 symlink ..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+ln -s ${iprefix}/luajit/lib/libluajit-5.1.so.2.1.0 ${iprefix}/luajit/lib/libluajit-5.1.so.2
+if [ $? -ne 0 ]; then
+    echo "Error: cannot install luajit.so.2 symlink !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step5=1
+fi
+
+# final check; all 5 steps
+kernel_openresty_done=`expr $step1 + $step2 + $step3 + $step4 + $step5`
+if [ $kernel_openresty_done -eq 5 ]; then
    kernel_openresty_done=1
 else
    kernel_openresty_done=90
@@ -519,9 +533,9 @@ cd ..
 
 
 
-### lua-resty-gettext
-build_kernel_gettext() {
-dir="lua-resty-gettext"
+### lua-resty-http
+build_kernel_http() {
+dir="lua-resty-http"
 step1=0
 step2=0
 step3=0
@@ -537,12 +551,12 @@ fi
 # STEP 2
 
 echo "" >> ${BUILD_PATH}/${BUILD_LOG}
-echo "Info: Step 2 - Install gettext.lua ..." |\
+echo "Info: Step 2 - Install http.lua ..." |\
  tee -a ${BUILD_PATH}/${BUILD_LOG}
 
-cp lib/resty/gettext.lua ${iprefix}/lualib/resty
+cp lib/resty/http* ${iprefix}/lualib/resty
 if [ $? -ne 0 ]; then
-    echo "Error: cannot install gettext.lua script !" |\
+    echo "Error: cannot install http.lua script !" |\
      tee -a ${BUILD_PATH}/${BUILD_LOG}
      rm /var/tmp/build.${module}
      exit 3
@@ -551,11 +565,11 @@ else
 fi
 
 # final check; all 2 steps
-kernel_lua_resty_gettext_done=`expr $step1 + $step2`
-if [ $kernel_lua_resty_gettext_done -eq 2 ]; then
-   kernel_lua_resty_gettext_done=1
+kernel_lua_resty_http_done=`expr $step1 + $step2`
+if [ $kernel_lua_resty_http_done -eq 2 ]; then
+   kernel_lua_resty_http_done=1
 else
-   kernel_lua_resty_gettext_done=90
+   kernel_lua_resty_http_done=90
 fi
 
 clean_module
@@ -1061,6 +1075,19 @@ if [ ! -d ${iprefix}/data/raw ]; then
     step1=`expr $step1 + 1`
 fi
 
+if [ ! -d ${iprefix}/data/bulk ]; then
+    mkdir ${iprefix}/data/bulk
+    if [ $? -ne 0 ]; then
+        echo "Error: cannot setup bulk directory !" |\
+         tee -a ${BUILD_PATH}/${BUILD_LOG}
+        rm /var/tmp/build.${module}
+        exit 3
+    else
+        step1=`expr $step1 + 1`
+    fi
+
+    step1=`expr $step1 + 1`
+fi
 
 if [ ! -d ${iprefix}/data/events ]; then
     mkdir ${iprefix}/data/events
@@ -1077,10 +1104,10 @@ if [ ! -d ${iprefix}/data/events ]; then
 fi
 
 
-if [ ! -d ${iprefix}/data/appliance ]; then
-    mkdir ${iprefix}/data/appliance
+if [ ! -d ${iprefix}/data/platform ]; then
+    mkdir ${iprefix}/data/platform
     if [ $? -ne 0 ]; then
-        echo "Error: cannot setup appliance directory !" |\
+        echo "Error: cannot setup platform directory !" |\
          tee -a ${BUILD_PATH}/${BUILD_LOG}
         rm /var/tmp/build.${module}
         exit 3
@@ -1091,8 +1118,8 @@ if [ ! -d ${iprefix}/data/appliance ]; then
     step1=`expr $step1 + 1`
 fi
 
-# there are 8 steps
-step1=`expr $step1 / 8`
+# there are 9 steps
+step1=`expr $step1 / 9`
 
 
 # STEP 2
@@ -1100,17 +1127,19 @@ echo "" >> ${BUILD_PATH}/${BUILD_LOG}
 echo "Info: Step 2 - Installing kernel startup services ..." |\
  tee -a ${BUILD_PATH}/${BUILD_LOG}
 
-cp kernel db_aux db_stats db_agg http_stats http_agg ${iprefix}/etc/
+cp kkernel db_green db_aux db_stats db_agg http_stats http_agg ${iprefix}/etc/
 mkdir ${iprefix}/etc/rc
 cp ${OS_NAME}/k* ${iprefix}/etc/rc
 if [ $x64_sem -eq 1 ]; then
     cp stats.conf.x64 ${iprefix}/etc/stats.conf
     cp aux.conf.x64 ${iprefix}/etc/aux.conf
     cp agg.conf.x64 ${iprefix}/etc/agg.conf
+    cp green.conf.x64 ${iprefix}/etc/green.conf
 elif [ $arm_sem -eq 1 ]; then
     cp stats.conf.arm ${iprefix}/etc/stats.conf
     cp aux.conf.arm ${iprefix}/etc/aux.conf
     cp agg.conf.arm ${iprefix}/etc/agg.conf
+    cp green.conf.arm ${iprefix}/etc/green.conf
 fi
 if [ $? -ne 0 ]; then
     echo "Error: cannot install kernel startup services !" |\
@@ -1138,25 +1167,9 @@ else
 fi
 
 
-# STEP 4
-echo "" >> ${BUILD_PATH}/${BUILD_LOG}
-echo "Info: Step 4 - Installing luajit.so.2 symlink ..." |\
- tee -a ${BUILD_PATH}/${BUILD_LOG}
-ln -s ${iprefix}/luajit/lib/libluajit-5.1.so.2.1.0 ${iprefix}/luajit/lib/libluajit-5.1.so.2
-if [ $? -ne 0 ]; then
-    echo "Error: cannot install luajit.so.2 symlink !" |\
-     tee -a ${BUILD_PATH}/${BUILD_LOG}
-    rm /var/tmp/build.${module}
-    exit 3
-else
-    step4=1
-fi
-
-
-
-# final check; all 4 steps
-kernel_fin_done=`expr $step1 + $step2 + $step3 + $step4`
-if [ "$kernel_fin_done" -eq 4 ]; then
+# final check; all 3 steps
+kernel_fin_done=`expr $step1 + $step2 + $step3`
+if [ "$kernel_fin_done" -eq 3 ]; then
    kernel_fin_done=1
 else
    kernel_fin_done=90

@@ -515,8 +515,10 @@ echo "" >> ${BUILD_PATH}/${BUILD_LOG}
 echo "Info: Step 2 - Installing auth startup services ..." |\
  tee -a ${BUILD_PATH}/${BUILD_LOG}
 
-cp mesg db http ${iprefix}/etc/
-mkdir ${iprefix}/etc/rc
+cp kmesg http ${iprefix}/etc/
+if [ ! -d ${iprefix}/etc/rc ]; then
+    mkdir ${iprefix}/etc/rc
+fi
 cp ${OS_NAME}/k* ${iprefix}/etc/rc
 if [ $? -ne 0 ]; then
     echo "Error: cannot install mesg startup services !" |\

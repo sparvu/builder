@@ -421,7 +421,6 @@ cd ..
 
 }
 
-
 ### inspect.lua
 build_auth_inspect() {
 dir="inspect.lua"
@@ -489,10 +488,10 @@ echo "" >> ${BUILD_PATH}/${BUILD_LOG}
 echo "Info: Step 1 - Installing nginx wrappers ..." |\
  tee -a ${BUILD_PATH}/${BUILD_LOG}
 
-if [ $enterprise_sem -eq 1 ]; then
-    cp nginx.conf.maas ${iprefix}/nginx/conf/nginx.conf
-elif [ $rbpi_sem -eq 1 ]; then
-    cp nginx.conf.rbpi ${iprefix}/nginx/conf/nginx.conf
+if [ $x64_sem -eq 1 ]; then
+    cp nginx.conf.x64 ${iprefix}/nginx/conf/nginx.conf
+elif [ $arm_sem -eq 1 ]; then
+    cp nginx.conf.arm ${iprefix}/nginx/conf/nginx.conf
 fi
 
 if [ $? -ne 0 ]; then
@@ -627,13 +626,13 @@ echo "" >> ${BUILD_PATH}/${BUILD_LOG}
 echo "Info: Step 2 - Installing startup services..." |\
  tee -a ${BUILD_PATH}/${BUILD_LOG}
 
-cp auth db http ${iprefix}/etc/
+cp kauth db http ${iprefix}/etc/
 mkdir ${iprefix}/etc/rc
-cp ${OS_NAME}/kronometrix* ${iprefix}/etc/rc
-if [ $enterprise_sem -eq 1 ]; then
-    cp redis.conf.maas ${iprefix}/etc/redis.conf
-elif [ $rbpi_sem -eq 1 ]; then
-    cp redis.conf.rbpi ${iprefix}/etc/redis.conf
+cp ${OS_NAME}/k* ${iprefix}/etc/rc
+if [ $x64_sem -eq 1 ]; then
+    cp redis.conf.x64 ${iprefix}/etc/redis.conf
+elif [ $arm_sem -eq 1 ]; then
+    cp redis.conf.arm ${iprefix}/etc/redis.conf
 fi
 
 if [ $? -ne 0 ]; then
@@ -648,10 +647,11 @@ fi
 
 # STEP 3
 echo "" >> ${BUILD_PATH}/${BUILD_LOG}
-echo "Info: Step 3 - Installing RELEASENOTES and README..." |\
+echo "Info: Step 3 - Installing RELEASENOTES and README ..." |\
  tee -a ${BUILD_PATH}/${BUILD_LOG}
+
 cd ..
-cp RELEASENOTES README TUNING ${iprefix}/
+cp README RELEASENOTES TUNING ${iprefix}/
 if [ $? -ne 0 ]; then
     echo "Error: cannot install RELEASENOTES and README !" |\
      tee -a ${BUILD_PATH}/${BUILD_LOG}

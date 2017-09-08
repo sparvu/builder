@@ -289,53 +289,6 @@ cd ..
 }
 
 
-### lua-resty-gettext
-build_auth_gettext() {
-dir="lua-resty-gettext"
-step1=0
-step2=0
-step3=0
-
-cd lib
-
-# STEP 1
-init_module "$dir"
-if [ $? -eq 0 ]; then
-    step1=1
-fi
-
-# STEP 2
-
-echo "" >> ${BUILD_PATH}/${BUILD_LOG}
-echo "Info: Step 2 - Install gettext.lua ..." |\
- tee -a ${BUILD_PATH}/${BUILD_LOG}
-
-cp lib/resty/gettext.lua ${iprefix}/lualib/resty
-if [ $? -ne 0 ]; then
-    echo "Error: cannot install gettext.lua script !" |\
-     tee -a ${BUILD_PATH}/${BUILD_LOG}
-     rm /var/tmp/build.${module}
-     exit 3
-else
-    step2=1
-fi
-
-# final check; all 2 steps
-auth_lua_resty_gettext_done=`expr $step1 + $step2`
-if [ $auth_lua_resty_gettext_done -eq 2 ]; then
-   auth_lua_resty_gettext_done=1
-else
-   auth_lua_resty_gettext_done=90
-fi
-
-clean_module
-
-# back to root
-cd ..
-
-}
-
-
 ### router.lua
 build_auth_router() {
 dir="router.lua"
@@ -723,7 +676,7 @@ echo "" >> ${BUILD_PATH}/${BUILD_LOG}
 echo "Info: Step 2 - Installing auth startup services ..." |\
  tee -a ${BUILD_PATH}/${BUILD_LOG}
 
-cp auth db http ${iprefix}/etc/
+cp kauth db http ${iprefix}/etc/
 mkdir ${iprefix}/etc/rc
 cp ${OS_NAME}/k* ${iprefix}/etc/rc
 if [ $x64_sem -eq 1 ]; then
@@ -872,8 +825,13 @@ if [ $? -ne 0 ]; then
     rm /var/tmp/build.${module}
     exit 3
 else
-    step2=`expr $step2 + 1`
+    step2=1
 fi
+
+
+# STEP 3
+echo "Info: Step 3 - Set MANIFEST" |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
 
 if [ -f files.txt ]; then
     rm files.txt
@@ -892,11 +850,15 @@ if [ $? -ne 0 ]; then
     rm /var/tmp/build.${module}
     exit 3
 else
-    step2=`expr $step2 + 1`
+    step3=1
 fi
 
 
+# STEP 4
 # set release
+echo "Info: Step 4 - Set release" |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
 REL=`echo $KERNEL | sed 's/\-.*//'`
 
 # copy config files
@@ -906,14 +868,20 @@ else
     cp /var/tmp/kauth-${krmxver}.txz /var/tmp/kauth-${krmxver}-${OS_NAME}${REL}-${PT_NAME}.txz
 fi
 
-
-step2=`expr $step2 / 2`
+if [ $? -ne 0 ]; then
+    echo "Error: cannot build FreeBSD pkg, pkg create error !" |\
+        tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step4=1
+fi
 
 cd ..
 
-# STEP 3
+# STEP 5
 echo "" >> ${BUILD_PATH}/${BUILD_LOG}
-echo "Info: Step 3 - Cleanup stage directory" |\
+echo "Info: Step 5 - Cleanup stage directory" |\
  tee -a ${BUILD_PATH}/${BUILD_LOG}
 
 if [ -d $pkgname ]; then
@@ -924,18 +892,13 @@ if [ -d $pkgname ]; then
         rm /var/tmp/build.${module}
         exit 3
     else
-        step3=1
+        step5=1
     fi
 fi
 
-echo "Step 1: $step1\n"
-echo "Step 2: $step2\n"
-echo "Step 3: $step3\n"
-
-
-# final check; 3 steps
-auth_fbsd_pkg_done=`expr $step1 + $step2 + $step3`
-if [ "$auth_fbsd_pkg_done" -eq 3 ]; then
+# final check; 5 steps
+auth_fbsd_pkg_done=`expr $step1 + $step2 + $step3 + $step4 + $step5`
+if [ "$auth_fbsd_pkg_done" -eq 5 ]; then
    auth_fbsd_pkg_done=1
 else
    auth_fbsd_pkg_done=90

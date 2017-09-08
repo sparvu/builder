@@ -21,7 +21,7 @@
 #
 #  (http://www.gnu.org/copyleft/gpl.html)
 
-# VERSION: 2.1
+# VERSION: 3.3
 
 # ############################################################### #
 # Analytics Messenger Linux                                       #
@@ -338,13 +338,13 @@ echo "Submodule: $dir ${OS_NAME}" | tee -a ${BUILD_PATH}/${BUILD_LOG}
 
 # STEP 1
 echo "" >> ${BUILD_PATH}/${BUILD_LOG}
-echo "Info: Step 1 - Installing nginx wrappers ..." |\
+echo "Info: Step 1 - Installing nginx configs..." |\
  tee -a ${BUILD_PATH}/${BUILD_LOG}
 
-if [ $enterprise_sem -eq 1 ]; then
-    cp nginx.conf.maas ${iprefix}/nginx/conf/nginx.conf
-elif [ $rbpi_sem -eq 1 ]; then
-    cp nginx.conf.rbpi ${iprefix}/nginx/conf/nginx.conf
+if [ $x64_sem -eq 1 ]; then
+    cp nginx.conf.x64 ${iprefix}/nginx/conf/nginx.conf
+elif [ $arm_sem -eq 1 ]; then
+    cp nginx.conf.arm ${iprefix}/nginx/conf/nginx.conf
 fi
 
 if [ $? -ne 0 ]; then
@@ -366,6 +366,7 @@ else
 fi
 
 cd ../..
+
 
 }
 
@@ -460,12 +461,14 @@ step1=`expr $step1 / 4`
 
 # STEP 2
 echo "" >> ${BUILD_PATH}/${BUILD_LOG}
-echo "Info: Step 2 - Installing startup services..." |\
+echo "Info: Step 2 - Installing mesg startup services ..." |\
  tee -a ${BUILD_PATH}/${BUILD_LOG}
 
-cp mesg http ${iprefix}/etc/
-mkdir ${iprefix}/etc/rc
-cp ${OS_NAME}/kronometrix* ${iprefix}/etc/rc
+cp kmesg http ${iprefix}/etc/
+if [ ! -d ${iprefix}/etc/rc ]; then
+    mkdir ${iprefix}/etc/rc
+fi
+cp ${OS_NAME}/k* ${iprefix}/etc/rc
 if [ $? -ne 0 ]; then
     echo "Error: cannot install mesg startup services !" |\
      tee -a ${BUILD_PATH}/${BUILD_LOG}
@@ -543,11 +546,11 @@ fi
 cd ${iprefix}/../..
 
 if [ "$buildno" -ne 0 ]; then
-    tar cf /var/tmp/kronometrix-mesg-${krmxver}b${buildno}-${DIST_ID}.${PT_NAME}.tar kronometrix/mesg
-    if [ -f /var/tmp/kronometrix-mesg-${krmxver}b${buildno}-${DIST_ID}.${PT_NAME}.tar.bz2 ]; then
-        rm /var/tmp/kronometrix-mesg-${krmxver}b${buildno}-${DIST_ID}.${PT_NAME}.tar.bz2
+    tar cf /var/tmp/kmesg-${krmxver}b${buildno}-${DIST_ID}.${PT_NAME}.tar kronometrix/mesg
+    if [ -f /var/tmp/kmesg-${krmxver}b${buildno}-${DIST_ID}.${PT_NAME}.tar.bz2 ]; then
+        rm /var/tmp/kmesg-${krmxver}b${buildno}-${DIST_ID}.${PT_NAME}.tar.bz2
     fi
-    bzip2 /var/tmp/kronometrix-mesg-${krmxver}b${buildno}-${DIST_ID}.${PT_NAME}.tar
+    bzip2 /var/tmp/kmesg-${krmxver}b${buildno}-${DIST_ID}.${PT_NAME}.tar
     if [ $? -ne 0 ]; then
         echo "Error: cannot create kronometrix mesg data recording package !" |\
          tee -a ${BUILD_PATH}/${BUILD_LOG}
@@ -558,11 +561,11 @@ if [ "$buildno" -ne 0 ]; then
     fi
 else
     # GA General Release
-    tar cf /var/tmp/kronometrix-mesg-${krmxver}-${DIST_ID}.${PT_NAME}.tar kronometrix/mesg
-    if [ -f /var/tmp/kronometrix-mesg-${krmxver}-${DIST_ID}.${PT_NAME}.tar.bz2 ]; then
-        rm /var/tmp/kronometrix-mesg-${krmxver}-${DIST_ID}.${PT_NAME}.tar.bz2
+    tar cf /var/tmp/kmesg-${krmxver}-${DIST_ID}.${PT_NAME}.tar kronometrix/mesg
+    if [ -f /var/tmp/kmesg-${krmxver}-${DIST_ID}.${PT_NAME}.tar.bz2 ]; then
+        rm /var/tmp/kmesg-${krmxver}-${DIST_ID}.${PT_NAME}.tar.bz2
     fi
-    bzip2 /var/tmp/kronometrix-mesg-${krmxver}-${DIST_ID}.${PT_NAME}.tar
+    bzip2 /var/tmp/kmesg-${krmxver}-${DIST_ID}.${PT_NAME}.tar
     if [ $? -ne 0 ]; then
         echo "Error: cannot create kronometrix mesg data recording package !" |\
          tee -a ${BUILD_PATH}/${BUILD_LOG}
@@ -809,15 +812,15 @@ echo "Info: Step 1 - Create stage directory" |\
 
 if [ "$PT_NAME" = "x86_64" ]; then
     if [ "$buildno" -ne 0 ]; then
-        pkgname="kronometrix-mesg-${krmxver}b${buildno}-amd64"
+        pkgname="kmesg-${krmxver}b${buildno}-amd64"
     else
-        pkgname="kronometrix-mesg-${krmxver}-amd64"
+        pkgname="kmesg-${krmxver}-amd64"
     fi
 else
     if [ "$buildno" -ne 0 ]; then
-        pkgname="kronometrix-mesg-${krmxver}b${buildno}-${PT_NAME}"
+        pkgname="kmesg-${krmxver}b${buildno}-${PT_NAME}"
     else
-        pkgname="kronometrix-mesg-${krmxver}-${PT_NAME}"
+        pkgname="kmesg-${krmxver}-${PT_NAME}"
     fi
 fi
 
@@ -846,6 +849,8 @@ if [ "$PT_NAME" = "x86_64" ]; then
     cp control.amd64 $pkgname/DEBIAN/control
 elif [ "$PT_NAME" = "armv6l" ]; then
     cp control.armv6l $pkgname/DEBIAN/control
+elif [ "$PT_NAME" = "armv7l" ]; then
+    cp control.armv7l $pkgname/DEBIAN/control
 elif [ "$PT_NAME" = "i386" ]; then
     cp control.i386 $pkgname/DEBIAN/control
 fi
@@ -860,8 +865,8 @@ if [ "$buildno" -ne 0 ]; then
     sed "s/^Version.*/Version:${krmxver}-b${buildno}/" ../../$pkgname/DEBIAN/control > ../../$pkgname/DEBIAN/control.tmp
     mv ../../${pkgname}/DEBIAN/control.tmp ../../${pkgname}/DEBIAN/control
 
-    if [ -f /var/tmp/kronometrix-mesg-${krmxver}b${buildno}-${DIST_ID}.${PT_NAME}.tar.bz2 ]; then
-        bzcat /var/tmp/kronometrix-mesg-${krmxver}b${buildno}-${DIST_ID}.${PT_NAME}.tar.bz2 | tar xf -
+    if [ -f /var/tmp/kmesg-${krmxver}b${buildno}-${DIST_ID}.${PT_NAME}.tar.bz2 ]; then
+        bzcat /var/tmp/kmesg-${krmxver}b${buildno}-${DIST_ID}.${PT_NAME}.tar.bz2 | tar xf -
         if [ $? -ne 0 ]; then
             echo "Error: cannot untar archive !" |\
               tee -a ${BUILD_PATH}/${BUILD_LOG}
@@ -877,8 +882,8 @@ else
     sed "s/^Version.*/Version:${krmxver}/" ../../$pkgname/DEBIAN/control > ../../$pkgname/DEBIAN/control.tmp
     mv ../../${pkgname}/DEBIAN/control.tmp ../../${pkgname}/DEBIAN/control
 
-    if [ -f /var/tmp/kronometrix-mesg-${krmxver}-${DIST_ID}.${PT_NAME}.tar.bz2 ]; then
-        bzcat /var/tmp/kronometrix-mesg-${krmxver}-${DIST_ID}.${PT_NAME}.tar.bz2 | tar xf -
+    if [ -f /var/tmp/kmesg-${krmxver}-${DIST_ID}.${PT_NAME}.tar.bz2 ]; then
+        bzcat /var/tmp/kmesg-${krmxver}-${DIST_ID}.${PT_NAME}.tar.bz2 | tar xf -
         if [ $? -ne 0 ]; then
             echo "Error: cannot untar archive !" |\
               tee -a ${BUILD_PATH}/${BUILD_LOG}
@@ -927,15 +932,15 @@ mv ${pkgname}.deb /var/tmp
 # kronometrix-mesg-1.0.0b41-armv6l.deb
 if [ "$buildno" -ne 0 ]; then
     if [ "$PT_NAME" = "x86_64" ]; then
-        mv /var/tmp/kronometrix-mesg-${krmxver}b${buildno}-amd64.deb /var/tmp/kronometrix-mesg-${krmxver}b${buildno}-${DIST_ID}${RELOS}-amd64.deb
+        mv /var/tmp/kmesg-${krmxver}b${buildno}-amd64.deb /var/tmp/kmesg-${krmxver}b${buildno}-${DIST_ID}${RELOS}-amd64.deb
     else
-        mv /var/tmp/kronometrix-mesg-${krmxver}b${buildno}-${PT_NAME}.deb /var/tmp/kronometrix-mesg-${krmxver}b${buildno}-${DIST_ID}${RELOS}-${PT_NAME}.deb
+        mv /var/tmp/kmesg-${krmxver}b${buildno}-${PT_NAME}.deb /var/tmp/kmesg-${krmxver}b${buildno}-${DIST_ID}${RELOS}-${PT_NAME}.deb
     fi
 else
     if [ "$PT_NAME" = "x86_64" ]; then
-        mv /var/tmp/kronometrix-mesg-${krmxver}-amd64.deb /var/tmp/kronometrix-mesg-${krmxver}-${DIST_ID}${RELOS}-amd64.deb
+        mv /var/tmp/kmesg-${krmxver}-amd64.deb /var/tmp/kmesg-${krmxver}-${DIST_ID}${RELOS}-amd64.deb
     else
-        mv /var/tmp/kronometrix-mesg-${krmxver}-${PT_NAME}.deb /var/tmp/kronometrix-mesg-${krmxver}-${DIST_ID}${RELOS}-${PT_NAME}.deb
+        mv /var/tmp/kmesg-${krmxver}-${PT_NAME}.deb /var/tmp/kmesg-${krmxver}-${DIST_ID}${RELOS}-${PT_NAME}.deb
     fi
 fi
 

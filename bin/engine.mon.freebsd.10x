@@ -205,7 +205,7 @@ fi
 echo "" >> ${BUILD_PATH}/${BUILD_LOG}
 echo "Info: Step 6 - CPAN modules" | tee -a ${BUILD_PATH}/${BUILD_LOG}
 
-cp ${BUILDER_PREFIX}/etc/Config.pm ${iprefix}/perl/lib/${cpanver}/CPAN 
+cp ${BUILDER_PREFIX}/etc/Config.pm ${iprefix}/perl/lib/${cpanver}/CPAN
 
 ${iprefix}/perl/bin/perl -MCPAN -e 'install BSD::Sysctl' >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
 if [ $? -ne 0 ]; then
@@ -218,7 +218,7 @@ else
 fi
 
 
-for lib in Digest::SHA Proc::ProcessTable Proc::PID::File File::Tail \
+for lib in Digest::SHA Proc::Daemon Proc::ProcessTable Proc::PID::File File::Tail \
            JSON::XS JSON HTTP::Response UUID::Tiny Carp::Assert \
            Date::Calc Filesys::Df Tie::IxHash Redis Text::CSV_XS Text::CSV
 do
@@ -248,8 +248,8 @@ do
     fi
 done
 
-# there are 16 perl modules install calls
-step6=`expr $step6 / 16`
+# there are 17 perl modules install calls
+step6=`expr $step6 / 17`
 
 # final check; all 6 steps
 mon_perl_done=`expr $step1 + $step2 + $step3 + $step4 + $step5 + $step6`
@@ -434,6 +434,102 @@ if [ "$mon_ossl_done" -eq 4 ]; then
    mon_ossl_done=1
 else
    mon_ossl_done=90
+fi
+
+clean_module
+
+# back to root
+cd ..
+
+}
+
+### perl Net::SSLeay
+build_mon_netssl() {
+
+dir=Net-SSLeay
+step1=0
+step2=0
+step3=0
+step4=0
+step5=0
+
+cd lib
+init_module "$dir"
+if [ $? -eq 0 ]; then
+    step1=1
+fi
+
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 2 - Configure $dir ..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+PERL_MM_USE_DEFAULT=1 \
+OPENSSL_PREFIX=${iprefix} \
+${iprefix}/perl/bin/perl Makefile.PL >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if [ $? -ne 0 ]; then
+    echo "Error: configure $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step2=1
+fi
+
+
+# STEP 3
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 3 - Make $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+make >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if [ $? -ne 0 ]; then
+    echo "Error: make $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step3=1
+fi
+
+
+# STEP 4
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 4 - Make install $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+make test >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+make install >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if [ $? -ne 0 ]; then
+    echo "Error: make install Proc::Daemon failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step4=1
+fi
+
+
+# STEP 5
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 5 - Install IO::Socket::SSL..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+lib='IO::Socket::SSL'
+env PERL_MM_USE_DEFAULT=1 \
+  ${iprefix}/perl/bin/perl -MCPAN -e 'install "'$lib'"' >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if [ $? -ne 0 ]; then
+    echo "Error: $lib installation failed !" |\
+    tee -a ${BUILD_LOG}/${module}.${version}.log
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step5=`expr $step5 + 1`
+fi
+
+## final check; all 5 steps
+mon_netssl_done=`expr $step1 + $step2 + $step3 + $step4 + $step5`
+if [ "$mon_netssl_done" -eq 5 ]; then
+   mon_netssl_done=1
+else
+   mon_netssl_done=90
 fi
 
 clean_module
