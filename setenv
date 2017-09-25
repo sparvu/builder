@@ -1,0 +1,122 @@
+#!/bin/sh
+
+# COPYRIGHT: Copyright (c) 2015 Kronometrix
+#
+#  This program is free software; you can redistribute it and/or
+#  modify it under the terms of the GNU General Public License
+#  as published by the Free Software Foundation; either version 2
+#  of the License, or (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this program; if not, write to the Free Software Foundation,
+#  Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+#
+#  (http://www.gnu.org/copyleft/gpl.html)
+
+
+### Platform and OS
+OS_NAME=`uname -s | tr '[A-Z]' '[a-z]'`
+MH_NAME=`uname -m | tr '[A-Z]' '[a-z]'`
+PL_NAME=`uname -p | tr '[A-Z]' '[a-z]'`
+HW_NAME=`uname -i | tr '[A-Z]' '[a-z]'`
+HOSTNAME=`uname -n`
+
+if [ "$PL_NAME" = "unknown" ]; then
+    PT_NAME=${MH_NAME}
+elif [ "$MH_NAME" = "arm" ]; then
+    PT_NAME=${PL_NAME}
+else
+    PT_NAME=${PL_NAME}
+fi
+
+
+### General settings
+BUILDER_PREFIX=/opt/builder
+BUILD_PATH=${BUILDER_PREFIX}/log
+
+### COMPILER & USER ID
+case "$OS_NAME" in
+
+    sunos)
+        USER_ID=`/usr/xpg4/bin/id -u`
+        KERNEL=`uname -sr`
+        DIST_ID="sunos"
+    ;;
+
+    linux)
+        COMPILER=`gcc --version | head -1 | sed 's/(GCC) //'`
+        KERNEL=`uname -r`
+        USER_ID=`/usr/bin/id -u`
+        if [ -f /etc/os-release ]; then
+            DIST_ID=`grep '^ID=' /etc/os-release | sed 's/^.*=//' | sed 's/"//g'`
+        elif [ -f /etc/system-release ]; then
+            DIST_ID=`sed 's/ release.*$//' /etc/system-release | tr '[A-Z]' '[a-z]'`
+        elif [ -f /etc/redhat-release ]; then
+            DIST_TEMP=`sed 's/ release.*$//' /etc/redhat-release | tr '[A-Z]' '[a-z]'`
+            echo $DIST_TEMP | grep '^red hat' >/dev/null
+            if [ $? -eq 0 ]; then
+                DIST_ID="rhel"
+            else
+                DIST_ID=$DIST_TEMP
+            fi
+            
+        fi
+        if [ -f /usr/bin/lsb_release ]; then
+            RELOS=`lsb_release -r | sed 's/^Release\:[ \t]*//'`
+        elif [ -f /etc/debian_version ]; then
+            RELOS=`cat /etc/debian_version`
+        fi
+    ;;
+
+    freebsd)
+        KERNEL=`uname -r`
+        USER_ID=`/usr/bin/id -u`
+        DIST_ID="freebsd"
+        RELOS=`echo $KERNEL | sed 's/\-.*//'`
+    ;;
+
+    *)
+        echo "Not supported OS !"
+esac
+
+
+### JDK PATH
+JDK_PATH=/opt/java/current
+
+
+### KRMX PREFIX
+KRMX_ROOT=/opt/kronometrix
+KRMX_BIN=${KRMX_ROOT}/bin
+KRMX_LIB=${KRMX_ROOT}/lib
+KRMX_LOG=${KRMX_ROOT}/log
+KRMX_CURRENT=${KRMX_LOG}/current
+KRMX_DAILY=${KRMX_LOG}/daily
+KRMX_PERLBIN=${KRMX_ROOT}/perl/bin
+
+
+WEBREC_LOG=${KRMX_RAW}/webrec.log
+
+
+#############################
+# OS UTILITIES
+# - used by all collectors
+#
+#############################
+WC_BIN=/usr/bin/wc
+GREP_BIN=/usr/bin/grep
+PERL_BIN=/opt/sdr/perl/bin/perl
+TAIL_BIN=/usr/bin/tail
+MPSTAT_BIN=/usr/bin/mpstat
+PRSTAT_BIN=/usr/bin/prstat
+ZLOGIN_BIN=/usr/sbin/zlogin
+NETSTAT_BIN=/usr/bin/netstat
+ZONEADM_BIN=/usr/sbin/zoneadm
+#############################
+
+
+export HOSTNAME BUILDER_PREFIX KRMX_PATH KRMX_BIN KRMX_PERLBIN DIST_ID
