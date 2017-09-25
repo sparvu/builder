@@ -221,10 +221,10 @@ else
 fi
 
 for lib in Digest::SHA Proc::Daemon Proc::ProcessTable Proc::PID::File \
-           File::Tail Regexp::Common Filesys::Df Sys::Filesystem Unix::Processors \
+           File::Tail Regexp::Common Filesys::Df Sys::Filesystem \
            JSON HTTP::Response UUID::Tiny Carp::Assert Net::Domain::TLD \
            DateTime::Format::ISO8601 Sys::HostIP ExtUtils::PkgConfig \
-           Inline::MakeMaker Capture::Tiny Net::SSL::ExpireDate Email::Valid \
+           Inline::MakeMaker Capture::Tiny Email::Valid \
            Inline::C Date::Calc Text::Template HTML::TableExtract \
            Tie::IxHash IO::Interface File::stat File::Stat::Bits Net::NTP \
            Filesys::DiskUsage Net::Ping
@@ -256,8 +256,8 @@ do
 done
 
 
-# there are 33 perl modules install calls
-step6=`expr $step6 / 33`
+# there are 31 perl modules install calls
+step6=`expr $step6 / 31`
 
 # final check; all 6 steps
 perl_done=`expr $step1 + $step2 + $step3 + $step4 + $step5 + $step6`
@@ -468,7 +468,7 @@ if [ "$PT_NAME" = "amd64" ]; then
     /usr/bin/env PATH=${iprefix}/bin:${iprefix}/perl/bin:$PATH CC=cc \
          ./Configure BSD-x86_64 threads shared --prefix=${iprefix} \
           --openssldir=${iprefix}/openssl >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
-elif [ "$PT_NAME" = "arm" ]; then
+elif [ "$PT_NAME" = "armv6" ]; then
     /usr/bin/env PATH=${iprefix}/bin:${iprefix}/perl/bin:$PATH CC=cc \
         ./Configure BSD-generic32 threads shared --prefix=${iprefix} \
         --openssldir=${iprefix}/openssl >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
@@ -812,6 +812,104 @@ if [ "$cares_done" -eq 4 ]; then
    cares_done=1
 else
    cares_done=90
+fi
+
+clean_module
+
+# back to root
+cd ..
+
+}
+
+
+# perl Crypt-OpenSSL-X509 
+build_rec_x509() {
+     
+dir=Crypt-OpenSSL-X509
+step1=0
+step2=0
+step3=0
+step4=0
+            
+# STEP 1
+cd lib
+init_module "$dir"
+if [ $? -eq 0 ]; then
+    step1=1
+fi
+    
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 2 - Configure $dir ..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+    
+     
+${iprefix}/perl/bin/perl Makefile.PL
+
+
+if [ $? -ne 0 ]; then
+    echo "Error: configure $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step2=1
+fi
+
+
+# STEP 3
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 3 - Make $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+make >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if [ $? -ne 0 ]; then
+    echo "Error: make $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step3=1
+fi
+
+
+# STEP 4
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 4 - Make install $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+make install >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if [ $? -ne 0 ]; then
+    echo "Error: make install $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step4=1
+fi
+
+
+# STEP 5
+lib='Net::SSL::ExpireDate'
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 5 - Install $lib ..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+env PERL_MM_USE_DEFAULT=1 \
+  ${iprefix}/perl/bin/perl -MCPAN -e 'install "'$lib'"' >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if [ $? -ne 0 ]; then
+    echo "Error: $lib installation failed !" |\
+    tee -a ${BUILD_LOG}/${module}.${version}.log
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step5=`expr $step5 + 1`
+fi
+
+
+# final check; all 5 steps
+x509_done=`expr $step1 + $step2 + $step3 + $step4 + $step5`
+if [ "$x509_done" -eq 5 ]; then
+   x509_done=1
+else
+   x509_done=90
 fi
 
 clean_module
@@ -1550,7 +1648,7 @@ echo "############################################################"
 echo "" >> ${BUILD_PATH}/${BUILD_LOG}
 echo "Submodule: FreeBSD package ${OS_NAME}" | tee -a ${BUILD_PATH}/${BUILD_LOG}
 
-if [ "$PT_NAME" = "arm" ]; then
+if [ "$PT_NAME" = "armv6" ]; then
     if [ -d /tmp/.cpan ]; then
         rm -rf /tmp/.cpan
     fi
@@ -1591,8 +1689,8 @@ if [ "$PT_NAME" = "amd64" ]; then
     cp MANIFEST.amd64 $pkgname/MANIFEST
 elif [ "$PT_NAME" = "i386" ]; then
     cp MANIFEST.i386 $pkgname/MANIFEST
-elif [ "$PT_NAME" = "arm" ]; then
-    cp MANIFEST.arm $pkgname/MANIFEST
+elif [ "$PT_NAME" = "armv6" ]; then
+    cp MANIFEST.armv6 $pkgname/MANIFEST
 fi
 
 cd ${pkgname}

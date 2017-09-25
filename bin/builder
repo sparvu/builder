@@ -20,7 +20,7 @@
 #
 #  (http://www.gnu.org/copyleft/gpl.html)
 
-# VERSION: 3.5
+# VERSION: 3.6
 
 usage() {
 
@@ -527,8 +527,8 @@ case "$OS_NAME" in
 
              # default appliance
              if [ -z "$appliance" ]; then
-                 if [ "$PT_NAME" = "arm" ]; then
-                     appliance="arm"
+                 if [ "$PT_NAME" = "armv6" ]; then
+                     appliance="armv6"
                      arm_sem=1
                  else
                      appliance="x64"
@@ -556,8 +556,8 @@ case "$OS_NAME" in
             
              # default appliance
              if [ -z "$appliance" ]; then
-                 if [ "$PT_NAME" = "arm" ]; then
-                     appliance="arm"
+                 if [ "$PT_NAME" = "armv6" ]; then
+                     appliance="armv6"
                      arm_sem=1
                  else
                      appliance="x64"
@@ -587,8 +587,8 @@ case "$OS_NAME" in
 
              # default appliance
              if [ -z "$appliance" ]; then
-                 if [ "$PT_NAME" = "armv6l" ]; then
-                     appliance="arm"
+                 if [ "$PT_NAME" = "armv6" ]; then
+                     appliance="armv6"
                      arm_sem=1
                  else
                      appliance="x64"
@@ -616,8 +616,8 @@ case "$OS_NAME" in
 
              # default appliance
              if [ -z "$appliance" ]; then
-                 if [ "$PT_NAME" = "armv6l" ]; then
-                     appliance="arm"
+                 if [ "$PT_NAME" = "armv6" ]; then
+                     appliance="armv6"
                      arm_sem=1
                  else
                      appliance="x64"
@@ -742,24 +742,22 @@ case "$module" in
         build_rec_perlssl
         build_rec_deviceserial
         if [ "$PT_NAME" = "armv7l" -o \
-             "$PT_NAME" = "armv"  ]; then
+             "$PT_NAME" = "armv6"  ]; then
             build_rec_deviceusb
         fi
         #build_rec_cares
         build_rec_curl
         build_rec_wcurl
         build_rec_ncurl
+        build_rec_x509
         if [ "$OS_NAME" = "linux" ]; then
-            build_rec_x509
             build_rec_sysstat
         fi
         build_rec_klib
   
         build_rec_scripts
         
-        if [ "$OS_NAME" != "freebsd" ]; then 
-            test_rec_scripts
-        fi
+        test_rec_scripts
 
         # currently we support Linux deb, rpm
         if [ "$OS_NAME" = "linux" -o \
