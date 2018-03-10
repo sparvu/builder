@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# COPYRIGHT: Copyright (c) 2015 Kronometrix
+#  Copyright (c) 2018 Stefan Parvu (www.kronometrix.org).
 #
 #  This program is free software; you can redistribute it and/or
 #  modify it under the terms of the GNU General Public License
@@ -17,7 +17,6 @@
 #  Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
 #  (http://www.gnu.org/copyleft/gpl.html)
-
 
 ### Platform and OS
 OS_NAME=`uname -s | tr '[A-Z]' '[a-z]'`
@@ -56,6 +55,8 @@ case "$OS_NAME" in
             DIST_ID=`grep '^ID=' /etc/os-release | sed 's/^.*=//' | sed 's/"//g'`
         elif [ -f /etc/system-release ]; then
             DIST_ID=`sed 's/ release.*$//' /etc/system-release | tr '[A-Z]' '[a-z]'`
+        elif [ -f /etc/debian_version ]; then
+            DIST_ID="debian"
         elif [ -f /etc/redhat-release ]; then
             DIST_TEMP=`sed 's/ release.*$//' /etc/redhat-release | tr '[A-Z]' '[a-z]'`
             echo $DIST_TEMP | grep '^red hat' >/dev/null
@@ -64,13 +65,17 @@ case "$OS_NAME" in
             else
                 DIST_ID=$DIST_TEMP
             fi
-            
         fi
+
+        # RELOS
         if [ -f /usr/bin/lsb_release ]; then
             RELOS=`lsb_release -r | sed 's/^Release\:[ \t]*//'`
         elif [ -f /etc/debian_version ]; then
             RELOS=`cat /etc/debian_version`
+        elif [ -f /etc/redhat-release ]; then
+            RELOS=`cat /etc/redhat-release | sed s/.*release\ // | sed s/\ .*//`
         fi
+
     ;;
 
     freebsd)

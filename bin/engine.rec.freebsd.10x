@@ -124,15 +124,17 @@ echo "Info: Step 2 - Configure perl ..." |\
 
 if [ "$PT_NAME" = "amd64" ]; then
     sh Configure -Doptimize='-O3' -Duselargefiles -Duse64bitall \
-        -Dcf_by="support@kronometrix.org"       \
-        -Dcf_email="support@kronometrix.org"    \
+        -Dcf_by="support@kronometrix.org"        \
+        -Dcf_email="support@kronometrix.org"     \
         -Dman1dir="none" -Dman3dir="none"        \
+        -Dlibs="-lpthread -lm -lcrypt -lutil -lc"\
         -Dprefix=${iprefix}/perl -des >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
 else
     sh Configure -Doptimize='-O3' -Duselargefiles -Duse64bitint \
-        -Dcf_by="support@kronometrix.org"       \
-        -Dcf_email="support@kronometrix.org"    \
+        -Dcf_by="support@kronometrix.org"        \
+        -Dcf_email="support@kronometrix.org"     \
         -Dman1dir="none" -Dman3dir="none"        \
+        -Dlibs="-lpthread -lm -lcrypt -lutil -lc"\
         -Dprefix=${iprefix}/perl -des >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
 fi
 
@@ -224,12 +226,12 @@ for lib in Digest::SHA Proc::Daemon Proc::ProcessTable Proc::PID::File \
            File::Tail Regexp::Common Filesys::Df Sys::Filesystem \
            JSON HTTP::Response UUID::Tiny Carp::Assert Net::Domain::TLD \
            DateTime::Format::ISO8601 Sys::HostIP ExtUtils::PkgConfig \
-           Inline::MakeMaker Capture::Tiny Email::Valid \
+           Inline::MakeMaker Capture::Tiny Email::Valid DBI \
            Inline::C Date::Calc Text::Template HTML::TableExtract \
            Tie::IxHash IO::Interface File::stat File::Stat::Bits Net::NTP \
-           Filesys::DiskUsage Net::Ping
+           Filesys::DiskUsage Net::Ping inc::Module::Install AnyEvent Redis
 do
-    if  [ "$lib" = "Inline::MakeMaker" ]; then
+    if  [ "$lib" = "Inline::MakeMaker" -o "$lib" = "AnyEvent" ]; then
         env PERL_MM_USE_DEFAULT=1 \
         ${iprefix}/perl/bin/perl -MCPAN -e 'install "'$lib'"' >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
         if [ $? -ne 0 ]; then
@@ -256,8 +258,8 @@ do
 done
 
 
-# there are 31 perl modules install calls
-step6=`expr $step6 / 31`
+# there are 36 perl modules install calls
+step6=`expr $step6 / 36`
 
 # final check; all 6 steps
 perl_done=`expr $step1 + $step2 + $step3 + $step4 + $step5 + $step6`
@@ -445,6 +447,44 @@ cd ..
 }
 
 
+### perl VM::EC2, Amazon libs
+build_rec_perlaws() {
+
+step1=0
+
+# STEP 1
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 1 - Install Perl AWS..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+for lib in XML::Simple
+do
+    ${iprefix}/perl/bin/perl -MCPAN -e 'install "'$lib'"' >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+    if [ $? -ne 0 ]; then
+        echo "Error: $lib installation failed !" |\
+            tee -a ${BUILD_LOG}/${module}.${version}.log
+        rm /var/tmp/build.${module}
+        exit 3
+    else
+        step1=`expr $step1 + 1`
+        continue
+    fi
+done
+
+# there are 1 perl modules install calls
+step1=`expr $step1 / 1`
+
+## final check; 1 step
+perlaws_done=$step1
+if [ "$perlaws_done" -eq 1 ]; then
+   perlaws_done=1
+else
+   perlaws_done=90
+fi
+
+}
+
+
 ### openssl
 build_rec_ossl() {
 dir="openssl"
@@ -495,9 +535,11 @@ echo "Info: Step 3 - Make $dir..." |\
 
 echo "Fixing SHARED_LDFLAGS flag..." >> ${BUILD_PATH}/${BUILD_LOG}
 if [ "$PT_NAME" = "amd64" ]; then
-    sed "s:^SHARED_LDFLAGS=.*:SHARED_LDFLAGS=-m64 -L${iprefix}/lib -Wl,-rpath -Wl,${iprefix}/lib:" Makefile > Makefile.tmp
+    sed "s:^LDFLAGS=.*:LDFLAGS=-m64 -L${iprefix}/lib -Wl,-rpath -Wl,${iprefix}/lib:" Makefile > Makefile.tmp
+    sed "s:^LIB_LDFLAGS=.*:LIB_LDFLAGS=-m64 -L${iprefix}/lib -Wl,-rpath -Wl,${iprefix}/lib:" Makefile.tmp > Makefile.tmp2
 else
-    sed "s:^SHARED_LDFLAGS=.*:SHARED_LDFLAGS=-m32 -L${iprefix}/lib -Wl,-rpath -Wl,${iprefix}/lib:" Makefile > Makefile.tmp
+    sed "s:^LDFLAGS=.*:LDFLAGS=-m32 -L${iprefix}/lib -Wl,-rpath -Wl,${iprefix}/lib:" Makefile > Makefile.tmp
+    sed "s:^LIB_LDFLAGS=.*:LIB_LDFLAGS=-m32 -L${iprefix}/lib -Wl,-rpath -Wl,${iprefix}/lib:" Makefile.tmp > Makefile.tmp2
 fi
 
 if [ $? -ne 0 ]; then
@@ -506,7 +548,7 @@ if [ $? -ne 0 ]; then
     rm /var/tmp/build.${module}
     exit 3
 fi
-mv Makefile.tmp Makefile
+mv Makefile.tmp2 Makefile
 
 
 make >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
@@ -630,7 +672,7 @@ fi
 
 
 # STEP 6
-for lib in Device::Modbus Device::Modbus::RTU
+for lib in Device::Modbus Device::Modbus::RTU Device::Modbus::ASCII
 do
     ${iprefix}/perl/bin/perl -MCPAN -e 'install "'$lib'"' >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
     if [ $? -ne 0 ]; then
@@ -644,7 +686,7 @@ do
     fi
 done
 # there are 2 perl modules install calls
-step6=`expr $step6 / 2`
+step6=`expr $step6 / 3`
 
 
 ## final check; all 6 steps
@@ -1317,7 +1359,6 @@ echo "Info: Step 2 - Installing recorders ..." |\
 
 cp sysrec cpurec diskrec nicrec hdwrec ${iprefix}/bin
 cp ../wsrec ${iprefix}/bin
-cp ../webrec* ${iprefix}/bin
 cp ../svcrec* ${iprefix}/bin
 cp ../webinvrec ${iprefix}/bin
 cp ../ntprec ${iprefix}/bin

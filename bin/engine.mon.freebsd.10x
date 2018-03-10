@@ -390,9 +390,11 @@ echo "Info: Step 3 - Make $dir..." |\
 
 echo "Fixing SHARED_LDFLAGS flag..." >> ${BUILD_PATH}/${BUILD_LOG}
 if [ "$PT_NAME" = "amd64" ]; then
-    sed "s:^SHARED_LDFLAGS=.*:SHARED_LDFLAGS=-m64 -L${iprefix}/lib -Wl,-rpath -Wl,${iprefix}/lib:" Makefile > Makefile.tmp
+    sed "s:^LDFLAGS=.*:LDFLAGS=-m64 -L${iprefix}/lib -Wl,-rpath -Wl,${iprefix}/lib:" Makefile > Makefile.tmp
+    sed "s:^LIB_LDFLAGS=.*:LIB_LDFLAGS=-m64 -L${iprefix}/lib -Wl,-rpath -Wl,${iprefix}/lib:" Makefile.tmp > Makefile.tmp2
 else
-    sed "s:^SHARED_LDFLAGS=.*:SHARED_LDFLAGS=-m32 -L${iprefix}/lib -Wl,-rpath -Wl,${iprefix}/lib:" Makefile > Makefile.tmp
+    sed "s:^LDFLAGS=.*:LDFLAGS=-m32 -L${iprefix}/lib -Wl,-rpath -Wl,${iprefix}/lib:" Makefile > Makefile.tmp
+    sed "s:^LIB_LDFLAGS=.*:LIB_LDFLAGS=-m32 -L${iprefix}/lib -Wl,-rpath -Wl,${iprefix}/lib:" Makefile.tmp > Makefile.tmp2
 fi
 
 if [ $? -ne 0 ]; then
@@ -401,7 +403,7 @@ if [ $? -ne 0 ]; then
     rm /var/tmp/build.${module}
     exit 3
 fi
-mv Makefile.tmp Makefile
+mv Makefile.tmp2 Makefile
 
 make >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
 if [ $? -ne 0 ]; then
@@ -876,6 +878,7 @@ echo "Info: Step 2 - Installing recorders ..." |\
  tee -a ${BUILD_PATH}/${BUILD_LOG}
 
 cp sysrec ${iprefix}/bin
+cp ../actmsg ${iprefix}/bin
 cp ../raw2day ${iprefix}/bin
 if [ $? -ne 0 ]; then
     echo "Error: cannot install rec scripts !" |\
@@ -912,7 +915,7 @@ cp etc/*.start ${iprefix}/etc
 cp etc/kronometrix.json ${iprefix}/etc
 cp etc/agents ${iprefix}/etc
 cp etc/transport ${iprefix}/etc
-cp etc/mon ${iprefix}/etc
+cp etc/kmon ${iprefix}/etc
 cp etc/${OS_NAME}/kronometrix.newsyslog ${iprefix}/etc
 mkdir ${iprefix}/etc/rc
 cp etc/${OS_NAME}/k* ${iprefix}/etc/rc

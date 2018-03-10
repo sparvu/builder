@@ -932,9 +932,11 @@ echo "Info: Step 1 - Installing nginx configs..." |\
 if [ $x64_sem -eq 1 ]; then
     cp nginx.stats.conf.x64 ${iprefix}/nginx/conf/nginx.stats.conf
     cp nginx.agg.conf.x64 ${iprefix}/nginx/conf/nginx.agg.conf
+    cp nginx.aux.conf.x64 ${iprefix}/nginx/conf/nginx.aux.conf
 elif [ $arm_sem -eq 1 ]; then
     cp nginx.stats.conf.arm ${iprefix}/nginx/conf/nginx.stats.conf
     cp nginx.agg.conf.arm ${iprefix}/nginx/conf/nginx.agg.conf
+    cp nginx.aux.conf.arm ${iprefix}/nginx/conf/nginx.aux.conf
 fi
 
 if [ $? -ne 0 ]; then
@@ -1127,7 +1129,7 @@ echo "" >> ${BUILD_PATH}/${BUILD_LOG}
 echo "Info: Step 2 - Installing kernel startup services ..." |\
  tee -a ${BUILD_PATH}/${BUILD_LOG}
 
-cp kkernel db_green db_aux db_stats db_agg http_stats http_agg ${iprefix}/etc/
+cp kkernel db_green db_aux db_stats db_agg http_stats http_agg http_aux ${iprefix}/etc/
 mkdir ${iprefix}/etc/rc
 cp ${OS_NAME}/k* ${iprefix}/etc/rc
 if [ $x64_sem -eq 1 ]; then

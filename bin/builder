@@ -29,14 +29,14 @@ Usage: $0 [-ht] [-p prefix_path]
           [-b build_number] [-m module_name] 
           [-a appliance] pkg version
 pkg:
-   recording, auth, avimet, kernel, mesg, mon
+   recording, auth, avmet, vcam, kernel, mesg, mon
 version:
    1.0.0
 
 OPTIONS
   -a appliance: x64, arm
   -b build_number: 01, 10, 102
-  -m module_name: perl, openssl, idn, curl,  wcurl, sysstat, scripts
+  -m module_name: perl, openssl, idn, curl,  sysstat, scripts
   -p prefix_path: /opt/kronometrix
   -t test_mode
   -h help
@@ -78,6 +78,7 @@ fbsd_pkg_sem=0
 
 idn_done=0
 libusb_done=0
+libexpat_done=0
 perl_done=0
 ossl_done=0
 curl_done=0
@@ -86,11 +87,11 @@ wrec_done=0
 recs_done=0
 nrec_done=0
 tests_done=0
-wwwcurl_done=0
 netcurl_done=0
 x509_done=0
 procdaemon_done=0
 perlssl_done=0
+perlaws_done=0
 deviceusb_done=0
 deviceserial_done=0
 sysstat_done=0
@@ -109,6 +110,7 @@ arm_sem=0
 auth_redis_done=0
 auth_openresty_done=0
 auth_luatz_done=0
+auth_libdate_done=0
 auth_lua_resty_template_done=0
 auth_lua_inspect_done=0
 auth_lua_router_done=0
@@ -121,19 +123,35 @@ auth_rpm_pkg_done=0
 auth_fbsd_pkg_done=0
 ##
 
-##avimet
-avimet_openresty_done=0
-avimet_luatz_done=0
-avimet_lua_resty_template_done=0
-avimet_lua_inspect_done=0
-avimet_lua_router_done=0
-avimet_lua_resty_http_simple_done=0
-avimet_fin_done=0
-avimet_config_done=0
-avimet_tar_pkg_done=0
-avimet_deb_pkg_done=0
-avimet_rpm_pkg_done=0
-avimet_fbsd_pkg_done=0
+##avmet
+avmet_openresty_done=0
+avmet_luatz_done=0
+avmet_lua_resty_template_done=0
+avmet_lua_inspect_done=0
+avmet_lua_router_done=0
+avmet_lua_resty_http_simple_done=0
+avmet_fin_done=0
+avmet_config_done=0
+avmet_tar_pkg_done=0
+avmet_deb_pkg_done=0
+avmet_rpm_pkg_done=0
+avmet_fbsd_pkg_done=0
+##
+
+##vcam
+vcam_openresty_done=0
+vcam_luatz_done=0
+vcam_lua_resty_template_done=0
+vcam_lua_inspect_done=0
+vcam_lua_router_done=0
+vcam_lua_resty_post_done=0
+vcam_lua_resty_http_simple_done=0
+vcam_fin_done=0
+vcam_config_done=0
+vcam_tar_pkg_done=0
+vcam_deb_pkg_done=0
+vcam_rpm_pkg_done=0
+vcam_fbsd_pkg_done=0
 ##
 
 ##kernel
@@ -175,8 +193,6 @@ mesg_fbsd_pkg_done=0
 
 ##mon
 mon_perl_done=0
-mon_curl_done=0
-mon_wwwcurl_done=0
 mon_ossl_done=0
 mon_netssl_done=0
 mon_procdaemon_done=0
@@ -407,7 +423,7 @@ case "$OS_NAME" in
              esac
          ;;
 
-         avimet)
+         avmet)
    
              # default appliance
              if [ -z "$appliance" ]; then
@@ -420,14 +436,14 @@ case "$OS_NAME" in
                  fi
              fi
 
-             iprefix=${iprefix:-/opt/kronometrix/avimet}
+             iprefix=${iprefix:-/opt/kronometrix/avmet}
              iuser=krmx
 
              WORKSPACE="${WORKSPACE_PREFIX}/kronometrix"
             
              case "$version" in
                  1.[0-4]*)
-                  . ${PWD}/engine.avimet.linux.10x
+                  . ${PWD}/engine.avmet.linux.10x
                   ;;
              
                  *)
@@ -435,6 +451,37 @@ case "$OS_NAME" in
                  ;;
              esac
          ;;
+
+
+         vcam)
+
+             # default appliance
+             if [ -z "$appliance" ]; then
+                 if [ "$PT_NAME" = "armv6l" ]; then
+                     appliance="arm"
+                     arm_sem=1
+                 else
+                     appliance="x64"
+                     x64_sem=1
+                 fi
+             fi
+
+             iprefix=${iprefix:-/opt/kronometrix/vcam}
+             iuser=krmx
+
+             WORKSPACE="${WORKSPACE_PREFIX}/kronometrix"
+
+             case "$version" in
+                 1.[0-4]*)
+                  . ${PWD}/engine.vcam.linux.10x
+                  ;;
+
+                 *)
+                   usage
+                 ;;
+             esac
+         ;;
+
 
          mesg)
 
@@ -552,7 +599,7 @@ case "$OS_NAME" in
              esac
          ;;
 
-         avimet)
+         avmet)
             
              # default appliance
              if [ -z "$appliance" ]; then
@@ -565,14 +612,14 @@ case "$OS_NAME" in
                  fi
              fi
 
-             iprefix=${iprefix:-/opt/kronometrix/avimet}
+             iprefix=${iprefix:-/opt/kronometrix/avmet}
              iuser=krmx
 
              WORKSPACE="${WORKSPACE_PREFIX}/kronometrix"
 
              case "$version" in
                  1.[0-6]*)
-                  . ${PWD}/engine.avimet.freebsd.10x
+                  . ${PWD}/engine.avmet.freebsd.10x
                   ;;
 
                  *)
@@ -582,6 +629,34 @@ case "$OS_NAME" in
          ;;
 
 
+         vcam)
+
+             # default appliance
+             if [ -z "$appliance" ]; then
+                 if [ "$PT_NAME" = "armv6" ]; then
+                     appliance="armv6"
+                     arm_sem=1
+                 else
+                     appliance="x64"
+                     x64_sem=1
+                 fi
+             fi
+
+             iprefix=${iprefix:-/opt/kronometrix/vcam}
+             iuser=krmx
+
+             WORKSPACE="${WORKSPACE_PREFIX}/kronometrix"
+
+             case "$version" in
+                 1.[0-6]*)
+                  . ${PWD}/engine.vcam.freebsd.10x
+                  ;;
+
+                 *)
+                   usage
+                 ;;
+             esac
+         ;;
 
          mesg)
 
@@ -740,14 +815,25 @@ case "$module" in
         build_rec_perl
         build_rec_ossl
         build_rec_perlssl
+        build_rec_perlaws
+
+        #serial and usb connectors
         build_rec_deviceserial
-        if [ "$PT_NAME" = "armv7l" -o \
-             "$PT_NAME" = "armv6"  ]; then
+
+        # build by default on all FreeBSDs
+        if [ "$OS_NAME" = "freebsd" ]; then
+            build_rec_deviceusb
+      elif [ "$PT_NAME" = "armv7l" ]; then
             build_rec_deviceusb
         fi
+
+        #if [ "$PT_NAME" = "armv7l" -o \
+        #     "$PT_NAME" = "armv6"  ]; then
+        #    build_rec_deviceusb
+        #fi
+
         #build_rec_cares
         build_rec_curl
-        build_rec_wcurl
         build_rec_ncurl
         build_rec_x509
         if [ "$OS_NAME" = "linux" ]; then
@@ -797,6 +883,7 @@ case "$module" in
         build_auth_router
         build_auth_httpsimple
         build_auth_luatz
+        build_auth_libdate
 
         if [ ! -z "$build_num" ]; then
             build_auth_inspect
@@ -815,12 +902,12 @@ case "$module" in
     fi
     ;;
 
- avimet)
+ avmet)
     echo "" > ${BUILD_PATH}/${BUILD_LOG}
 
     if [ $rpm_sem -eq 1 ]; then
         if [ "x${DIST_ID}" = "xrhel" -o "x${DIST_ID}" = "xcentos" ]; then
-            build_avimet_pkg
+            build_avmet_pkg
         else
             echo "Error: not a RPM installation, cannot build rpm pkg"
             rm /var/tmp/${STATFILE}
@@ -837,29 +924,77 @@ case "$module" in
             exit 3
         fi
     elif [ $fbsd_pkg_sem -eq 1 ]; then
-        build_avimet_pkg
+        build_avmet_pkg
     else
-        build_avimet_openresty
-        build_avimet_template
-        build_avimet_router
-        build_avimet_luatz
+        build_avmet_openresty
+        build_avmet_template
+        build_avmet_httpsimple
+        build_avmet_router
+        build_avmet_luatz
 
         if [ ! -z "$build_num" ]; then
-            build_avimet_inspect
+            build_avmet_inspect
         fi
 
-        build_avimet_config
-        build_avimet_fin
+        build_avmet_config
+        build_avmet_fin
 
         # currently we support Linux(deb,rpm), FreeBSD(pkg)
         if [ "$OS_NAME" = "linux" -o \
              "$OS_NAME" = "freebsd"  ]; then
-            build_avimet_pkg
+            build_avmet_pkg
         fi
 
     fi
     ;;
 
+
+ vcam)
+    echo "" > ${BUILD_PATH}/${BUILD_LOG}
+
+    if [ $rpm_sem -eq 1 ]; then
+        if [ "x${DIST_ID}" = "xrhel" -o "x${DIST_ID}" = "xcentos" ]; then
+            build_vcam_pkg
+        else
+            echo "Error: not a RPM installation, cannot build rpm pkg"
+            rm /var/tmp/${STATFILE}
+            exit 3
+        fi
+    elif [ $deb_sem -eq 1 ]; then
+        if [ "x${DIST_ID}" = "xdebian" -o \
+             "x${DIST_ID}" = "xubuntu" -o \
+             "x${DIST_ID}" = "xraspbian" ]; then
+            build_vcam_pkg
+        else
+            echo "Error: not a DEB installation, cannot build deb pkg"
+            rm /var/tmp/${STATFILE}
+            exit 3
+        fi
+    elif [ $fbsd_pkg_sem -eq 1 ]; then
+        build_vcam_pkg
+    else
+        build_vcam_openresty
+        build_vcam_post
+        build_vcam_template
+        build_vcam_httpsimple
+        build_vcam_router
+        build_vcam_luatz
+
+        if [ ! -z "$build_num" ]; then
+            build_vcam_inspect
+        fi
+
+        build_vcam_config
+        build_vcam_fin
+
+        # currently we support Linux(deb,rpm), FreeBSD(pkg)
+        if [ "$OS_NAME" = "linux" -o \
+             "$OS_NAME" = "freebsd"  ]; then
+            build_vcam_pkg
+        fi
+
+    fi
+    ;;
 
  mesg)
     echo "" > ${BUILD_PATH}/${BUILD_LOG}
@@ -965,11 +1100,8 @@ case "$module" in
         build_mon_pkg 
     else 
         build_mon_perl
-        # build_mon_procdaemon
         build_mon_ossl
         build_mon_netssl
-        #build_mon_curl
-        #build_mon_wwwcurl
         build_mon_scripts
         #build_mon_config
         build_mon_pkg
@@ -1036,6 +1168,22 @@ case "$module" in
         fi
     fi
 
+    if [ $libexpat_done -eq 1 ]; then
+        echo "# libexpat: ok"
+    else
+        if [ $libexpat_done -eq 90 ]; then
+            echo "# libexpat: failed"
+        fi
+    fi
+
+    if [ $perlaws_done -eq 1 ]; then
+        echo "# Perl AWS: ok"
+    else
+        if [ $perlaws_done -eq 90 ]; then
+            echo "# Perl AWS: failed"
+        fi
+    fi
+
     if [ $deviceserial_done -eq 1 ]; then
         echo "# deviceserial: ok"
     else
@@ -1075,14 +1223,6 @@ case "$module" in
             if [ $sysstat_done -eq 90 ]; then
                 echo "# sysstat: failed"
             fi
-        fi
-    fi
-
-    if [ $wwwcurl_done -eq 1 ]; then
-        echo "# wcurl: ok"
-    else
-        if [ $wwwcurl_done -eq 90 ]; then
-            echo "# wcurl: failed"
         fi
     fi
 
@@ -1215,6 +1355,16 @@ case "$module" in
         fi
     fi
 
+    if [ $auth_libdate_done -ne 0 ]; then
+        if [ $auth_libdate_done -eq 1 ]; then
+            echo  "# lib date.lua: built and integrated"
+        else
+            if [ $auth_libdone_done -eq 90 ]; then
+                echo  "# lib date.lua: not integrated"
+            fi
+        fi
+    fi
+
     if [ ! -z "$build_num" ]; then
         if [ $auth_lua_inspect_done -ne 0 ]; then
             if [ $auth_lua_inspect_done -eq 1 ]; then
@@ -1292,117 +1442,117 @@ case "$module" in
  ;;
 
 
- avimet)
+ avmet)
 
-    if [ $avimet_openresty_done -ne 0 ]; then
-        if [ $avimet_openresty_done -eq 1 ]; then
+    if [ $avmet_openresty_done -ne 0 ]; then
+        if [ $avmet_openresty_done -eq 1 ]; then
             echo "# openresty: built and integrated"
         else
-            if [ $avimet_openresty_done -eq 90 ]; then
+            if [ $avmet_openresty_done -eq 90 ]; then
                 echo "# openresty: not integrated"
             fi
         fi
     fi
 
-    if [ $avimet_lua_resty_template_done -ne 0 ]; then
-        if [ $avimet_lua_resty_template_done -eq 1 ]; then
+    if [ $avmet_lua_resty_template_done -ne 0 ]; then
+        if [ $avmet_lua_resty_template_done -eq 1 ]; then
             echo  "# lib lua-resty-template: built and integrated"
         else
-            if [ $avimet_lua_resty_template_done -eq 90 ]; then
+            if [ $avmet_lua_resty_template_done -eq 90 ]; then
                 echo  "# lib lua-resty-template: not integrated"
             fi
         fi
     fi
 
-    if [ $avimet_lua_router_done -ne 0 ]; then
-        if [ $avimet_lua_router_done -eq 1 ]; then
+    if [ $avmet_lua_router_done -ne 0 ]; then
+        if [ $avmet_lua_router_done -eq 1 ]; then
             echo  "# lib router.lua: built and integrated"
         else
-            if [ $avimet_lua_router_done -eq 90 ]; then
+            if [ $avmet_lua_router_done -eq 90 ]; then
                 echo  "# lib router.lua: not integrated"
             fi
         fi
     fi
 
-    if [ $avimet_lua_resty_http_simple_done -ne 0 ]; then
-        if [ $avimet_lua_resty_http_simple_done -eq 1 ]; then
-            echo  "# lib simple.lua: built and integrated"
+    if [ $avmet_lua_resty_http_simple_done -ne 0 ]; then
+        if [ $avmet_lua_resty_http_simple_done -eq 1 ]; then
+            echo  "# lib http simple.lua: built and integrated"
         else
-            if [ $avimet_lua_resty_http_simple_done -eq 90 ]; then
-                echo  "# lib simple.lua: not integrated"
+            if [ $avmet_lua_resty_http_simple_done -eq 90 ]; then
+                echo  "# lib http simple.lua: not integrated"
             fi
         fi
     fi
 
-    if [ $avimet_luatz_done -ne 0 ]; then
-        if [ $avimet_luatz_done -eq 1 ]; then
+    if [ $avmet_luatz_done -ne 0 ]; then
+        if [ $avmet_luatz_done -eq 1 ]; then
             echo  "# lib luatz: built and integrated"
         else
-            if [ $avimet_luatz_done -eq 90 ]; then
+            if [ $avmet_luatz_done -eq 90 ]; then
                 echo  "# lib luatz: not integrated"
             fi
         fi
     fi
 
     if [ ! -z "$build_num" ]; then
-        if [ $avimet_lua_inspect_done -ne 0 ]; then
-            if [ $avimet_lua_inspect_done -eq 1 ]; then
+        if [ $avmet_lua_inspect_done -ne 0 ]; then
+            if [ $avmet_lua_inspect_done -eq 1 ]; then
                 echo  "# lib inspect.lua: built and integrated"
             else
-                if [ $avimet_lua_inspect_done -eq 90 ]; then
+                if [ $avmet_lua_inspect_done -eq 90 ]; then
                     echo  "# lib inspect.lua: not integrated"
                 fi
             fi
         fi
     fi
 
-    if [ $avimet_config_done -ne 0 ]; then
-        if [ $avimet_config_done -eq 1 ]; then
-            echo  "# analytics-avimet nginx.conf: done"
+    if [ $avmet_config_done -ne 0 ]; then
+        if [ $avmet_config_done -eq 1 ]; then
+            echo  "# analytics-avmet nginx.conf: done"
         else
-            if [ $avimet_config_done -eq 90 ]; then
-                echo  "# analytics-avimet nginx.conf: not done"
+            if [ $avmet_config_done -eq 90 ]; then
+                echo  "# analytics-avmet nginx.conf: not done"
             fi
         fi
     fi
 
-    if [ $avimet_tar_pkg_done -eq 1 ]; then
+    if [ $avmet_tar_pkg_done -eq 1 ]; then
         echo "# tar pkg: ok"
     else
-        if [ $avimet_tar_pkg_done -eq 90 ]; then
+        if [ $avmet_tar_pkg_done -eq 90 ]; then
             echo "# tar pkg: failed"
         fi
     fi
 
-    if [ $avimet_rpm_pkg_done -eq 1 ]; then
+    if [ $avmet_rpm_pkg_done -eq 1 ]; then
         echo "# rpm pkg: ok"
     else
-        if [ $avimet_rpm_pkg_done -eq 90 ]; then
+        if [ $avmet_rpm_pkg_done -eq 90 ]; then
             echo "# rpm pkg: failed"
         fi
     fi
 
-    if [ $avimet_deb_pkg_done -eq 1 ]; then
+    if [ $avmet_deb_pkg_done -eq 1 ]; then
         echo "# deb pkg: ok"
     else
-        if [ $avimet_deb_pkg_done -eq 90 ]; then
+        if [ $avmet_deb_pkg_done -eq 90 ]; then
             echo "# deb pkg: failed"
         fi
     fi
 
-    if [ $avimet_fbsd_pkg_done -eq 1 ]; then
+    if [ $avmet_fbsd_pkg_done -eq 1 ]; then
         echo "# freebsd pkg: ok"
     else
-        if [ $avimet_fbsd_pkg_done -eq 90 ]; then
+        if [ $avmet_fbsd_pkg_done -eq 90 ]; then
             echo "# freebsd pkg: failed"
         fi
     fi
 
-    if [ $avimet_fin_done -ne 0 ]; then
-        if [ $avimet_fin_done -eq 1 ]; then
+    if [ $avmet_fin_done -ne 0 ]; then
+        if [ $avmet_fin_done -eq 1 ]; then
             echo  "# FINALIZE: done"
         else
-            if [ $avimet_fin_done -eq 90 ]; then
+            if [ $avmet_fin_done -eq 90 ]; then
                 echo  "# FINALIZE: not done"
             fi
         fi
@@ -1411,11 +1561,133 @@ case "$module" in
  ;;
 
 
+ vcam)
+        
+    if [ $vcam_openresty_done -ne 0 ]; then
+        if [ $vcam_openresty_done -eq 1 ]; then
+            echo "# openresty: built and integrated"
+        else
+            if [ $vcam_openresty_done -eq 90 ]; then
+                echo "# openresty: not integrated"
+            fi
+        fi
+    fi
+        
+    if [ $vcam_lua_resty_template_done -ne 0 ]; then
+        if [ $vcam_lua_resty_template_done -eq 1 ]; then
+            echo  "# lib lua-resty-template: built and integrated"
+        else
+            if [ $vcam_lua_resty_template_done -eq 90 ]; then
+                echo  "# lib lua-resty-template: not integrated"
+            fi
+        fi
+    fi
 
+    if [ $vcam_lua_resty_post_done -ne 0 ]; then
+        if [ $vcam_lua_resty_post_done -eq 1 ]; then
+            echo  "# lib lua-resty-post: built and integrated"
+        else
+            if [ $vcam_lua_resty_post_done -eq 90 ]; then
+                echo  "# lib lua-resty-post: not integrated"
+            fi
+        fi
+    fi
 
+    if [ $vcam_lua_router_done -ne 0 ]; then
+        if [ $vcam_lua_router_done -eq 1 ]; then
+            echo  "# lib router.lua: built and integrated"
+        else
+            if [ $vcam_lua_router_done -eq 90 ]; then
+                echo  "# lib router.lua: not integrated"
+            fi
+        fi
+    fi
 
+    if [ $vcam_lua_resty_http_simple_done -ne 0 ]; then
+        if [ $vcam_lua_resty_http_simple_done -eq 1 ]; then
+            echo  "# lib http simple.lua: built and integrated"
+        else
+            if [ $vcam_lua_resty_http_simple_done -eq 90 ]; then
+                echo  "# lib http simple.lua: not integrated"
+            fi
+        fi
+    fi
 
+    if [ $vcam_luatz_done -ne 0 ]; then
+        if [ $vcam_luatz_done -eq 1 ]; then
+            echo  "# lib luatz: built and integrated"
+        else
+            if [ $vcam_luatz_done -eq 90 ]; then
+                echo  "# lib luatz: not integrated"
+            fi
+        fi
+    fi
 
+    if [ ! -z "$build_num" ]; then
+        if [ $vcam_lua_inspect_done -ne 0 ]; then
+            if [ $vcam_lua_inspect_done -eq 1 ]; then
+                echo  "# lib inspect.lua: built and integrated"
+            else
+                if [ $vcam_lua_inspect_done -eq 90 ]; then
+                    echo  "# lib inspect.lua: not integrated"
+                fi
+            fi
+        fi
+    fi
+
+    if [ $vcam_config_done -ne 0 ]; then
+        if [ $vcam_config_done -eq 1 ]; then
+            echo  "# analytics-vcam nginx.conf: done"
+        else
+            if [ $vcam_config_done -eq 90 ]; then
+                echo  "# analytics-vcam nginx.conf: not done"
+            fi
+        fi
+    fi
+
+    if [ $vcam_tar_pkg_done -eq 1 ]; then
+        echo "# tar pkg: ok"
+    else
+        if [ $vcam_tar_pkg_done -eq 90 ]; then
+            echo "# tar pkg: failed"
+        fi
+    fi
+
+    if [ $vcam_rpm_pkg_done -eq 1 ]; then
+        echo "# rpm pkg: ok"
+    else
+        if [ $vcam_rpm_pkg_done -eq 90 ]; then
+            echo "# rpm pkg: failed"
+        fi
+    fi
+
+    if [ $vcam_deb_pkg_done -eq 1 ]; then
+        echo "# deb pkg: ok"
+    else
+        if [ $vcam_deb_pkg_done -eq 90 ]; then
+            echo "# deb pkg: failed"
+        fi
+    fi
+
+    if [ $vcam_fbsd_pkg_done -eq 1 ]; then
+        echo "# freebsd pkg: ok"
+    else
+        if [ $vcam_fbsd_pkg_done -eq 90 ]; then
+            echo "# freebsd pkg: failed"
+        fi
+    fi
+
+    if [ $vcam_fin_done -ne 0 ]; then
+        if [ $vcam_fin_done -eq 1 ]; then
+            echo  "# FINALIZE: done"
+        else
+            if [ $vcam_fin_done -eq 90 ]; then
+                echo  "# FINALIZE: not done"
+            fi
+        fi
+    fi
+
+ ;;
 
 
  mon)
@@ -1446,22 +1718,6 @@ case "$module" in
         fi
     fi
 
-    if [ $mon_curl_done -eq 1 ]; then
-        echo "# curl: ok"
-    else
-        if [ $mon_curl_done -eq 90 ]; then
-            echo "# curl: failed"
-        fi
-    fi
-
-    if [ $mon_wwwcurl_done -eq 1 ]; then
-        echo "# www-curl: ok"
-    else
-        if [ $mon_wwwcurl_done -eq 90 ]; then
-            echo "# www-curl: failed"
-        fi
-    fi
-        
     if [ $mon_tar_pkg_done -eq 1 ]; then
         echo "# tar pkg: ok"
     else
