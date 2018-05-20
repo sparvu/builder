@@ -95,40 +95,40 @@ package() {
 
     cd $TEMP_KRONOMETRIX
 
-    if [ ! -z $build_num ]; then
-        echo "Cloning QA branch..."
-        git clone -b qa https://github.com/sdrdynamics/analytics .
-    else 
+    #if [ ! -z $build_num ]; then
+    #    echo "Cloning QA branch..."
+    #    git clone -b qa https://github.com/sdrdynamics/analytics .
+    #else 
         echo "Cloning Prod Master branch..."
         git clone https://github.com/sdrdynamics/analytics .
-    fi
+    #fi
 
     if [ "${docmd}" = "all" ]; then
         for pkg in auth kernel mesg
         do
-            tar cf ${KRONOMETRIX_PREFIX}/pkg/kronometrix-${pkg}app-b${build_num}-${TIMESTAMP}.tar \
+            tar cf ${KRONOMETRIX_PREFIX}/pkg/k${pkg}-app-${build_num}-${TIMESTAMP}.tar \
              ${pkg}/app ${pkg}/static
-            bzip2 ${KRONOMETRIX_PREFIX}/pkg/kronometrix-${pkg}app-b${build_num}-${TIMESTAMP}.tar
-            echo " package: kronometrix-${pkg}app-b${build_num}-${TIMESTAMP}.tar.bz2 created"
+            bzip2 ${KRONOMETRIX_PREFIX}/pkg/k${pkg}-app-${build_num}-${TIMESTAMP}.tar
+            echo " package: k${pkg}-app-${build_num}-${TIMESTAMP}.tar.bz2 created"
         done
 
     elif [ "${docmd}" = "auth" ]; then
-        tar cf ${KRONOMETRIX_PREFIX}/pkg/kronometrix-authapp-b${build_num}-${TIMESTAMP}.tar \
+        tar cf ${KRONOMETRIX_PREFIX}/pkg/kauth-app-${build_num}-${TIMESTAMP}.tar \
           auth/app auth/static
-        bzip2 ${KRONOMETRIX_PREFIX}/pkg/kronometrix-authapp-b${build_num}-${TIMESTAMP}.tar
-        echo " package: kronometrix-authapp-b${build_num}-${TIMESTAMP}.tar.bz2 created"
+        bzip2 ${KRONOMETRIX_PREFIX}/pkg/kauth-app-${build_num}-${TIMESTAMP}.tar
+        echo " package: kauth-app-${build_num}-${TIMESTAMP}.tar.bz2 created"
 
     elif [ "${docmd}" = "kernel" ]; then
-        tar cf ${KRONOMETRIX_PREFIX}/pkg/kronometrix-kernelapp-b${build_num}-${TIMESTAMP}.tar \
+        tar cf ${KRONOMETRIX_PREFIX}/pkg/kkernel-app-${build_num}-${TIMESTAMP}.tar \
           kernel/app kernel/static
-        bzip2 ${KRONOMETRIX_PREFIX}/pkg/kronometrix-kernelapp-b${build_num}-${TIMESTAMP}.tar
-        echo " package: kronometrix-kernelapp-b${build_num}-${TIMESTAMP}.tar.bz2 created"
+        bzip2 ${KRONOMETRIX_PREFIX}/pkg/kkernel-app-${build_num}-${TIMESTAMP}.tar
+        echo " package: kkernel-app-${build_num}-${TIMESTAMP}.tar.bz2 created"
 
     elif [ "${docmd}" = "mesg" ]; then
-        tar cf ${KRONOMETRIX_PREFIX}/pkg/kronometrix-mesgapp-b${build_num}-${TIMESTAMP}.tar \
+        tar cf ${KRONOMETRIX_PREFIX}/pkg/kmesg-app-${build_num}-${TIMESTAMP}.tar \
           mesg/app mesg/static
-        bzip2 ${KRONOMETRIX_PREFIX}/pkg/kronometrix-mesgapp-b${build_num}-${TIMESTAMP}.tar
-        echo " package: kronometrix-mesgapp-b${build_num}-${TIMESTAMP}.tar.bz2 created"
+        bzip2 ${KRONOMETRIX_PREFIX}/pkg/kmesg-app-${build_num}-${TIMESTAMP}.tar
+        echo " package: kmesg-app-${build_num}-${TIMESTAMP}.tar.bz2 created"
  
     else
         usage
@@ -182,8 +182,8 @@ install() {
         cd ${KRONOMETRIX_PREFIX}
         for pkg in auth kernel mesg
         do
-            bzcat pkg/kronometrix-${pkg}app-b${build_num}-${TIMESTAMP}.tar.bz2 | tar xf -
-            echo " package: kronometrix-${pkg}app-b${build_num}-${TIMESTAMP}.tar.bz2 installed"
+            bzcat pkg/k${pkg}-app-${build_num}-${TIMESTAMP}.tar.bz2 | tar xf -
+            echo " package: k${pkg}-app-${build_num}-${TIMESTAMP}.tar.bz2 installed"
         done
         
         # master start
@@ -220,9 +220,9 @@ install() {
         fi
 
         cd ${KRONOMETRIX_PREFIX}
-        bzcat pkg/kronometrix-authapp-b${build_num}-${TIMESTAMP}.tar.bz2 | tar xf -
+        bzcat pkg/kauth-app-${build_num}-${TIMESTAMP}.tar.bz2 | tar xf -
 
-        echo " package: kronometrix-authapp-b${build_num}-${TIMESTAMP}.tar.bz2 installed"
+        echo " package: kauth-app-${build_num}-${TIMESTAMP}.tar.bz2 installed"
         start_auth_http
         start_auth_db
 
@@ -252,9 +252,9 @@ install() {
         fi
 
         cd ${KRONOMETRIX_PREFIX}
-        bzcat pkg/kronometrix-kernelapp-b${build_num}-${TIMESTAMP}.tar.bz2 | tar xf -
+        bzcat pkg/kkernel-app-${build_num}-${TIMESTAMP}.tar.bz2 | tar xf -
 
-        echo " package: kronometrix-kernelapp-b${build_num}-${TIMESTAMP}.tar.bz2 installed"
+        echo " package: kkernel-app-${build_num}-${TIMESTAMP}.tar.bz2 installed"
         start_kernel_http
         start_kernel_db_aux
         start_kernel_db_stats
@@ -282,9 +282,9 @@ install() {
         fi
 
         cd ${KRONOMETRIX_PREFIX}
-        bzcat pkg/kronometrix-mesgapp-b${build_num}-${TIMESTAMP}.tar.bz2 | tar xf -
+        bzcat pkg/kmesg-app-${build_num}-${TIMESTAMP}.tar.bz2 | tar xf -
 
-        echo " package: kronometrix-mesgapp-b${build_num}-${TIMESTAMP}.tar.bz2 installed"
+        echo " package: kmesg-app-${build_num}-${TIMESTAMP}.tar.bz2 installed"
         start_mesg_http
 
     else
