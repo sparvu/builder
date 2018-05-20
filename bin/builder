@@ -91,6 +91,7 @@ netcurl_done=0
 x509_done=0
 procdaemon_done=0
 perlssl_done=0
+perli2c_done=0
 perlaws_done=0
 deviceusb_done=0
 deviceserial_done=0
@@ -825,12 +826,8 @@ case "$module" in
             build_rec_deviceusb
       elif [ "$PT_NAME" = "armv7l" ]; then
             build_rec_deviceusb
+            build_rec_i2c
         fi
-
-        #if [ "$PT_NAME" = "armv7l" -o \
-        #     "$PT_NAME" = "armv6"  ]; then
-        #    build_rec_deviceusb
-        #fi
 
         #build_rec_cares
         build_rec_curl
@@ -1181,6 +1178,14 @@ case "$module" in
     else
         if [ $perlaws_done -eq 90 ]; then
             echo "# Perl AWS: failed"
+        fi
+    fi
+
+    if [ $perli2c_done -eq 1 ]; then
+        echo "# Perl RPiI2C: ok"
+    else
+        if [ $perli2c_done -eq 90 ]; then
+            echo "# Perl RPiI2C: failed"
         fi
     fi
 
