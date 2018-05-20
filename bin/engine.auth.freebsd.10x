@@ -3,7 +3,7 @@
 #  Kronometrix Development tools
 #  FreeBSD Analytics Authentication Engine
 #
-#  Copyright (c) 2016 Stefan Parvu (www.kronometrix.org).
+#  Copyright (c) 2018 Stefan Parvu (www.kronometrix.org).
 #
 #  This program is free software; you can redistribute it and/or
 #  modify it under the terms of the GNU General Public License
@@ -236,6 +236,53 @@ else
 fi
 
 clean_module
+
+}
+
+
+### date.lua
+build_auth_libdate() {
+dir="date"
+step1=0
+step2=0
+
+cd lib
+
+# STEP 1
+init_module "$dir"
+if [ $? -eq 0 ]; then
+    step1=1
+fi
+
+
+# STEP 2
+
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 2 - Install date.lua ..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+cp date.lua ${iprefix}/lualib/
+if [ $? -ne 0 ]; then
+    echo "Error: cannot install date.lua script !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+     rm /var/tmp/build.${module}
+     exit 3
+else
+    step2=1
+fi
+
+# final check; all 2 steps
+auth_libdate_done=`expr $step1 + $step2`
+if [ $auth_libdate_done -eq 2 ]; then
+   auth_libdate_done=1
+else
+   auth_libdate_done=90
+fi
+
+clean_module
+
+# back to root
+cd ..
 
 }
 

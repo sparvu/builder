@@ -207,26 +207,16 @@ echo "Info: Step 6 - CPAN modules" | tee -a ${BUILD_PATH}/${BUILD_LOG}
 
 cp ${BUILDER_PREFIX}/etc/Config.pm ${iprefix}/perl/lib/${cpanver}/CPAN
 
-#${iprefix}/perl/bin/perl -MCPAN -e 'install Sys::Statistics::Linux' >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
-#if [ $? -ne 0 ]; then
-#    echo "Error: Sys::Statistics::Linux installation failed !" |\
-#     tee -a ${BUILD_PATH}/${BUILD_LOG}
-#    rm /var/tmp/build.${module}
-#    exit 3
-#else
-#    step6=`expr $step6 + 1`
-#fi
-
 for lib in Digest::SHA Proc::Daemon Proc::ProcessTable Proc::PID::File \
            File::Tail Regexp::Common Filesys::Df Sys::Filesystem HTML::TableExtract \
            JSON HTTP::Response UUID::Tiny Carp::Assert Net::Domain::TLD \
            DateTime::Format::ISO8601 ExtUtils::PkgConfig Email::Valid \
-           Inline::MakeMaker Capture::Tiny Text::Template Linux::Info \
-           Inline::C Date::Calc Device::SerialPort Linux::Distribution \
-           Tie::IxHash IO::Interface Device::Modbus Device::Modbus::RTU \
+           Inline::MakeMaker Capture::Tiny Text::Template Linux::Info AnyEvent \
+           Inline::C Date::Calc Linux::Distribution inc::Module::Install DBI \
+           Tie::IxHash IO::Interface Redis \
            File::stat File::Stat::Bits Net::NTP Filesys::DiskUsage Net::Ping
 do
-    if  [ "$lib" = "Inline::MakeMaker" ]; then
+    if  [ "$lib" = "Inline::MakeMaker" -o "$lib" = "AnyEvent" ]; then
         env PERL_MM_USE_DEFAULT=1 \
         ${iprefix}/perl/bin/perl -MCPAN -e 'install "'$lib'"' >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
         if [ $? -ne 0 ]; then
@@ -252,8 +242,8 @@ do
     fi
 done
 
-# there are 34 perl modules install calls
-step6=`expr $step6 / 34`
+# there are 35 perl modules install calls
+step6=`expr $step6 / 35`
 
 # final check; all 6 steps
 perl_done=`expr $step1 + $step2 + $step3 + $step4 + $step5 + $step6`
@@ -264,6 +254,42 @@ else
 fi
 
 clean_module
+
+}
+
+
+### i2c arm7
+build_rec_i2c() {
+step1=0
+
+# STEP 1
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 1 - i2c module" | tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+for lib in RPi::I2C
+do
+    ${iprefix}/perl/bin/perl -MCPAN -e 'install "'$lib'"' >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+    if [ $? -ne 0 ]; then
+        echo "Error: $lib installation failed !" |\
+            tee -a ${BUILD_LOG}/${module}.${version}.log
+        rm /var/tmp/build.${module}
+        exit 3
+    else
+        step1=`expr $step1 + 1`
+        continue
+    fi
+done
+
+# there are 35 perl modules install calls
+step1=`expr $step1 / 1`
+
+# final check; all 6 steps
+perli2c_done=$step1
+if [ "$perli2c_done" -eq 1 ]; then
+   perli2c_done=1
+else
+   perli2c_done=90
+fi
 
 }
 
@@ -443,6 +469,44 @@ cd ..
 }
 
 
+### perl VM::EC2, Amazon libs
+build_rec_perlaws() {
+
+step1=0
+
+# STEP 1
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 1 - Install VM::EC2..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+for lib in XML::Simple
+do
+    ${iprefix}/perl/bin/perl -MCPAN -e 'install "'$lib'"' >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+    if [ $? -ne 0 ]; then
+        echo "Error: $lib installation failed !" |\
+            tee -a ${BUILD_LOG}/${module}.${version}.log
+        rm /var/tmp/build.${module}
+        exit 3
+    else
+        step1=`expr $step1 + 1`
+        continue
+    fi
+done
+
+# there are 1 perl modules install calls
+step1=`expr $step1 / 1`
+
+## final check; 1 step
+perlaws_done=$step1
+if [ "$perlaws_done" -eq 1 ]; then
+   perlaws_done=1
+else
+   perlaws_done=90
+fi
+
+}
+
+
 ### openssl
 build_rec_ossl() {
 dir="openssl"
@@ -500,13 +564,17 @@ echo "Info: Step 3 - Make $dir..." |\
 
 echo "Fixing SHARED_LDFLAGS flag..." >> ${BUILD_PATH}/${BUILD_LOG}
 if [ "$PT_NAME" = "x86_64" ]; then
-    sed "s:^SHARED_LDFLAGS=.*:SHARED_LDFLAGS=-m64 -L${iprefix}/lib -Wl,-rpath -Wl,${iprefix}/lib:" Makefile > Makefile.tmp
+    sed "s:^LDFLAGS=.*:LDFLAGS=-m64 -L${iprefix}/lib -Wl,-rpath -Wl,${iprefix}/lib:" Makefile > Makefile.tmp
+    sed "s:^LIB_LDFLAGS=.*:LIB_LDFLAGS=-m64 -L${iprefix}/lib -Wl,-rpath -Wl,${iprefix}/lib:" Makefile.tmp > Makefile.tmp2
 elif [ "$PT_NAME" = "ppc64" ]; then
-    sed "s:^SHARED_LDFLAGS=.*:SHARED_LDFLAGS=-m64 -L${iprefix}/lib -Wl,-rpath -Wl,${iprefix}/lib:" Makefile > Makefile.tmp
+    sed "s:^LDFLAGS=.*:LDFLAGS=-m64 -L${iprefix}/lib -Wl,-rpath -Wl,${iprefix}/lib:" Makefile > Makefile.tmp
+    sed "s:^LIB_LDFLAGS=.*:LIB_LDFLAGS=-m64 -L${iprefix}/lib -Wl,-rpath -Wl,${iprefix}/lib:" Makefile.tmp > Makefile.tmp2
 elif [ "$PT_NAME" = "armv7l" ]; then
-    sed "s:^SHARED_LDFLAGS=.*:SHARED_LDFLAGS=-L${iprefix}/lib -Wl,-rpath -Wl,${iprefix}/lib:" Makefile > Makefile.tmp
+    sed "s:^LDFLAGS=.*:LDFLAGS=-L${iprefix}/lib -Wl,-rpath -Wl,${iprefix}/lib:" Makefile > Makefile.tmp
+    sed "s:^LIB_LDFLAGS=.*:LIB_LDFLAGS=-L${iprefix}/lib -Wl,-rpath -Wl,${iprefix}/lib:" Makefile.tmp > Makefile.tmp2
 else
-    sed "s:^SHARED_LDFLAGS=.*:SHARED_LDFLAGS=-m32 -L${iprefix}/lib -Wl,-rpath -Wl,${iprefix}/lib:" Makefile > Makefile.tmp
+    sed "s:^LDFLAGS=.*:LDFLAGS=-m32 -L${iprefix}/lib -Wl,-rpath -Wl,${iprefix}/lib:" Makefile > Makefile.tmp
+    sed "s:^LIB_LDFLAGS=.*:LIB_LDFLAGS=-m32 -L${iprefix}/lib -Wl,-rpath -Wl,${iprefix}/lib:" Makefile.tmp > Makefile.tmp2
 fi
 
 if [ $? -ne 0 ]; then
@@ -515,8 +583,7 @@ if [ $? -ne 0 ]; then
     rm /var/tmp/build.${module}
     exit 3
 fi
-mv Makefile.tmp Makefile
-
+mv Makefile.tmp2 Makefile
 
 make depend >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
 make >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
@@ -552,6 +619,118 @@ if [ "$ossl_done" -eq 4 ]; then
    ossl_done=1
 else
    ossl_done=90
+fi
+
+clean_module
+
+# back to root
+cd ..
+
+}
+
+
+### perl Device-SerialPort
+build_rec_deviceserial() {
+
+dir=Device-SerialPort
+step1=0
+step2=0
+step3=0
+step4=0
+
+cd lib
+init_module "$dir"
+if [ $? -eq 0 ]; then
+    step1=1
+fi
+
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 2 - Configure $dir ..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+${iprefix}/perl/bin/perl Makefile.PL >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+
+if [ $? -ne 0 ]; then
+    echo "Error: configure $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step2=1
+fi
+
+
+# STEP 3
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 3 - Make $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+make >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if [ $? -ne 0 ]; then
+    echo "Error: make $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step3=1
+fi
+
+
+# STEP 4
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 4 - Make test $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+make test >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if [ $? -ne 0 ]; then
+    echo "Error: make test failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step4=1
+fi
+
+
+# STEP 5
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 5 - Make install $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+make install >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if [ $? -ne 0 ]; then
+    echo "Error: make install perl failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step5=1
+fi
+
+
+# STEP 6
+for lib in Device::Modbus Device::Modbus::RTU Device::Modbus::ASCII
+do
+    ${iprefix}/perl/bin/perl -MCPAN -e 'install "'$lib'"' >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+    if [ $? -ne 0 ]; then
+        echo "Error: $lib installation failed !" |\
+        tee -a ${BUILD_LOG}/${module}.${version}.log
+        rm /var/tmp/build.${module}
+        exit 3
+    else
+        step6=`expr $step6 + 1`
+        continue
+    fi
+done
+# there are 3 perl modules install calls
+step6=`expr $step6 / 3`
+
+
+## final check; all 6 steps
+deviceserial_done=`expr $step1 + $step2 + $step3 + $step4 + $step5 + $step6`
+if [ "$deviceserial_done" -eq 6 ]; then
+   deviceserial_done=1
+else
+   deviceserial_done=90
 fi
 
 clean_module
@@ -1370,6 +1549,82 @@ cd ..
 }
 
 
+### libexpat
+build_rec_expat() {
+dir=expat
+step1=0
+step2=0
+step3=0
+step4=0
+
+cd lib
+init_module "$dir"
+if [ $? -eq 0 ]; then
+    step1=1
+fi
+
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 2 - Configure $dir ..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+env CC=cc CFLAGS="-O3 -I${iprefix}/include" \
+    LDFLAGS="-L${iprefix}/lib -Wl,-rpath -Wl,${iprefix}/lib" \
+    ./configure --prefix=${iprefix} --without-xmlwf >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if [ $? -ne 0 ]; then
+    echo "Error: configure $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step2=1
+fi
+
+
+# STEP 3
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 3 - Make $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+make >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if [ $? -ne 0 ]; then
+    echo "Error: make $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step3=1
+fi
+
+
+# STEP 4
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 4 - Make install $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+make install >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if [ $? -ne 0 ]; then
+    echo "Error: make install libusb failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step4=1
+fi
+
+# final check; all 4 steps
+libexpat_done=`expr $step1 + $step2 + $step3 + $step4`
+if [ "$libexpat_done" -eq 4 ]; then
+   libexpat_done=1
+else
+   libexpat_done=90
+fi
+
+clean_module
+
+# back to root
+cd ..
+
+}
+
 
 
 
@@ -1419,13 +1674,11 @@ echo "Info: Step 2 - Installing recorders ..." |\
     if [ "$PT_NAME" != "armv6l" ]; then
         cp *rec ${iprefix}/bin
         cp ../wsrec ${iprefix}/bin
-        cp ../webrec* ${iprefix}/bin
         cp ../webinvrec ${iprefix}/bin
         cp ../rs485rec ${iprefix}/bin
         cp ../ntprec ${iprefix}/bin
         cp ../direc ${iprefix}/bin
         cp ../certrec ${iprefix}/bin
-        cp ../svcrec* ${iprefix}/bin
         cp ../raw2day ${iprefix}/bin
         cp ../u2htime ${iprefix}/bin
         cp ../actmsg ${iprefix}/bin
@@ -1441,13 +1694,11 @@ echo "Info: Step 2 - Installing recorders ..." |\
     elif [ "$PT_NAME" != "armv7l" ]; then
         cp *rec ${iprefix}/bin
         cp ../wsrec ${iprefix}/bin
-        cp ../webrec* ${iprefix}/bin
         cp ../webinvrec ${iprefix}/bin
         cp ../rs485rec ${iprefix}/bin
         cp ../ntprec ${iprefix}/bin
         cp ../direc ${iprefix}/bin
         cp ../certrec ${iprefix}/bin
-        cp ../svcrec* ${iprefix}/bin
         cp ../raw2day ${iprefix}/bin
         cp ../u2htime ${iprefix}/bin
         cp ../actmsg ${iprefix}/bin
@@ -1463,13 +1714,11 @@ echo "Info: Step 2 - Installing recorders ..." |\
     else
         cp sysrec cpurec diskrec nicrec hdwrec ${iprefix}/bin
         cp ../wsrec ${iprefix}/bin
-        cp ../webrec* ${iprefix}/bin
         cp ../webinvrec ${iprefix}/bin
         cp ../rs485rec ${iprefix}/bin
         cp ../ntprec ${iprefix}/bin
         cp ../direc ${iprefix}/bin
         cp ../certrec ${iprefix}/bin
-        cp ../svcrec* ${iprefix}/bin
         cp ../raw2day ${iprefix}/bin
         cp ../u2htime ${iprefix}/bin
         cp ../actmsg ${iprefix}/bin
@@ -1507,7 +1756,7 @@ cp etc/ntprec.json ${iprefix}/etc
 cp etc/direc.json ${iprefix}/etc
 cp etc/certrec.json ${iprefix}/etc
 cp etc/svcrec.json ${iprefix}/etc
-cp etc/agents ${iprefix}/etc
+cp etc/rec ${iprefix}/etc
 cp etc/transport ${iprefix}/etc
 cp etc/${OS_NAME}/logrotate.krmx ${iprefix}/etc
 if [ ! -d ${iprefix}/etc/rc ]; then
