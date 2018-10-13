@@ -9,9 +9,11 @@ Command: package - package the application
          install - package, install and start the application
 
 Modules: auth   - authenticator module
-         kernel - kernel module
+         stats  - kernel stats module
+         agg    - kernel agg module
          mesg   - messenger module
-         all    - authenticator, kernel, mesg modules
+         admin  - admin module
+         all    - authenticator, stats, agg, mesg modules
 
 Options:
          -h help               # help information
@@ -20,12 +22,12 @@ Options:
 
 Examples:
   appacker package mesg         # package mesg, do not install
-  appacker package kernel       # package kernel, do not install
+  appacker package stats        # package kernel stats, do not install
   appacker package auth         # package auth, do not install
   appacker package all          # package auth and kernel, do not install
 
   appacker install all          # package and install auth, kernel
-  appacker install kernel       # package and install kernel
+  appacker install stats        # package and install kernel stats
   appacker install auth         # package and install auth
   appacker -b70 install all     # package and install all modules as build 70
 
@@ -37,7 +39,15 @@ exit 1
 }
 
 
-## stop analytics services
+##################################################
+### STOP
+### analytics services
+##################################################
+stop_admin_http() {
+    ${KRONOMETRIX_PREFIX}/admin/etc/http stop
+}
+
+### AUTH
 stop_auth_http() {
     ${KRONOMETRIX_PREFIX}/auth/etc/http stop
 }
@@ -46,23 +56,44 @@ stop_auth_db() {
     ${KRONOMETRIX_PREFIX}/auth/etc/db stop
 }
 
-stop_kernel_http() {
-    ${KRONOMETRIX_PREFIX}/kernel/etc/http stop
+### KSTATS
+stop_kstats_http() {
+    ${KRONOMETRIX_PREFIX}/kernel/stats/etc/http_stats stop
+    ${KRONOMETRIX_PREFIX}/kernel/stats/etc/http_aux stop
 }
 
-stop_kernel_db_aux() {
-    ${KRONOMETRIX_PREFIX}/kernel/etc/db_aux stop
+stop_kstats_db() {
+    ${KRONOMETRIX_PREFIX}/kernel/stats/etc/db_green stop
+    ${KRONOMETRIX_PREFIX}/kernel/stats/etc/db_aux stop
+    ${KRONOMETRIX_PREFIX}/kernel/stats/etc/db_stats stop
 }
 
-stop_kernel_db_stats() {
-    ${KRONOMETRIX_PREFIX}/kernel/etc/db_stats stop
+### KAGG
+stop_kagg_http() {
+    ${KRONOMETRIX_PREFIX}/kernel/agg/etc/http_agg stop
 }
 
+stop_kagg_db() {
+    ${KRONOMETRIX_PREFIX}/kernel/agg/etc/db_agg stop
+}
+
+
+### MESG
 stop_mesg_http() {
     ${KRONOMETRIX_PREFIX}/mesg/etc/http stop
 }
 
-## start analytics services
+
+##################################################
+### START
+### analytics services
+##################################################
+### ADMIN
+start_admin_http() {
+    ${KRONOMETRIX_PREFIX}/admin/etc/http admin
+}
+
+### AUTH
 start_auth_http() {
     ${KRONOMETRIX_PREFIX}/auth/etc/http start
 }
@@ -71,18 +102,28 @@ start_auth_db() {
     ${KRONOMETRIX_PREFIX}/auth/etc/db start
 }
 
-start_kernel_http() {
-    ${KRONOMETRIX_PREFIX}/kernel/etc/http start
+### KSTATS
+start_kstats_http() {
+    ${KRONOMETRIX_PREFIX}/kernel/stats/etc/http_stats start
+    ${KRONOMETRIX_PREFIX}/kernel/stats/etc/http_aux start
 }
 
-start_kernel_db_aux() {
-    ${KRONOMETRIX_PREFIX}/kernel/etc/db_aux start
+start_kstats_db() {
+    ${KRONOMETRIX_PREFIX}/kernel/stats/etc/db_green start
+    ${KRONOMETRIX_PREFIX}/kernel/stats/etc/db_aux start
+    ${KRONOMETRIX_PREFIX}/kernel/stats/etc/db_stats start
 }
 
-start_kernel_db_stats() {
-    ${KRONOMETRIX_PREFIX}/kernel/etc/db_stats start
+### KAGG
+start_kagg_http() {
+    ${KRONOMETRIX_PREFIX}/kernel/agg/etc/http_agg start
 }
 
+start_kagg_db() {
+    ${KRONOMETRIX_PREFIX}/kernel/agg/etc/db_agg start
+}
+
+### MESG
 start_mesg_http() {
     ${KRONOMETRIX_PREFIX}/mesg/etc/http stop
 }
@@ -99,18 +140,31 @@ package() {
     #    echo "Cloning QA branch..."
     #    git clone -b qa https://github.com/sdrdynamics/analytics .
     #else 
-        echo "Cloning Prod Master branch..."
-        git clone https://github.com/sdrdynamics/analytics .
+    echo "Cloning Prod Master branch..."
+    git clone https://github.com/sdrdynamics/analytics .
     #fi
 
     if [ "${docmd}" = "all" ]; then
-        for pkg in auth kernel mesg
+        for pkg in admin auth stats agg mesg
         do
-            tar cf ${KRONOMETRIX_PREFIX}/pkg/k${pkg}-app-${build_num}-${TIMESTAMP}.tar \
-             ${pkg}/app ${pkg}/static
-            bzip2 ${KRONOMETRIX_PREFIX}/pkg/k${pkg}-app-${build_num}-${TIMESTAMP}.tar
-            echo " package: k${pkg}-app-${build_num}-${TIMESTAMP}.tar.bz2 created"
+            if [ "${pkg}" = "stats" -o "${pkg}" = "agg" ]; then
+                tar cf ${KRONOMETRIX_PREFIX}/pkg/k${pkg}-app-${build_num}-${TIMESTAMP}.tar \
+                kernel/${pkg}/app
+                bzip2 ${KRONOMETRIX_PREFIX}/pkg/k${pkg}-app-${build_num}-${TIMESTAMP}.tar
+                echo " package: k${pkg}-app-${build_num}-${TIMESTAMP}.tar.bz2 created"
+            else 
+                tar cf ${KRONOMETRIX_PREFIX}/pkg/k${pkg}-app-${build_num}-${TIMESTAMP}.tar \
+                ${pkg}/app ${pkg}/static
+                bzip2 ${KRONOMETRIX_PREFIX}/pkg/k${pkg}-app-${build_num}-${TIMESTAMP}.tar
+                echo " package: k${pkg}-app-${build_num}-${TIMESTAMP}.tar.bz2 created"
+            fi
         done
+
+    elif [ "${docmd}" = "admin" ]; then
+        tar cf ${KRONOMETRIX_PREFIX}/pkg/kadmin-app-${build_num}-${TIMESTAMP}.tar \
+          admin/app admin/static
+        bzip2 ${KRONOMETRIX_PREFIX}/pkg/kadmin-app-${build_num}-${TIMESTAMP}.tar
+        echo " package: kadmin-app-${build_num}-${TIMESTAMP}.tar.bz2 created"
 
     elif [ "${docmd}" = "auth" ]; then
         tar cf ${KRONOMETRIX_PREFIX}/pkg/kauth-app-${build_num}-${TIMESTAMP}.tar \
@@ -118,11 +172,17 @@ package() {
         bzip2 ${KRONOMETRIX_PREFIX}/pkg/kauth-app-${build_num}-${TIMESTAMP}.tar
         echo " package: kauth-app-${build_num}-${TIMESTAMP}.tar.bz2 created"
 
-    elif [ "${docmd}" = "kernel" ]; then
-        tar cf ${KRONOMETRIX_PREFIX}/pkg/kkernel-app-${build_num}-${TIMESTAMP}.tar \
-          kernel/app kernel/static
-        bzip2 ${KRONOMETRIX_PREFIX}/pkg/kkernel-app-${build_num}-${TIMESTAMP}.tar
-        echo " package: kkernel-app-${build_num}-${TIMESTAMP}.tar.bz2 created"
+    elif [ "${docmd}" = "stats" ]; then
+        tar cf ${KRONOMETRIX_PREFIX}/pkg/kstats-app-${build_num}-${TIMESTAMP}.tar \
+          kernel/stats
+        bzip2 ${KRONOMETRIX_PREFIX}/pkg/kstats-app-${build_num}-${TIMESTAMP}.tar
+        echo " package: kstats-app-${build_num}-${TIMESTAMP}.tar.bz2 created"
+
+    elif [ "${docmd}" = "agg" ]; then
+        tar cf ${KRONOMETRIX_PREFIX}/pkg/kagg-app-${build_num}-${TIMESTAMP}.tar \
+          kernel/agg
+        bzip2 ${KRONOMETRIX_PREFIX}/pkg/kagg-app-${build_num}-${TIMESTAMP}.tar
+        echo " package: kagg-app-${build_num}-${TIMESTAMP}.tar.bz2 created"
 
     elif [ "${docmd}" = "mesg" ]; then
         tar cf ${KRONOMETRIX_PREFIX}/pkg/kmesg-app-${build_num}-${TIMESTAMP}.tar \
@@ -151,15 +211,17 @@ install() {
         package all
 
         # master stop
+        stop_admin_http
         stop_auth_http
         stop_auth_db
-        stop_kernel_http
-        stop_kernel_db_stats
-        stop_kernel_db_aux
+        stop_kstats_http
+        stop_kstats_db
+        stop_kagg_http
+        stop_kagg_db
         stop_mesg_http
 
         # backup 
-        for pkg in auth kernel mesg
+        for pkg in admin auth kernel/stats kernel/agg mesg
         do
             if [ -d "${KRONOMETRIX_PREFIX}/${pkg}/app" ]; then
                 mv ${KRONOMETRIX_PREFIX}/${pkg}/app \
@@ -180,13 +242,14 @@ install() {
         done
  
         cd ${KRONOMETRIX_PREFIX}
-        for pkg in auth kernel mesg
+        for pkg in admin auth kernel/stats kernel/agg mesg
         do
             bzcat pkg/k${pkg}-app-${build_num}-${TIMESTAMP}.tar.bz2 | tar xf -
             echo " package: k${pkg}-app-${build_num}-${TIMESTAMP}.tar.bz2 installed"
         done
         
         # master start
+        start_admin_http
         start_auth_http
         start_auth_db
         start_kernel_http
@@ -195,6 +258,34 @@ install() {
         start_mesg_http
 
         cd --
+
+    elif [ "${docmd}" = "admin" ]; then
+
+        package admin
+        stop_admin_http
+
+        if [ -d "${KRONOMETRIX_PREFIX}/admin/app" ]; then
+            mv ${KRONOMETRIX_PREFIX}/admin/app \
+             ${KRONOMETRIX_PREFIX}/admin/app.old.${TIMESTAMP}
+        fi
+        if [ -d "${KRONOMETRIX_PREFIX}/admin/static" ]; then
+            mv ${KRONOMETRIX_PREFIX}/admin/static \
+             ${KRONOMETRIX_PREFIX}/admin/static.old.${TIMESTAMP}
+        fi
+        if [ -f "${KRONOMETRIX_PREFIX}/admin/nginx/logs/access.log" ]; then
+            mv ${KRONOMETRIX_PREFIX}/admin/nginx/logs/access.log \
+             ${KRONOMETRIX_PREFIX}/admin/nginx/logs/access.${TIMESTAMP}.log
+        fi
+        if [ -f "${KRONOMETRIX_PREFIX}/admin/nginx/logs/error.log" ]; then
+            mv ${KRONOMETRIX_PREFIX}/admin/nginx/logs/error.log \
+             ${KRONOMETRIX_PREFIX}/admin/nginx/logs/error.${TIMESTAMP}.log
+        fi
+
+        cd ${KRONOMETRIX_PREFIX}
+        bzcat pkg/kadmin-app-${build_num}-${TIMESTAMP}.tar.bz2 | tar xf -
+
+        echo " package: kadmin-app-${build_num}-${TIMESTAMP}.tar.bz2 installed"
+        start_admin_http
 
     elif [ "${docmd}" = "auth" ]; then
 
@@ -371,6 +462,10 @@ case "$cmd" in
 
     package)
         case "$module" in
+            admin)
+                package admin
+                ;;
+
             auth)
                 package auth
                 ;;
@@ -396,6 +491,10 @@ case "$cmd" in
     install)
 
         case "$module" in
+            admin)
+                package admin
+                ;;
+
             auth)
                 install auth
                 ;;
