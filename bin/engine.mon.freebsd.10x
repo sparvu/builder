@@ -495,10 +495,11 @@ else
     step2=1
 fi
 
-sed "s:^LDFLAGS =.*:LDFLAGS=-Wl,-E  -fstack-protector-strong -L${iprefix}/lib -Wl,-rpath -Wl,${iprefix}/lib:" Makefile > Makefile.tmp
-sed "s:^LDDLFLAGS =.*:LDDLFLAGS=-shared -fstack-protector-strong -L${iprefix}/lib -Wl,-rpath -Wl,${iprefix}/lib:" Makefile.tmp > Makefile.tmp2
-mv Makefile.tmp2 Makefile
-
+if [ "$PT_NAME" = "aarch64" ]; then
+    sed "s:^LDFLAGS =.*:LDFLAGS=-Wl,-E  -fstack-protector-strong -L${iprefix}/lib -Wl,-rpath -Wl,${iprefix}/lib:" Makefile > Makefile.tmp
+    sed "s:^LDDLFLAGS =.*:LDDLFLAGS=-shared -fstack-protector-strong -L${iprefix}/lib -Wl,-rpath -Wl,${iprefix}/lib:" Makefile.tmp > Makefile.tmp2
+    mv Makefile.tmp2 Makefile
+fi
 
 # STEP 3
 echo "" >> ${BUILD_PATH}/${BUILD_LOG}
