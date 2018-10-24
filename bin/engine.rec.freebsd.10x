@@ -274,82 +274,6 @@ clean_module
 }
 
 
-### perl Proc::Daemon
-build_rec_procdaemon() {
-
-dir=Proc-Daemon
-step1=0
-step2=0
-step3=0
-step4=0
-
-cd lib
-init_module "$dir"
-if [ $? -eq 0 ]; then
-    step1=1
-fi
-
-echo "" >> ${BUILD_PATH}/${BUILD_LOG}
-echo "Info: Step 2 - Configure $dir ..." |\
- tee -a ${BUILD_PATH}/${BUILD_LOG}
-
-
-${iprefix}/perl/bin/perl Makefile.PL >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
-if [ $? -ne 0 ]; then
-    echo "Error: configure $dir failed !" |\
-     tee -a ${BUILD_PATH}/${BUILD_LOG}
-    rm /var/tmp/build.${module}
-    exit 3
-else
-    step2=1
-fi  
-
-
-# STEP 3
-echo "" >> ${BUILD_PATH}/${BUILD_LOG}
-echo "Info: Step 3 - Make $dir..." |\
- tee -a ${BUILD_PATH}/${BUILD_LOG}
-make >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
-if [ $? -ne 0 ]; then
-    echo "Error: make $dir failed !" |\
-     tee -a ${BUILD_PATH}/${BUILD_LOG}
-    rm /var/tmp/build.${module}
-    exit 3
-else
-    step3=1
-fi 
-
-# STEP 4
-echo "" >> ${BUILD_PATH}/${BUILD_LOG}
-echo "Info: Step 4 - Make install $dir..." |\
- tee -a ${BUILD_PATH}/${BUILD_LOG}
-make test >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
-make install >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
-if [ $? -ne 0 ]; then
-    echo "Error: make install Proc::Daemon failed !" |\
-     tee -a ${BUILD_PATH}/${BUILD_LOG}
-    rm /var/tmp/build.${module}
-    exit 3
-else
-    step4=1
-fi
-
-## final check; all 4 steps
-procdaemon_done=`expr $step1 + $step2 + $step3 + $step4`
-if [ "$procdaemon_done" -eq 4 ]; then
-   procdaemon_done=1
-else
-   procdaemon_done=90
-fi
-
-clean_module
-
-# back to root
-cd ..
-
-}
-
-
 ### perl Net::SSLeay
 build_rec_perlssl() {
 
@@ -382,6 +306,11 @@ else
     step2=1
 fi  
 
+if [ "$PT_NAME" = "aarch64" ]; then
+    sed "s:^LDFLAGS =.*:LDFLAGS=-Wl,-E  -fstack-protector-strong -L${iprefix}/lib -Wl,-rpath -Wl,${iprefix}/lib:" Makefile > Makefile.tmp
+    sed "s:^LDDLFLAGS =.*:LDDLFLAGS=-shared -fstack-protector-strong -L${iprefix}/lib -Wl,-rpath -Wl,${iprefix}/lib:" Makefile.tmp > Makefile.tmp2
+    mv Makefile.tmp2 Makefile
+fi
 
 # STEP 3
 echo "" >> ${BUILD_PATH}/${BUILD_LOG}
@@ -539,7 +468,7 @@ echo "Info: Step 3 - Make $dir..." |\
 
 
 echo "Fixing SHARED_LDFLAGS flag..." >> ${BUILD_PATH}/${BUILD_LOG}
-if [ "$PT_NAME" = "amd64" ]; then
+if [ "$PT_NAME" = "amd64" -o "$PT_NAME" = "aarch64" ]; then
     sed "s:^LDFLAGS=.*:LDFLAGS=-m64 -L${iprefix}/lib -Wl,-rpath -Wl,${iprefix}/lib:" Makefile > Makefile.tmp
     sed "s:^LIB_LDFLAGS=.*:LIB_LDFLAGS=-m64 -L${iprefix}/lib -Wl,-rpath -Wl,${iprefix}/lib:" Makefile.tmp > Makefile.tmp2
 else
@@ -781,84 +710,6 @@ if [ "$deviceusb_done" -eq 4 ]; then
    deviceusb_done=1
 else
    deviceusb_done=90
-fi
-
-clean_module
-
-# back to root
-cd ..
-
-}
-
-
-### cares
-build_rec_cares() {
-dir=cares
-step1=0
-step2=0
-step3=0
-step4=0
-
-cd lib
-init_module "$dir"
-if [ $? -eq 0 ]; then
-    step1=1
-fi
-
-echo "" >> ${BUILD_PATH}/${BUILD_LOG}
-echo "Info: Step 2 - Configure $dir ..." |\
- tee -a ${BUILD_PATH}/${BUILD_LOG}
-
-env CFLAGS="-O3" \
-    CPPFLAGS="-I${iprefix}/include"   \
-    LDFLAGS="-L${iprefix}/lib -Wl,-rpath -Wl,${iprefix}/lib" \
-    ./configure --prefix=${iprefix} >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
-if [ $? -ne 0 ]; then
-    echo "Error: configure $dir failed !" |\
-     tee -a ${BUILD_PATH}/${BUILD_LOG}
-    rm /var/tmp/build.${module}
-    exit 3
-else
-    step2=1
-fi
-
-
-# STEP 3
-echo "" >> ${BUILD_PATH}/${BUILD_LOG}
-echo "Info: Step 3 - Make $dir..." |\
- tee -a ${BUILD_PATH}/${BUILD_LOG}
-make >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
-if [ $? -ne 0 ]; then
-    echo "Error: make $dir failed !" |\
-     tee -a ${BUILD_PATH}/${BUILD_LOG}
-    rm /var/tmp/build.${module}
-    exit 3
-else
-    step3=1
-fi
-
-
-# STEP 4
-echo "" >> ${BUILD_PATH}/${BUILD_LOG}
-echo "Info: Step 4 - Make install $dir..." |\
- tee -a ${BUILD_PATH}/${BUILD_LOG}
-
-make install >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
-if [ $? -ne 0 ]; then
-    echo "Error: make install cares failed !" |\
-     tee -a ${BUILD_PATH}/${BUILD_LOG}
-    rm /var/tmp/build.${module}
-    exit 3
-else
-    step4=1
-fi
-
-# final check; all 4 steps
-cares_done=`expr $step1 + $step2 + $step3 + $step4`
-if [ "$cares_done" -eq 4 ]; then
-   cares_done=1
-else
-   cares_done=90
 fi
 
 clean_module
@@ -1161,84 +1012,6 @@ cd ..
 }
 
 
-# perl WWW::Curl
-build_rec_wcurl() {
-
-dir=WWW-Curl
-step1=0
-step2=0
-step3=0
-step4=0
-
-cd lib
-init_module "$dir"
-if [ $? -eq 0 ]; then
-    step1=1
-fi
-
-echo "" >> ${BUILD_PATH}/${BUILD_LOG}
-echo "Info: Step 2 - Configure $dir ..." |\
- tee -a ${BUILD_PATH}/${BUILD_LOG}
-
-
-env PATH=${iprefix}/bin:$PATH ${iprefix}/perl/bin/perl Makefile.PL >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
-if [ $? -ne 0 ]; then
-    echo "Error: configure $dir failed !" |\
-     tee -a ${BUILD_PATH}/${BUILD_LOG}
-    rm /var/tmp/build.${module}
-    exit 3
-else
-    step2=1
-fi  
-
-
-# STEP 3
-echo "" >> ${BUILD_PATH}/${BUILD_LOG}
-echo "Info: Step 3 - Make $dir..." |\
- tee -a ${BUILD_PATH}/${BUILD_LOG}
-make >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
-if [ $? -ne 0 ]; then
-    echo "Error: make $dir failed !" |\
-     tee -a ${BUILD_PATH}/${BUILD_LOG}
-    rm /var/tmp/build.${module}
-    exit 3
-else
-    step3=1
-fi 
-
-
-# STEP 4
-echo "" >> ${BUILD_PATH}/${BUILD_LOG}
-echo "Info: Step 4 - Make install $dir..." |\
- tee -a ${BUILD_PATH}/${BUILD_LOG}
-
-make install >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
-if [ $? -ne 0 ]; then
-    echo "Error: make install perl failed !" |\
-     tee -a ${BUILD_PATH}/${BUILD_LOG}
-    rm /var/tmp/build.${module}
-    exit 3
-else
-    step4=1
-fi
-
-#
-# final check; all 4 steps
-wwwcurl_done=`expr $step1 + $step2 + $step3 + $step4`
-if [ "$wwwcurl_done" -eq 4 ]; then
-   wwwcurl_done=1
-else
-   wwwcurl_done=90
-fi
-
-clean_module
-
-# back to root
-cd ..
-
-}
-
-
 ### Kronometrix libs
 build_rec_klib() {
 
@@ -1315,10 +1088,6 @@ make distclean >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
 cd ../..
 
 }
-
-
-
-
 
 
 ### configuration settings
