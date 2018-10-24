@@ -20,7 +20,7 @@
 #
 #  (http://www.gnu.org/copyleft/gpl.html)
 
-# VERSION: 3.6
+# VERSION: 4
 
 usage() {
 
@@ -29,7 +29,7 @@ Usage: $0 [-ht] [-p prefix_path]
           [-b build_number] [-m module_name] 
           [-a appliance] pkg version
 pkg:
-   recording, auth, avmet, vcam, kernel, mesg, mon
+   recording, auth, admin, avmet, vcam, stats, agg, mesg, mon
 version:
    1.0.0
 
@@ -44,7 +44,7 @@ OPTIONS
   eg, builder recording 1.0.0       # build recording 0.73
       builder auth 1.0.0            # build analytics auth 1.0.0
       builder -a arm auth 1.0.0     # build arm analytics auth 1.0.0
-      builder kernel 1.0.0          # build analytics kernel 1.0.0
+      builder stats  1.0.0          # build analytics kernel stats 1.0.0
       builder mon 1.0.17            # build appliance mon 1.0.17
 
 Notes:
@@ -115,7 +115,7 @@ auth_libdate_done=0
 auth_lua_resty_template_done=0
 auth_lua_inspect_done=0
 auth_lua_router_done=0
-auth_lua_resty_http_simple_done=0
+auth_lua_resty_http_done=0
 auth_fin_done=0
 auth_config_done=0
 auth_tar_pkg_done=0
@@ -123,6 +123,25 @@ auth_deb_pkg_done=0
 auth_rpm_pkg_done=0
 auth_fbsd_pkg_done=0
 ##
+
+##admin
+admin_openresty_done=0
+admin_luatz_done=0
+admin_luafs_done=0
+admin_libdate_done=0
+admin_lua_resty_template_done=0
+admin_lua_inspect_done=0
+admin_lua_router_done=0
+admin_lua_resty_http_done=0
+admin_lua_resty_prettycjson_done=0
+admin_fin_done=0
+admin_config_done=0
+admin_tar_pkg_done=0
+admin_deb_pkg_done=0
+admin_rpm_pkg_done=0
+admin_fbsd_pkg_done=0
+##
+
 
 ##avmet
 avmet_openresty_done=0
@@ -146,6 +165,7 @@ vcam_lua_resty_template_done=0
 vcam_lua_inspect_done=0
 vcam_lua_router_done=0
 vcam_lua_resty_post_done=0
+vcam_luafs_done=0
 vcam_lua_resty_http_simple_done=0
 vcam_fin_done=0
 vcam_config_done=0
@@ -155,28 +175,51 @@ vcam_rpm_pkg_done=0
 vcam_fbsd_pkg_done=0
 ##
 
-##kernel
-kernel_openresty_done=0
-kernel_luafs_done=0
-kernel_luazlib_done=0
-kernel_struct_done=0
-kernel_zipwriter_done=0
-kernel_luatz_done=0
-kernel_lua_resty_template_done=0
-kernel_lua_router_done=0
-kernel_lua_resty_http_done=0
-kernel_lua_resty_http_simple_done=0
-kernel_lua_resty_prettycjson_done=0
-kernel_lua_inspect_done=0
-kernel_libdate_done=0
-kernel_redis_done=0
-kernel_fin_done=0
-kernel_config_done=0
-kernel_tar_pkg_done=0
-kernel_deb_pkg_done=0
-kernel_rpm_pkg_done=0
-kernel_fbsd_pkg_done=0
+##kernel stats
+kstats_openresty_done=0
+kstats_luafs_done=0
+kstats_luazlib_done=0
+kstats_struct_done=0
+kstats_zipwriter_done=0
+kstats_luatz_done=0
+kstats_lua_resty_template_done=0
+kstats_lua_router_done=0
+kstats_lua_resty_http_done=0
+kstats_lua_resty_prettycjson_done=0
+kstats_libdate_done=0
+kstats_redis_done=0
+kstats_fin_done=0
+kstats_config_done=0
+kstats_tar_pkg_done=0
+kstats_deb_pkg_done=0
+kstats_rpm_pkg_done=0
+kstats_fbsd_pkg_done=0
 ##
+
+
+##kernel agg
+kagg_openresty_done=0
+kagg_luafs_done=0
+kagg_luazlib_done=0
+kagg_struct_done=0
+kagg_zipwriter_done=0
+kagg_luatz_done=0
+kagg_lua_resty_template_done=0
+kagg_lua_router_done=0
+kagg_lua_resty_http_done=0
+kagg_lua_resty_prettycjson_done=0
+kagg_lua_inspect_done=0
+kagg_libdate_done=0
+kagg_redis_done=0
+kagg_fin_done=0
+kagg_config_done=0
+kagg_tar_pkg_done=0
+kagg_deb_pkg_done=0
+kagg_rpm_pkg_done=0
+kagg_fbsd_pkg_done=0
+##
+
+
 
 ##mesg
 mesg_openresty_done=0
@@ -424,6 +467,37 @@ case "$OS_NAME" in
              esac
          ;;
 
+
+         admin)
+
+             # default appliance
+             if [ -z "$appliance" ]; then
+                 if [ "$PT_NAME" = "armv6l" ]; then
+                     appliance="arm"
+                     arm_sem=1
+                 else
+                     appliance="x64"
+                     x64_sem=1
+                 fi
+             fi
+
+             iprefix=${iprefix:-/opt/kronometrix/admin}
+             iuser=krmx
+
+             WORKSPACE="${WORKSPACE_PREFIX}/kronometrix"
+
+             case "$version" in
+                 1.[0-4]*)
+                  . ${PWD}/engine.admin.linux.10x
+                  ;;
+
+                 *)
+                   usage
+                 ;;
+             esac
+         ;;
+
+
          avmet)
    
              # default appliance
@@ -513,7 +587,7 @@ case "$OS_NAME" in
              esac
          ;;
 
-         kernel)
+         stats)
 
              # default appliance
              if [ -z "$appliance" ]; then
@@ -526,16 +600,46 @@ case "$OS_NAME" in
                  fi
              fi
       
-             iprefix=${iprefix:-/opt/kronometrix/kernel}
+             iprefix=${iprefix:-/opt/kronometrix/kernel/stats}
              iuser=krmx
              
              WORKSPACE="${WORKSPACE_PREFIX}/kronometrix"
 
              case "$version" in
                  1.[0-4]*)
-                  . ${PWD}/engine.kernel.linux.10x
+                  . ${PWD}/engine.kstats.linux.10x
                   ;;
 
+                 *)
+                   usage
+                 ;;
+             esac
+         ;;
+
+
+         aggregates)
+
+             # default appliance
+             if [ -z "$appliance" ]; then
+                 if [ "$PT_NAME" = "armv6l" ]; then
+                     appliance="arm"
+                     arm_sem=1
+                 else
+                     appliance="x64"
+                     x64_sem=1
+                 fi
+             fi
+
+             iprefix=${iprefix:-/opt/kronometrix/kernel/agg}
+             iuser=krmx
+
+             WORKSPACE="${WORKSPACE_PREFIX}/kronometrix"
+
+             case "$version" in
+                 1.[0-4]*)
+                  . ${PWD}/engine.kagg.linux.10x
+                  ;;
+      
                  *)
                    usage
                  ;;
@@ -561,7 +665,7 @@ case "$OS_NAME" in
              WORKSPACE="${WORKSPACE_PREFIX}/kronometrix"
 
              case "$version" in
-                 1.[0-6]*)
+                 1.[0-8]*)
                   . ${PWD}/engine.rec.freebsd.10x
                   ;;
 
@@ -590,8 +694,37 @@ case "$OS_NAME" in
              WORKSPACE="${WORKSPACE_PREFIX}/kronometrix"
 
              case "$version" in
-                 1.[0-6]*)
+                 1.[0-8]*)
                   . ${PWD}/engine.auth.freebsd.10x
+                  ;;
+
+                 *)
+                   usage
+                 ;;
+             esac
+         ;;
+
+         admin)
+
+             # default appliance
+             if [ -z "$appliance" ]; then
+                 if [ "$PT_NAME" = "armv6" ]; then
+                     appliance="armv6"
+                     arm_sem=1
+                 else
+                     appliance="x64"
+                     x64_sem=1
+                 fi
+             fi
+
+             iprefix=${iprefix:-/opt/kronometrix/admin}
+             iuser=krmx
+
+             WORKSPACE="${WORKSPACE_PREFIX}/kronometrix"
+
+             case "$version" in
+                 1.[0-8]*)
+                  . ${PWD}/engine.admin.freebsd.10x
                   ;;
 
                  *)
@@ -619,7 +752,7 @@ case "$OS_NAME" in
              WORKSPACE="${WORKSPACE_PREFIX}/kronometrix"
 
              case "$version" in
-                 1.[0-6]*)
+                 1.[0-8]*)
                   . ${PWD}/engine.avmet.freebsd.10x
                   ;;
 
@@ -649,7 +782,7 @@ case "$OS_NAME" in
              WORKSPACE="${WORKSPACE_PREFIX}/kronometrix"
 
              case "$version" in
-                 1.[0-6]*)
+                 1.[0-8]*)
                   . ${PWD}/engine.vcam.freebsd.10x
                   ;;
 
@@ -678,7 +811,7 @@ case "$OS_NAME" in
              WORKSPACE="${WORKSPACE_PREFIX}/kronometrix"
 
              case "$version" in
-                 1.[0-6]*)
+                 1.[0-8]*)
                   . ${PWD}/engine.mesg.freebsd.10x
                   ;;
 
@@ -688,7 +821,7 @@ case "$OS_NAME" in
              esac
          ;;
 
-         kernel)
+         stats)
 
              # default appliance
              if [ -z "$appliance" ]; then
@@ -701,14 +834,43 @@ case "$OS_NAME" in
                  fi
              fi
       
-             iprefix=${iprefix:-/opt/kronometrix/kernel}
+             iprefix=${iprefix:-/opt/kronometrix/kernel/stats}
              iuser=krmx
              
              WORKSPACE="${WORKSPACE_PREFIX}/kronometrix"
 
              case "$version" in
-                 1.[0-6]*)
-                  . ${PWD}/engine.kernel.freebsd.10x
+                 1.[0-8]*)
+                  . ${PWD}/engine.kstats.freebsd.10x
+                  ;;
+
+                 *)
+                   usage
+                 ;;
+             esac
+         ;;
+
+         aggregates)
+
+             # default appliance
+             if [ -z "$appliance" ]; then
+                 if [ "$PT_NAME" = "armv6" ]; then
+                     appliance="armv6"
+                     arm_sem=1
+                 else
+                     appliance="x64"
+                     x64_sem=1
+                 fi
+             fi
+
+             iprefix=${iprefix:-/opt/kronometrix/kernel/agg}
+             iuser=krmx
+
+             WORKSPACE="${WORKSPACE_PREFIX}/kronometrix"
+
+             case "$version" in
+                 1.[0-8]*)
+                  . ${PWD}/engine.kagg.freebsd.10x
                   ;;
 
                  *)
@@ -725,7 +887,7 @@ case "$OS_NAME" in
              WORKSPACE="${WORKSPACE_PREFIX}/kronometrix"
 
              case "$version" in
-                 1.[0-6]*)
+                 1.[0-8]*)
                   . ${PWD}/engine.mon.freebsd.10x
                   ;;
 
@@ -878,7 +1040,7 @@ case "$module" in
         build_auth_openresty
         build_auth_template
         build_auth_router
-        build_auth_httpsimple
+        build_auth_http
         build_auth_luatz
         build_auth_libdate
 
@@ -898,6 +1060,56 @@ case "$module" in
 
     fi
     ;;
+
+
+ admin)
+    echo "" > ${BUILD_PATH}/${BUILD_LOG}
+
+    if [ $rpm_sem -eq 1 ]; then
+        if [ "x${DIST_ID}" = "xrhel" -o "x${DIST_ID}" = "xcentos" ]; then
+            build_admin_pkg
+        else
+            echo "Error: not a RPM installation, cannot build rpm pkg"
+            rm /var/tmp/${STATFILE}
+            exit 3
+        fi
+    elif [ $deb_sem -eq 1 ]; then
+        if [ "x${DIST_ID}" = "xdebian" -o \
+             "x${DIST_ID}" = "xubuntu" -o \
+             "x${DIST_ID}" = "xraspbian" ]; then
+            build_admin_pkg
+        else
+            echo "Error: not a DEB installation, cannot build deb pkg"
+            rm /var/tmp/${STATFILE}
+            exit 3
+        fi
+    elif [ $fbsd_pkg_sem -eq 1 ]; then
+        build_admin_pkg
+    else
+        build_admin_openresty
+        build_admin_fs
+        build_admin_template
+        build_admin_router
+        build_admin_http
+        build_admin_luatz
+        build_admin_prettycjson
+        build_admin_libdate
+
+        if [ ! -z "$build_num" ]; then
+            build_admin_inspect
+        fi
+
+        build_admin_config
+        build_admin_fin
+
+        # currently we support Linux(deb,rpm), FreeBSD(pkg)
+        if [ "$OS_NAME" = "linux" -o \
+             "$OS_NAME" = "freebsd"  ]; then
+            build_admin_pkg
+        fi
+    fi
+    ;;
+
 
  avmet)
     echo "" > ${BUILD_PATH}/${BUILD_LOG}
@@ -976,6 +1188,7 @@ case "$module" in
         build_vcam_httpsimple
         build_vcam_router
         build_vcam_luatz
+        build_vcam_fs
 
         if [ ! -z "$build_num" ]; then
             build_vcam_inspect
@@ -1037,12 +1250,12 @@ case "$module" in
     fi
     ;;
 
- kernel)
+ stats)
     echo "" > ${BUILD_PATH}/${BUILD_LOG}
 
     if [ $rpm_sem -eq 1 ]; then
         if [ "x${DIST_ID}" = "xrhel" -o "x${DIST_ID}" = "xcentos" ]; then
-            build_kernel_pkg
+            build_kstats_pkg
         else
             echo "Error: not a RPM installation, cannot build rpm pkg"
             rm /var/tmp/${STATFILE}
@@ -1052,43 +1265,97 @@ case "$module" in
         if [ "x${DIST_ID}" = "xdebian" -o \
              "x${DIST_ID}" = "xubuntu" -o \
              "x${DIST_ID}" = "xraspbian" ]; then
-            build_kernel_pkg
+            build_kstats_pkg
         else
             echo "Error: not a DEB installation, cannot build deb pkg"
             rm /var/tmp/${STATFILE}
             exit 3
         fi
     elif [ $fbsd_pkg_sem -eq 1 ]; then
-        build_kernel_pkg 
+        build_kstats_pkg 
     else 
-        build_kernel_openresty
-        build_kernel_fs
-        build_kernel_template
-        build_kernel_router
-        build_kernel_libdate
-        build_kernel_httpsimple
-        build_kernel_luatz
-        build_kernel_prettycjson
-        build_kernel_zlib
-        build_kernel_struct
-        build_kernel_zip
-        build_kernel_http
+        build_kstats_openresty
+        build_kstats_fs
+        build_kstats_template
+        build_kstats_router
+        build_kstats_libdate
+        build_kstats_luatz
+        build_kstats_prettycjson
+        build_kstats_zlib
+        build_kstats_struct
+        build_kstats_zip
+        build_kstats_http
 
         if [ ! -z "$build_num" ]; then
-            build_kernel_inspect
+            build_kstats_inspect
         fi
 
-        build_kernel_redis
-        build_kernel_config
-        build_kernel_fin
+        build_kstats_redis
+        build_kstats_config
+        build_kstats_fin
 
         # currently we support Linux deb, rpm
         if [ "$OS_NAME" = "linux" -o \
              "$OS_NAME" = "freebsd"  ]; then
-            build_kernel_pkg
+            build_kstats_pkg
         fi
     fi
     ;;
+
+
+
+ aggregates)
+    echo "" > ${BUILD_PATH}/${BUILD_LOG}
+
+    if [ $rpm_sem -eq 1 ]; then
+        if [ "x${DIST_ID}" = "xrhel" -o "x${DIST_ID}" = "xcentos" ]; then
+            build_kagg_pkg
+        else
+            echo "Error: not a RPM installation, cannot build rpm pkg"
+            rm /var/tmp/${STATFILE}
+            exit 3
+        fi
+    elif [ $deb_sem -eq 1 ]; then
+        if [ "x${DIST_ID}" = "xdebian" -o \
+             "x${DIST_ID}" = "xubuntu" -o \
+             "x${DIST_ID}" = "xraspbian" ]; then
+            build_kagg_pkg
+        else
+            echo "Error: not a DEB installation, cannot build deb pkg"
+            rm /var/tmp/${STATFILE}
+            exit 3
+        fi
+    elif [ $fbsd_pkg_sem -eq 1 ]; then
+        build_kagg_pkg
+    else
+        build_kagg_openresty
+        build_kagg_fs
+        build_kagg_template
+        build_kagg_router
+        build_kagg_libdate
+        build_kagg_luatz
+        #build_kagg_prettycjson
+        #build_kagg_zlib
+        #build_kagg_struct
+        #build_kagg_zip
+        build_kagg_http
+
+        if [ ! -z "$build_num" ]; then
+            build_kagg_inspect
+        fi
+
+        build_kagg_redis
+        build_kagg_config
+        build_kagg_fin
+
+        # currently we support Linux deb, rpm
+        if [ "$OS_NAME" = "linux" -o \
+             "$OS_NAME" = "freebsd"  ]; then
+            build_kagg_pkg
+        fi
+    fi
+    ;;
+
 
  mon)
     echo "" > ${BUILD_PATH}/${BUILD_LOG}
@@ -1340,12 +1607,12 @@ case "$module" in
         fi
     fi
 
-    if [ $auth_lua_resty_http_simple_done -ne 0 ]; then
-        if [ $auth_lua_resty_http_simple_done -eq 1 ]; then
-            echo  "# lib simple.lua: built and integrated"
+    if [ $auth_lua_resty_http_done -ne 0 ]; then
+        if [ $auth_lua_resty_http_done -eq 1 ]; then
+            echo  "# lib http: built and integrated"
         else
-            if [ $auth_lua_resty_http_simple_done -eq 90 ]; then
-                echo  "# lib simple.lua: not integrated"
+            if [ $auth_lua_resty_http_done -eq 90 ]; then
+                echo  "# lib http: not integrated"
             fi
         fi
     fi
@@ -1446,6 +1713,154 @@ case "$module" in
 
  ;;
 
+
+ admin)
+
+    if [ $admin_openresty_done -ne 0 ]; then
+        if [ $admin_openresty_done -eq 1 ]; then
+            echo "# openresty: built and integrated"
+        else
+            if [ $admin_openresty_done -eq 90 ]; then
+                echo "# openresty: not integrated"
+            fi
+        fi
+    fi
+
+    if [ $admin_lua_resty_template_done -ne 0 ]; then
+        if [ $admin_lua_resty_template_done -eq 1 ]; then
+            echo  "# lib lua-resty-template: built and integrated"
+        else
+            if [ $admin_lua_resty_template_done -eq 90 ]; then
+                echo  "# lib lua-resty-template: not integrated"
+            fi
+        fi
+    fi
+
+    if [ $admin_lua_router_done -ne 0 ]; then
+        if [ $admin_lua_router_done -eq 1 ]; then
+            echo  "# lib router.lua: built and integrated"
+        else
+            if [ $admin_lua_router_done -eq 90 ]; then
+                echo  "# lib router.lua: not integrated"
+            fi
+        fi
+    fi
+
+    if [ $admin_lua_resty_http_done -ne 0 ]; then
+        if [ $admin_lua_resty_http_done -eq 1 ]; then
+            echo  "# lib http: built and integrated"
+        else
+            if [ $admin_lua_resty_http_done -eq 90 ]; then
+                echo  "# lib http: not integrated"
+            fi
+        fi
+    fi
+
+    if [ $admin_luatz_done -ne 0 ]; then
+        if [ $admin_luatz_done -eq 1 ]; then
+            echo  "# lib luatz: built and integrated"
+        else
+            if [ $admin_luatz_done -eq 90 ]; then
+                echo  "# lib luatz: not integrated"
+            fi
+        fi
+    fi
+
+    if [ $admin_libdate_done -ne 0 ]; then
+        if [ $admin_libdate_done -eq 1 ]; then
+            echo  "# lib date.lua: built and integrated"
+        else
+            if [ $admin_libdone_done -eq 90 ]; then
+                echo  "# lib date.lua: not integrated"
+            fi
+        fi
+    fi
+
+    if [ $admin_luafs_done -ne 0 ]; then
+        if [ $admin_luafs_done -eq 1 ]; then
+            echo  "# lib luafilesystem: built and integrated"
+        else
+            if [ $admin_luafs_done -eq 90 ]; then
+                echo  "# lib luafilesystem: not integrated"
+            fi
+        fi
+    fi
+
+    if [ $admin_lua_resty_prettycjson_done -ne 0 ]; then
+        if [ $admin_lua_resty_prettycjson_done -eq 1 ]; then
+            echo  "# lib prettycjson.lua: built and integrated"
+        else
+            if [ $admin_lua_resty_prettycjson_done -eq 90 ]; then
+                echo  "# lib prettycjson.lua: not integrated"
+            fi
+        fi
+    fi
+
+    if [ ! -z "$build_num" ]; then
+        if [ $admin_lua_inspect_done -ne 0 ]; then
+            if [ $admin_lua_inspect_done -eq 1 ]; then
+                echo  "# lib inspect.lua: built and integrated"
+            else
+                if [ $admin_lua_inspect_done -eq 90 ]; then
+                    echo  "# lib inspect.lua: not integrated"
+                fi
+            fi
+        fi
+    fi
+
+    if [ $admin_config_done -ne 0 ]; then
+        if [ $admin_config_done -eq 1 ]; then
+            echo  "# analytics-admin nginx.conf: done"
+        else
+            if [ $admin_config_done -eq 90 ]; then
+                echo  "# analytics-admin nginx.conf: not done"
+            fi
+        fi
+    fi
+
+    if [ $admin_tar_pkg_done -eq 1 ]; then
+        echo "# tar pkg: ok"
+    else
+        if [ $admin_tar_pkg_done -eq 90 ]; then
+            echo "# tar pkg: failed"
+        fi
+    fi
+
+    if [ $admin_rpm_pkg_done -eq 1 ]; then
+        echo "# rpm pkg: ok"
+    else
+        if [ $admin_rpm_pkg_done -eq 90 ]; then
+            echo "# rpm pkg: failed"
+        fi
+    fi
+
+    if [ $admin_deb_pkg_done -eq 1 ]; then
+        echo "# deb pkg: ok"
+    else
+        if [ $admin_deb_pkg_done -eq 90 ]; then
+            echo "# deb pkg: failed"
+        fi
+    fi
+
+    if [ $admin_fbsd_pkg_done -eq 1 ]; then
+        echo "# freebsd pkg: ok"
+    else
+        if [ $admin_fbsd_pkg_done -eq 90 ]; then
+            echo "# freebsd pkg: failed"
+        fi
+    fi
+
+    if [ $admin_fin_done -ne 0 ]; then
+        if [ $admin_fin_done -eq 1 ]; then
+            echo  "# FINALIZE: done"
+        else
+            if [ $admin_fin_done -eq 90 ]; then
+                echo  "# FINALIZE: not done"
+            fi
+        fi
+    fi
+
+ ;;
 
  avmet)
 
@@ -1624,6 +2039,16 @@ case "$module" in
         else
             if [ $vcam_luatz_done -eq 90 ]; then
                 echo  "# lib luatz: not integrated"
+            fi
+        fi
+    fi
+
+    if [ $vcam_luafs_done -ne 0 ]; then
+        if [ $vcam_luafs_done -eq 1 ]; then
+            echo  "# lib luafileystem: built and integrated"
+        else
+            if [ $vcam_luafs_done -eq 90 ]; then
+                echo  "# lib luafilesystem: not integrated"
             fi
         fi
     fi
@@ -1856,203 +2281,383 @@ case "$module" in
 
  ;;
 
- kernel)
+ stats)
 
-    if [ $kernel_openresty_done -ne 0 ]; then
-        if [ $kernel_openresty_done -eq 1 ]; then
+    if [ $kstats_openresty_done -ne 0 ]; then
+        if [ $kstats_openresty_done -eq 1 ]; then
             echo "# openresty: built and integrated"
         else
-            if [ $kernel_openresty_done -eq 90 ]; then
+            if [ $kstats_openresty_done -eq 90 ]; then
                 echo "# openresty: not integrated"
             fi
         fi
     fi
 
-    if [ $kernel_luafs_done -ne 0 ]; then
-        if [ $kernel_luafs_done -eq 1 ]; then
+    if [ $kstats_luafs_done -ne 0 ]; then
+        if [ $kstats_luafs_done -eq 1 ]; then
             echo  "# lib luafilesystem: built and integrated"
         else
-            if [ $kernel_luafs_done -eq 90 ]; then
+            if [ $kstats_luafs_done -eq 90 ]; then
                 echo  "# lib luafilesystem: not integrated"
             fi
         fi
     fi
 
-    if [ $kernel_lua_resty_template_done -ne 0 ]; then
-        if [ $kernel_lua_resty_template_done -eq 1 ]; then
+    if [ $kstats_lua_resty_template_done -ne 0 ]; then
+        if [ $kstats_lua_resty_template_done -eq 1 ]; then
             echo  "# lib lua-resty-template: built and integrated"
         else
-            if [ $kernel_lua_resty_template_done -eq 90 ]; then
+            if [ $kstats_lua_resty_template_done -eq 90 ]; then
                 echo  "# lib lua-resty-template: not integrated"
             fi
         fi
     fi
 
-    if [ $kernel_lua_router_done -ne 0 ]; then
-        if [ $kernel_lua_router_done -eq 1 ]; then
+    if [ $kstats_lua_router_done -ne 0 ]; then
+        if [ $kstats_lua_router_done -eq 1 ]; then
             echo  "# lib router.lua: built and integrated"
         else
-            if [ $kernel_lua_router_done -eq 90 ]; then
+            if [ $kstats_lua_router_done -eq 90 ]; then
                 echo  "# lib router.lua: not integrated"
             fi
         fi
     fi
 
-    if [ $kernel_libdate_done -ne 0 ]; then
-        if [ $kernel_libdate_done -eq 1 ]; then
+    if [ $kstats_libdate_done -ne 0 ]; then
+        if [ $kstats_libdate_done -eq 1 ]; then
             echo  "# lib date.lua: built and integrated"
         else
-            if [ $kernel_libdone_done -eq 90 ]; then
+            if [ $kstats_libdone_done -eq 90 ]; then
                 echo  "# lib date.lua: not integrated"
             fi
         fi
     fi
 
-    if [ $kernel_lua_resty_http_simple_done -ne 0 ]; then
-        if [ $kernel_lua_resty_http_simple_done -eq 1 ]; then
-            echo  "# lib simple.lua: built and integrated"
-        else
-            if [ $kernel_lua_resty_http_simple_done -eq 90 ]; then
-                echo  "# lib simple.lua: not integrated"
-            fi
-        fi
-    fi
-
-    if [ $kernel_lua_resty_prettycjson_done -ne 0 ]; then
-        if [ $kernel_lua_resty_prettycjson_done -eq 1 ]; then
+    if [ $kstats_lua_resty_prettycjson_done -ne 0 ]; then
+        if [ $kstats_lua_resty_prettycjson_done -eq 1 ]; then
             echo  "# lib prettycjson.lua: built and integrated"
         else
-            if [ $kernel_lua_resty_prettycjson_done -eq 90 ]; then
+            if [ $kstats_lua_resty_prettycjson_done -eq 90 ]; then
                 echo  "# lib prettycjson.lua: not integrated"
             fi
         fi
     fi
 
-    if [ $kernel_luatz_done -ne 0 ]; then
-        if [ $kernel_luatz_done -eq 1 ]; then
+    if [ $kstats_luatz_done -ne 0 ]; then
+        if [ $kstats_luatz_done -eq 1 ]; then
             echo  "# lib luatz: built and integrated"
         else
-            if [ $kernel_luatz_done -eq 90 ]; then
+            if [ $kstats_luatz_done -eq 90 ]; then
                 echo  "# lib luatz: not integrated"
             fi
         fi
     fi
 
-    if [ $kernel_luazlib_done -ne 0 ]; then
-        if [ $kernel_luazlib_done -eq 1 ]; then
+    if [ $kstats_luazlib_done -ne 0 ]; then
+        if [ $kstats_luazlib_done -eq 1 ]; then
             echo  "# lib lua-zlib: built and integrated"
         else
-            if [ $kernel_luazlib_done -eq 90 ]; then
+            if [ $kstats_luazlib_done -eq 90 ]; then
                 echo  "# lib luazlib: not integrated"
             fi
         fi
     fi
 
-    if [ $kernel_struct_done -ne 0 ]; then
-        if [ $kernel_struct_done -eq 1 ]; then
+    if [ $kstats_struct_done -ne 0 ]; then
+        if [ $kstats_struct_done -eq 1 ]; then
             echo  "# lib struct: built and integrated"
         else
-            if [ $kernel_struct_done -eq 90 ]; then
+            if [ $kstats_struct_done -eq 90 ]; then
                 echo  "# lib struct: not integrated"
             fi
         fi
     fi
 
-    if [ $kernel_zipwriter_done -ne 0 ]; then
-        if [ $kernel_zipwriter_done -eq 1 ]; then
+    if [ $kstats_zipwriter_done -ne 0 ]; then
+        if [ $kstats_zipwriter_done -eq 1 ]; then
             echo  "# lib zipwriter: built and integrated"
         else
-            if [ $kernel_zipwriter_done -eq 90 ]; then
+            if [ $kstats_zipwriter_done -eq 90 ]; then
                 echo  "# lib zipwriter: not integrated"
             fi
         fi
     fi
 
-    if [ $kernel_lua_resty_http_done -ne 0 ]; then
-        if [ $kernel_lua_resty_http_done -eq 1 ]; then
+    if [ $kstats_lua_resty_http_done -ne 0 ]; then
+        if [ $kstats_lua_resty_http_done -eq 1 ]; then
             echo  "# lib lua-resty-http: built and integrated"
         else
-            if [ $kernel_lua_resty_http_done -eq 90 ]; then
+            if [ $kstats_lua_resty_http_done -eq 90 ]; then
                 echo  "# lib lua-resty-http: not integrated"
             fi
         fi
     fi
 
     if [ ! -z "$build_num" ]; then
-        if [ $kernel_lua_inspect_done -ne 0 ]; then
-            if [ $kernel_lua_inspect_done -eq 1 ]; then
+        if [ $kstats_lua_inspect_done -ne 0 ]; then
+            if [ $kstats_lua_inspect_done -eq 1 ]; then
                 echo  "# lib inspect.lua: built and integrated"
             else
-                if [ $kernel_lua_inspect_done -eq 90 ]; then
+                if [ $kstats_lua_inspect_done -eq 90 ]; then
                     echo  "# lib inspect.lua: not integrated"
                 fi
             fi
         fi
     fi
 
-    if [ $kernel_redis_done -ne 0 ]; then
-        if [ $kernel_redis_done -eq 1 ]; then
+    if [ $kstats_redis_done -ne 0 ]; then
+        if [ $kstats_redis_done -eq 1 ]; then
             echo  "# redis: built and integrated"
         else
-            if [ $kernel_redis_done -eq 90 ]; then
+            if [ $kstats_redis_done -eq 90 ]; then
                 echo  "# redis: not integrated"
             fi
         fi
     fi
 
-    if [ $kernel_config_done -ne 0 ]; then
-        if [ $kernel_config_done -eq 1 ]; then
+    if [ $kstats_config_done -ne 0 ]; then
+        if [ $kstats_config_done -eq 1 ]; then
             echo  "# analytics-kernel nginx.conf: done"
         else
-            if [ $kernel_config_done -eq 90 ]; then
+            if [ $kstats_config_done -eq 90 ]; then
                 echo  "# analytics-kernel nginx.conf: not done"
             fi
         fi
     fi
 
-    if [ $kernel_tar_pkg_done -eq 1 ]; then
+    if [ $kstats_tar_pkg_done -eq 1 ]; then
         echo "# tar pkg: ok"
     else
-        if [ $kernel_tar_pkg_done -eq 90 ]; then
+        if [ $kstats_tar_pkg_done -eq 90 ]; then
             echo "# tar pkg: failed"
         fi
     fi
 
-    if [ $kernel_rpm_pkg_done -eq 1 ]; then
+    if [ $kstats_rpm_pkg_done -eq 1 ]; then
         echo "# rpm pkg: ok"
     else
-        if [ $kernel_rpm_pkg_done -eq 90 ]; then
+        if [ $kstats_rpm_pkg_done -eq 90 ]; then
             echo "# rpm pkg: failed"
         fi
     fi
 
-    if [ $kernel_deb_pkg_done -eq 1 ]; then
+    if [ $kstats_deb_pkg_done -eq 1 ]; then
         echo "# deb pkg: ok"
     else
-        if [ $kernel_deb_pkg_done -eq 90 ]; then
+        if [ $kstats_deb_pkg_done -eq 90 ]; then
             echo "# deb pkg: failed"
         fi
     fi
 
-    if [ $kernel_fbsd_pkg_done -eq 1 ]; then
+    if [ $kstats_fbsd_pkg_done -eq 1 ]; then
         echo "# freebsd pkg: ok"
     else
-        if [ $kernel_fbsd_pkg_done -eq 90 ]; then
+        if [ $kstats_fbsd_pkg_done -eq 90 ]; then
             echo "# freebsd pkg: failed"
         fi
     fi
 
-    if [ $kernel_fin_done -ne 0 ]; then
-        if [ $kernel_fin_done -eq 1 ]; then
+    if [ $kstats_fin_done -ne 0 ]; then
+        if [ $kstats_fin_done -eq 1 ]; then
             echo  "# FINALIZE: done"
         else
-            if [ $kernel_fin_done -eq 90 ]; then
+            if [ $kstats_fin_done -eq 90 ]; then
                 echo  "# FINALIZE: not done"
             fi
         fi
     fi
 
  ;;
+
+
+
+ aggregates)
+
+    if [ $kagg_openresty_done -ne 0 ]; then
+        if [ $kagg_openresty_done -eq 1 ]; then
+            echo "# openresty: built and integrated"
+        else
+            if [ $kagg_openresty_done -eq 90 ]; then
+                echo "# openresty: not integrated"
+            fi
+        fi
+    fi
+
+    if [ $kagg_luafs_done -ne 0 ]; then
+        if [ $kagg_luafs_done -eq 1 ]; then
+            echo  "# lib luafilesystem: built and integrated"
+        else
+            if [ $kagg_luafs_done -eq 90 ]; then
+                echo  "# lib luafilesystem: not integrated"
+            fi
+        fi
+    fi
+
+    if [ $kagg_lua_resty_template_done -ne 0 ]; then
+        if [ $kagg_lua_resty_template_done -eq 1 ]; then
+            echo  "# lib lua-resty-template: built and integrated"
+        else
+            if [ $kagg_lua_resty_template_done -eq 90 ]; then
+                echo  "# lib lua-resty-template: not integrated"
+            fi
+        fi
+    fi
+
+
+    if [ $kagg_lua_router_done -ne 0 ]; then
+        if [ $kagg_lua_router_done -eq 1 ]; then
+            echo  "# lib router.lua: built and integrated"
+        else
+            if [ $kagg_lua_router_done -eq 90 ]; then
+                echo  "# lib router.lua: not integrated"
+            fi
+        fi
+    fi
+                
+    if [ $kagg_libdate_done -ne 0 ]; then
+        if [ $kagg_libdate_done -eq 1 ]; then
+            echo  "# lib date.lua: built and integrated"
+        else
+            if [ $kagg_libdone_done -eq 90 ]; then
+                echo  "# lib date.lua: not integrated"
+            fi
+        fi
+    fi
+
+    if [ $kagg_lua_resty_prettycjson_done -ne 0 ]; then
+        if [ $kagg_lua_resty_prettycjson_done -eq 1 ]; then
+            echo  "# lib prettycjson.lua: built and integrated"
+        else
+            if [ $kagg_lua_resty_prettycjson_done -eq 90 ]; then
+                echo  "# lib prettycjson.lua: not integrated"
+            fi
+        fi
+    fi
+
+    if [ $kagg_luatz_done -ne 0 ]; then
+        if [ $kagg_luatz_done -eq 1 ]; then
+            echo  "# lib luatz: built and integrated"
+        else
+            if [ $kagg_luatz_done -eq 90 ]; then
+                echo  "# lib luatz: not integrated"
+            fi
+        fi
+    fi
+
+
+    if [ $kagg_luazlib_done -ne 0 ]; then
+        if [ $kagg_luazlib_done -eq 1 ]; then
+            echo  "# lib lua-zlib: built and integrated"
+        else
+            if [ $kagg_luazlib_done -eq 90 ]; then
+                echo  "# lib luazlib: not integrated"
+            fi
+        fi
+    fi
+
+    if [ $kagg_struct_done -ne 0 ]; then
+        if [ $kagg_struct_done -eq 1 ]; then
+            echo  "# lib struct: built and integrated"
+        else
+            if [ $kagg_struct_done -eq 90 ]; then
+                echo  "# lib struct: not integrated"
+            fi
+        fi
+    fi
+
+    if [ $kagg_zipwriter_done -ne 0 ]; then
+        if [ $kagg_zipwriter_done -eq 1 ]; then
+            echo  "# lib zipwriter: built and integrated"
+        else
+            if [ $kagg_zipwriter_done -eq 90 ]; then
+                echo  "# lib zipwriter: not integrated"
+            fi
+        fi
+    fi
+
+    if [ $kagg_lua_resty_http_done -ne 0 ]; then
+        if [ $kagg_lua_resty_http_done -eq 1 ]; then
+            echo  "# lib lua-resty-http: built and integrated"
+        else
+            if [ $kagg_lua_resty_http_done -eq 90 ]; then
+                echo  "# lib lua-resty-http: not integrated"
+            fi
+        fi
+    fi
+
+    if [ ! -z "$build_num" ]; then
+        if [ $kagg_lua_inspect_done -ne 0 ]; then
+            if [ $kagg_lua_inspect_done -eq 1 ]; then
+                echo  "# lib inspect.lua: built and integrated"
+            else
+                if [ $kagg_lua_inspect_done -eq 90 ]; then
+                    echo  "# lib inspect.lua: not integrated"
+                fi
+            fi
+        fi
+    fi
+
+    if [ $kagg_redis_done -ne 0 ]; then
+        if [ $kagg_redis_done -eq 1 ]; then
+            echo  "# redis: built and integrated"
+        else
+            if [ $kagg_redis_done -eq 90 ]; then
+                echo  "# redis: not integrated"
+            fi
+        fi
+    fi
+
+    if [ $kagg_config_done -ne 0 ]; then
+        if [ $kagg_config_done -eq 1 ]; then
+            echo  "# analytics-kernel nginx.conf: done"
+        else
+            if [ $kagg_config_done -eq 90 ]; then
+                echo  "# analytics-kernel nginx.conf: not done"
+            fi
+        fi
+    fi
+
+    if [ $kagg_tar_pkg_done -eq 1 ]; then
+        echo "# tar pkg: ok"
+    else
+        if [ $kagg_tar_pkg_done -eq 90 ]; then
+            echo "# tar pkg: failed"
+        fi
+    fi
+                
+    if [ $kagg_rpm_pkg_done -eq 1 ]; then
+        echo "# rpm pkg: ok"
+    else
+        if [ $kagg_rpm_pkg_done -eq 90 ]; then
+            echo "# rpm pkg: failed"
+        fi
+    fi
+
+    if [ $kagg_deb_pkg_done -eq 1 ]; then
+        echo "# deb pkg: ok"
+    else
+        if [ $kagg_deb_pkg_done -eq 90 ]; then
+            echo "# deb pkg: failed"
+        fi
+    fi
+
+    if [ $kagg_fbsd_pkg_done -eq 1 ]; then
+        echo "# freebsd pkg: ok"
+    else
+        if [ $kagg_fbsd_pkg_done -eq 90 ]; then
+            echo "# freebsd pkg: failed"
+        fi
+    fi
+
+    if [ $kagg_fin_done -ne 0 ]; then
+        if [ $kagg_fin_done -eq 1 ]; then
+            echo  "# FINALIZE: done"
+        else
+            if [ $kagg_fin_done -eq 90 ]; then
+                echo  "# FINALIZE: not done"
+            fi
+        fi
+    fi
 
 
 esac
