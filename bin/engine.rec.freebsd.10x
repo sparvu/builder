@@ -508,15 +508,20 @@ if [ "$PT_NAME" = "amd64" ]; then
     /usr/bin/env PATH=${iprefix}/bin:${iprefix}/perl/bin:$PATH CC=cc \
          ./Configure BSD-x86_64 threads shared --prefix=${iprefix} \
           --openssldir=${iprefix}/openssl >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
-elif [ "$PT_NAME" = "armv6" ]; then
+elif [ "$PT_NAME" = "arm" ]; then
     /usr/bin/env PATH=${iprefix}/bin:${iprefix}/perl/bin:$PATH CC=cc \
         ./Configure BSD-generic32 threads shared --prefix=${iprefix} \
+        --openssldir=${iprefix}/openssl >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+elif [ "$PT_NAME" = "aarch64" ]; then
+    /usr/bin/env PATH=${iprefix}/bin:${iprefix}/perl/bin:$PATH CC=cc \
+        ./Configure BSD-generic64 threads shared  --prefix=${iprefix} \
         --openssldir=${iprefix}/openssl >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
 else
     env PATH=${iprefix}/bin:${iprefix}/perl/bin:$PATH CC=cc \
      ./Configure BSD-x86-elf threads shared --prefix=${iprefix} \
      --openssldir=${iprefix}/openssl >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
 fi
+
 
 if [ $? -ne 0 ]; then
     echo "Error: configure $dir failed !" |\
