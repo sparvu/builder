@@ -1506,6 +1506,8 @@ elif [ "$PT_NAME" = "i386" ]; then
     cp MANIFEST.i386 $pkgname/MANIFEST
 elif [ "$PT_NAME" = "armv6" ]; then
     cp MANIFEST.armv6 $pkgname/MANIFEST
+elif [ "$PT_NAME" = "aarch64" ]; then
+    cp MANIFEST.aarch64 $pkgname/MANIFEST
 fi
 
 cd ${pkgname}
