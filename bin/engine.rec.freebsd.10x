@@ -26,6 +26,7 @@
 # Engine: FreeBSD                                                 # 
 # ############################################################### #
 
+cpanver=0
 
 ### extract_archive
 extract_archive() {
@@ -326,6 +327,10 @@ build_rec_perlaws() {
 
 step1=0
 
+echo "############################################################"
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Submodule: perl aws" | tee -a ${BUILD_PATH}/${BUILD_LOG}
+
 # STEP 1
 echo "" >> ${BUILD_PATH}/${BUILD_LOG}
 echo "Info: Step 1 - Install Perl AWS..." |\
@@ -362,6 +367,10 @@ fi
 build_rec_perlcpan() {
 
 step1=0
+
+echo "############################################################"
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Submodule: perl cpan" | tee -a ${BUILD_PATH}/${BUILD_LOG}
 
 # STEP 1
 echo "" >> ${BUILD_PATH}/${BUILD_LOG}
