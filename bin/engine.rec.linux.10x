@@ -201,53 +201,9 @@ else
 fi
 
            
-# STEP 6
-echo "" >> ${BUILD_PATH}/${BUILD_LOG}
-echo "Info: Step 6 - CPAN modules" | tee -a ${BUILD_PATH}/${BUILD_LOG}
-
-cp ${BUILDER_PREFIX}/etc/Config.pm ${iprefix}/perl/lib/${cpanver}/CPAN
-
-for lib in Digest::SHA Proc::Daemon Proc::ProcessTable Proc::PID::File \
-           File::Tail Regexp::Common Filesys::Df Sys::Filesystem HTML::TableExtract \
-           JSON HTTP::Response UUID::Tiny Carp::Assert Net::Domain::TLD \
-           DateTime::Format::ISO8601 ExtUtils::PkgConfig Email::Valid \
-           Inline::MakeMaker Capture::Tiny Text::Template Linux::Info AnyEvent \
-           Inline::C Date::Calc Linux::Distribution inc::Module::Install DBI \
-           Tie::IxHash IO::Interface Redis \
-           File::stat File::Stat::Bits Net::NTP Filesys::DiskUsage Net::Ping
-do
-    if  [ "$lib" = "Inline::MakeMaker" -o "$lib" = "AnyEvent" ]; then
-        env PERL_MM_USE_DEFAULT=1 \
-        ${iprefix}/perl/bin/perl -MCPAN -e 'install "'$lib'"' >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
-        if [ $? -ne 0 ]; then
-            echo "Error: $lib installation failed !" |\
-                tee -a ${BUILD_LOG}/${module}.${version}.log
-            rm /var/tmp/build.${module}
-            exit 3
-        else
-            step6=`expr $step6 + 1`
-            continue
-        fi
-    else
-        ${iprefix}/perl/bin/perl -MCPAN -e 'install "'$lib'"' >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
-        if [ $? -ne 0 ]; then
-            echo "Error: $lib installation failed !" |\
-                tee -a ${BUILD_LOG}/${module}.${version}.log
-            rm /var/tmp/build.${module}
-            exit 3
-        else
-            step6=`expr $step6 + 1`
-            continue
-        fi
-    fi
-done
-
-# there are 35 perl modules install calls
-step6=`expr $step6 / 35`
-
-# final check; all 6 steps
-perl_done=`expr $step1 + $step2 + $step3 + $step4 + $step5 + $step6`
-if [ "$perl_done" -eq 6 ]; then
+# final check; all 5 steps
+perl_done=`expr $step1 + $step2 + $step3 + $step4 + $step5`
+if [ "$perl_done" -eq 5 ]; then
    perl_done=1
 else
    perl_done=90
@@ -465,6 +421,66 @@ clean_module
 
 # back to root
 cd ..
+
+}
+
+### perl cpan
+build_rec_perlcpan() {
+
+step1=0
+
+# STEP 1
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 1 - Install Perl CPAN modules" |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+cp ${BUILDER_PREFIX}/etc/Config.pm ${iprefix}/perl/lib/${cpanver}/CPAN
+
+for lib in Digest::SHA Proc::Daemon Proc::ProcessTable Proc::PID::File \
+           File::Tail Regexp::Common Filesys::Df Sys::Filesystem HTML::TableExtract \
+           JSON HTTP::Response UUID::Tiny Carp::Assert Net::Domain::TLD \
+           DateTime::Format::ISO8601 ExtUtils::PkgConfig Email::Valid \
+           Inline::MakeMaker Capture::Tiny Text::Template Linux::Info AnyEvent \
+           Inline::C Date::Calc Linux::Distribution inc::Module::Install DBI \
+           Tie::IxHash IO::Interface Redis \
+           File::stat File::Stat::Bits Net::NTP Filesys::DiskUsage Net::Ping
+do
+    if  [ "$lib" = "Inline::MakeMaker" -o "$lib" = "AnyEvent" ]; then
+        env PERL_MM_USE_DEFAULT=1 \
+        ${iprefix}/perl/bin/perl -MCPAN -e 'install "'$lib'"' >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+        if [ $? -ne 0 ]; then
+            echo "Error: $lib installation failed !" |\
+                tee -a ${BUILD_LOG}/${module}.${version}.log
+            rm /var/tmp/build.${module}
+            exit 3
+        else
+            step6=`expr $step6 + 1`
+            continue
+        fi
+    else
+        ${iprefix}/perl/bin/perl -MCPAN -e 'install "'$lib'"' >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+        if [ $? -ne 0 ]; then
+            echo "Error: $lib installation failed !" |\
+                tee -a ${BUILD_LOG}/${module}.${version}.log
+            rm /var/tmp/build.${module}
+            exit 3
+        else
+            step6=`expr $step6 + 1`
+            continue
+        fi
+    fi
+done
+
+# there are 35 perl modules install calls
+step1=`expr $step1 / 35`
+
+## final check; 1 step
+perlaws_done=$step1
+if [ "$perlcpan_done" -eq 1 ]; then
+   perlcpan_done=1
+else
+   perlcpan_done=90
+fi
 
 }
 
