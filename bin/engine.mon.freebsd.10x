@@ -39,6 +39,7 @@
 # Engine: FreeBSD                                                 # 
 # ############################################################### #
 
+cpanver=0
 
 ### extract_archive
 extract_archive() {
@@ -212,61 +213,10 @@ if [ $? -ne 0 ]; then
 else
     step5=1
 fi
-
            
-# STEP 6
-echo "" >> ${BUILD_PATH}/${BUILD_LOG}
-echo "Info: Step 6 - CPAN modules" | tee -a ${BUILD_PATH}/${BUILD_LOG}
-
-cp ${BUILDER_PREFIX}/etc/Config.pm ${iprefix}/perl/lib/${cpanver}/CPAN
-
-${iprefix}/perl/bin/perl -MCPAN -e 'install BSD::Sysctl' >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
-if [ $? -ne 0 ]; then
-    echo "Error: BSD::Sysctl installation failed !" |\
-     tee -a ${BUILD_PATH}/${BUILD_LOG}
-    rm /var/tmp/build.${module}
-    exit 3
-else
-    step6=`expr $step6 + 1`
-fi
-
-
-for lib in Digest::SHA Proc::Daemon Proc::ProcessTable Proc::PID::File File::Tail \
-           JSON::XS JSON HTTP::Response UUID::Tiny Carp::Assert \
-           Date::Calc Filesys::Df Tie::IxHash Redis Text::CSV_XS Text::CSV
-do
-    if  [ "$lib" = "JSON::XS" ]; then
-        env PERL_MM_USE_DEFAULT=1 \
-        ${iprefix}/perl/bin/perl -MCPAN -e 'install "'$lib'"' >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
-        if [ $? -ne 0 ]; then
-            echo "Error: $lib installation failed !" |\
-                tee -a ${BUILD_LOG}/${module}.${version}.log
-            rm /var/tmp/build.${module}
-            exit 3
-        else
-            step6=`expr $step6 + 1`
-            continue
-        fi
-    else
-        ${iprefix}/perl/bin/perl -MCPAN -e 'install "'$lib'"' >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
-        if [ $? -ne 0 ]; then
-            echo "Error: $lib installation failed !" |\
-                tee -a ${BUILD_LOG}/${module}.${version}.log
-            rm /var/tmp/build.${module}
-            exit 3
-        else
-            step6=`expr $step6 + 1`
-            continue
-        fi
-    fi
-done
-
-# there are 17 perl modules install calls
-step6=`expr $step6 / 17`
-
-# final check; all 6 steps
-mon_perl_done=`expr $step1 + $step2 + $step3 + $step4 + $step5 + $step6`
-if [ "$perl_done" -eq 6 ]; then
+# final check; all 5 steps
+mon_perl_done=`expr $step1 + $step2 + $step3 + $step4 + $step5`
+if [ "$perl_done" -eq 5 ]; then
    mon_perl_done=1
 else
    mon_perl_done=90
@@ -388,7 +338,7 @@ cd ..
 }
 
 ### perl Net::SSLeay
-build_mon_netssl() {
+build_mon_perlssl() {
 
 dir=Net-SSLeay
 step1=0
@@ -474,17 +424,87 @@ else
 fi
 
 ## final check; all 5 steps
-mon_netssl_done=`expr $step1 + $step2 + $step3 + $step4 + $step5`
-if [ "$mon_netssl_done" -eq 5 ]; then
-   mon_netssl_done=1
+mon_perlssl_done=`expr $step1 + $step2 + $step3 + $step4 + $step5`
+if [ "$mon_perlssl_done" -eq 5 ]; then
+   mon_perlssl_done=1
 else
-   mon_netssl_done=90
+   mon_perlssl_done=90
 fi
 
 clean_module
 
 # back to root
 cd ..
+
+}
+
+### perl-cpan-libs
+build_mon_perlcpan() {
+
+step1=0
+
+echo "############################################################"
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Submodule: perl cpan" | tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+# STEP 1
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 1 - Install Perl CPAN modules" | tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+cp ${BUILDER_PREFIX}/etc/Config.pm ${iprefix}/perl/lib/${cpanver}/CPAN
+        
+${iprefix}/perl/bin/perl -MCPAN -e 'install BSD::Sysctl' >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if [ $? -ne 0 ]; then
+    echo "Error: BSD::Sysctl installation failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step1=`expr $step1 + 1`
+fi
+    
+ 
+for lib in Digest::SHA Proc::Daemon Proc::ProcessTable Proc::PID::File File::Tail \
+           JSON::XS JSON HTTP::Response UUID::Tiny Carp::Assert \
+           Date::Calc Filesys::Df Tie::IxHash Redis Text::CSV_XS Text::CSV
+do
+    if  [ "$lib" = "JSON::XS" ]; then
+        env PERL_MM_USE_DEFAULT=1 \
+        ${iprefix}/perl/bin/perl -MCPAN -e 'install "'$lib'"' >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+        if [ $? -ne 0 ]; then
+            echo "Error: $lib installation failed !" |\
+                tee -a ${BUILD_LOG}/${module}.${version}.log
+            rm /var/tmp/build.${module}
+
+            exit 3
+        else
+            step1=`expr $step1 + 1`
+            continue
+        fi
+    else
+        ${iprefix}/perl/bin/perl -MCPAN -e 'install "'$lib'"' >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+        if [ $? -ne 0 ]; then
+            echo "Error: $lib installation failed !" |\
+                tee -a ${BUILD_LOG}/${module}.${version}.log
+            rm /var/tmp/build.${module}
+            exit 3
+        else
+            step1=`expr $step1 + 1`
+            continue
+        fi
+    fi
+done
+
+# there are 17 perl modules install calls
+step1=`expr $step1 / 17`
+
+## final check; 1 step
+mon_perlcpan_done=$step1
+if [ "$mon_perlcpan_done" -eq 1 ]; then
+   mon_perlcpan_done=1
+else
+   mon_perlcpan_done=90
+fi
 
 }
 
