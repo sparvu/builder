@@ -495,9 +495,11 @@ echo "Fixing SHARED_LDFLAGS flag..." >> ${BUILD_PATH}/${BUILD_LOG}
 if [ "$PT_NAME" = "amd64" -o "$PT_NAME" = "aarch64" ]; then
     sed "s:^LDFLAGS=.*:LDFLAGS=-m64 -L${iprefix}/lib -Wl,-rpath -Wl,${iprefix}/lib:" Makefile > Makefile.tmp
     sed "s:^LIB_LDFLAGS=.*:LIB_LDFLAGS=-m64 -L${iprefix}/lib -Wl,-rpath -Wl,${iprefix}/lib:" Makefile.tmp > Makefile.tmp2
+    mv Makefile.tmp2 Makefile
 else
     sed "s:^LDFLAGS=.*:LDFLAGS=-m32 -L${iprefix}/lib -Wl,-rpath -Wl,${iprefix}/lib:" Makefile > Makefile.tmp
     sed "s:^LIB_LDFLAGS=.*:LIB_LDFLAGS=-m32 -L${iprefix}/lib -Wl,-rpath -Wl,${iprefix}/lib:" Makefile.tmp > Makefile.tmp2
+    mv Makefile.tmp2 Makefile
 fi
 
 if [ $? -ne 0 ]; then
@@ -506,8 +508,6 @@ if [ $? -ne 0 ]; then
     rm /var/tmp/build.${module}
     exit 3
 fi
-mv Makefile.tmp2 Makefile
-
 
 make >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
 if [ $? -ne 0 ]; then

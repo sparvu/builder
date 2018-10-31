@@ -1370,12 +1370,7 @@ case "$module" in
         build_mon_ossl
         build_mon_perlssl
         build_mon_perlcpan
-
-        #build_mon_perl
-        #build_mon_ossl
-        #build_mon_netssl
         build_mon_scripts
-        #build_mon_config
         build_mon_pkg
     fi
     ;;
