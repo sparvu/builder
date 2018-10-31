@@ -2148,19 +2148,27 @@ case "$module" in
         fi
     fi
 
-    if [ $mon_procdaemon_done -eq 1 ]; then
-        echo "# proc-daemon: ok"
-    else
-        if [ $mon_procdaemon_done -eq 90 ]; then
-            echo "# proc-daemon: failed"
-        fi
-    fi
-
     if [ $mon_ossl_done -eq 1 ]; then
         echo "# openssl: ok"
     else
         if [ $mon_ossl_done -eq 90 ]; then
             echo "# openssl: failed"
+        fi
+    fi
+
+    if [ $mon_perlcpan_done -eq 1 ]; then
+        echo "# Perl CPAN: ok"
+    else
+        if [ $mon_perlcpan_done -eq 90 ]; then
+            echo "# Perl CPAN: failed"
+        fi
+    fi
+
+    if [ $mon_perlssl_done -eq 1 ]; then
+        echo "# Net-SSLeay: ok"
+    else
+        if [ $mon_perlssl_done -eq 90 ]; then
+            echo "# Net-SSLeay: failed"
         fi
     fi
 
