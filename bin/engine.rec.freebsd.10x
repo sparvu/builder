@@ -457,23 +457,26 @@ echo "" >> ${BUILD_PATH}/${BUILD_LOG}
 echo "Info: Step 2 - Configure $dir ..." |\
  tee -a ${BUILD_PATH}/${BUILD_LOG}
 
-if [ "$PT_NAME" = "amd64" ]; then
-    /usr/bin/env PATH=${iprefix}/bin:${iprefix}/perl/bin:$PATH CC=cc \
-         ./Configure BSD-x86_64 threads shared --prefix=${iprefix} \
-          --openssldir=${iprefix}/openssl >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
-elif [ "$PT_NAME" = "arm" ]; then
-    /usr/bin/env PATH=${iprefix}/bin:${iprefix}/perl/bin:$PATH CC=cc \
-        ./Configure BSD-generic32 threads shared --prefix=${iprefix} \
-        --openssldir=${iprefix}/openssl >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
-elif [ "$PT_NAME" = "aarch64" ]; then
-    /usr/bin/env PATH=${iprefix}/bin:${iprefix}/perl/bin:$PATH CC=cc \
-        ./Configure BSD-generic64 threads shared  --prefix=${iprefix} \
-        --openssldir=${iprefix}/openssl >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
-else
-    env PATH=${iprefix}/bin:${iprefix}/perl/bin:$PATH CC=cc \
-     ./Configure BSD-x86-elf threads shared --prefix=${iprefix} \
-     --openssldir=${iprefix}/openssl >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
-fi
+./config -L${iprefix} -Wl,-rpath -Wl,${iprefix}/lib \
+--prefix=${iprefix} --openssldir=${iprefix}/ssl
+
+#if [ "$PT_NAME" = "amd64" ]; then
+#    /usr/bin/env PATH=${iprefix}/bin:${iprefix}/perl/bin:$PATH CC=cc \
+#         ./Configure BSD-x86_64 threads shared --prefix=${iprefix} \
+#          --openssldir=${iprefix}/openssl >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+#elif [ "$PT_NAME" = "arm" ]; then
+#    /usr/bin/env PATH=${iprefix}/bin:${iprefix}/perl/bin:$PATH CC=cc \
+#        ./Configure BSD-generic32 threads shared --prefix=${iprefix} \
+#        --openssldir=${iprefix}/openssl >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+#elif [ "$PT_NAME" = "aarch64" ]; then
+#    /usr/bin/env PATH=${iprefix}/bin:${iprefix}/perl/bin:$PATH CC=cc \
+#        ./Configure BSD-generic64 threads shared  --prefix=${iprefix} \
+#        --openssldir=${iprefix}/openssl >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+#else
+#    env PATH=${iprefix}/bin:${iprefix}/perl/bin:$PATH CC=cc \
+#     ./Configure BSD-x86-elf threads shared --prefix=${iprefix} \
+#     --openssldir=${iprefix}/openssl >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+#fi
 
 
 if [ $? -ne 0 ]; then
@@ -491,23 +494,23 @@ echo "Info: Step 3 - Make $dir..." |\
  tee -a ${BUILD_PATH}/${BUILD_LOG}
 
 
-echo "Fixing SHARED_LDFLAGS flag..." >> ${BUILD_PATH}/${BUILD_LOG}
-if [ "$PT_NAME" = "amd64" -o "$PT_NAME" = "aarch64" ]; then
-    sed "s:^LDFLAGS=.*:LDFLAGS=-m64 -L${iprefix}/lib -Wl,-rpath -Wl,${iprefix}/lib:" Makefile > Makefile.tmp
-    sed "s:^LIB_LDFLAGS=.*:LIB_LDFLAGS=-m64 -L${iprefix}/lib -Wl,-rpath -Wl,${iprefix}/lib:" Makefile.tmp > Makefile.tmp2
-    mv Makefile.tmp2 Makefile
-else
-    sed "s:^LDFLAGS=.*:LDFLAGS=-m32 -L${iprefix}/lib -Wl,-rpath -Wl,${iprefix}/lib:" Makefile > Makefile.tmp
-    sed "s:^LIB_LDFLAGS=.*:LIB_LDFLAGS=-m32 -L${iprefix}/lib -Wl,-rpath -Wl,${iprefix}/lib:" Makefile.tmp > Makefile.tmp2
-    mv Makefile.tmp2 Makefile
-fi
-
-if [ $? -ne 0 ]; then
-    echo "Error: fixing SHARED_LDFLAGS Makefile failed !" |\
-     tee -a ${BUILD_PATH}/${BUILD_LOG}
-    rm /var/tmp/build.${module}
-    exit 3
-fi
+#echo "Fixing SHARED_LDFLAGS flag..." >> ${BUILD_PATH}/${BUILD_LOG}
+#if [ "$PT_NAME" = "amd64" -o "$PT_NAME" = "aarch64" ]; then
+#    sed "s:^LDFLAGS=.*:LDFLAGS=-m64 -L${iprefix}/lib -Wl,-rpath -Wl,${iprefix}/lib:" Makefile > Makefile.tmp
+#    sed "s:^LIB_LDFLAGS=.*:LIB_LDFLAGS=-m64 -L${iprefix}/lib -Wl,-rpath -Wl,${iprefix}/lib:" Makefile.tmp > Makefile.tmp2
+#    mv Makefile.tmp2 Makefile
+#else
+#    sed "s:^LDFLAGS=.*:LDFLAGS=-m32 -L${iprefix}/lib -Wl,-rpath -Wl,${iprefix}/lib:" Makefile > Makefile.tmp
+#    sed "s:^LIB_LDFLAGS=.*:LIB_LDFLAGS=-m32 -L${iprefix}/lib -Wl,-rpath -Wl,${iprefix}/lib:" Makefile.tmp > Makefile.tmp2
+#    mv Makefile.tmp2 Makefile
+#fi
+#
+#if [ $? -ne 0 ]; then
+#    echo "Error: fixing SHARED_LDFLAGS Makefile failed !" |\
+#     tee -a ${BUILD_PATH}/${BUILD_LOG}
+#    rm /var/tmp/build.${module}
+#    exit 3
+#fi
 
 make >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
 if [ $? -ne 0 ]; then
