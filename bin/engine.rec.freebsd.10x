@@ -389,7 +389,7 @@ else
 fi
 
 for lib in Digest::SHA Proc::Daemon Proc::ProcessTable Proc::PID::File \
-           File::Tail Regexp::Common Filesys::Df Sys::Filesystem \
+           File::Tail Regexp::Common Filesys::Df Sys::Filesystem JSON::XS\
            JSON HTTP::Response UUID::Tiny Carp::Assert Net::Domain::TLD \
            DateTime::Format::ISO8601 Sys::HostIP ExtUtils::PkgConfig \
            Inline::MakeMaker Capture::Tiny Email::Valid DBI \
@@ -397,7 +397,7 @@ for lib in Digest::SHA Proc::Daemon Proc::ProcessTable Proc::PID::File \
            Tie::IxHash IO::Interface File::stat File::Stat::Bits Net::NTP \
            Filesys::DiskUsage Net::Ping inc::Module::Install AnyEvent Redis
 do
-    if  [ "$lib" = "Inline::MakeMaker" -o "$lib" = "AnyEvent" ]; then
+    if  [ "$lib" = "Inline::MakeMaker" -o  "$lib" = "JSON::XS" -o "$lib" = "AnyEvent" ]; then
         env PERL_MM_USE_DEFAULT=1 \
         ${iprefix}/perl/bin/perl -MCPAN -e 'install "'$lib'"' >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
         if [ $? -ne 0 ]; then
