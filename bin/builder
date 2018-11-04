@@ -90,7 +90,8 @@ tests_done=0
 netcurl_done=0
 x509_done=0
 procdaemon_done=0
-perlssl_done=0
+perlnetssleay_done=0
+perliossl_done=0
 perli2c_done=0
 perlaws_done=0
 perlcpan_done=0
@@ -979,7 +980,8 @@ case "$module" in
     else 
         build_rec_perl
         build_rec_ossl
-        build_rec_perlssl
+        build_rec_perlnetssleay
+        build_rec_perliossl
         build_rec_perlcpan
         build_rec_perlaws
 
@@ -1427,11 +1429,19 @@ case "$module" in
         fi
     fi
 
-    if [ $perlssl_done -eq 1 ]; then
+    if [ $perlnetssleay_done -eq 1 ]; then
         echo "# Net-SSLeay: ok"
     else
-        if [ $perlssl_done -eq 90 ]; then
+        if [ $perlnetssleay_done -eq 90 ]; then
             echo "# Net-SSLeay: failed"
+        fi
+    fi
+
+    if [ $perliossl_done -eq 1 ]; then
+        echo "# IO-Socket-SSL: ok"
+    else
+        if [ $perlnetssleay_done -eq 90 ]; then
+            echo "# IO-Socket-SSL: failed"
         fi
     fi
 
