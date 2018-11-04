@@ -207,6 +207,8 @@ if [ ! -f ${iprefix}/perl/bin/perl5 ]; then
     ln -s ${iprefix}/perl/bin/perl ${iprefix}/perl/bin/perl5
 fi
 
+cp ${BUILDER_PREFIX}/etc/Config.pm ${iprefix}/perl/lib/${cpanver}/CPAN
+
 # final check; all 5 steps
 perl_done=`expr $step1 + $step2 + $step3 + $step4 + $step5`
 if [ "$perl_done" -eq 5 ]; then
@@ -375,8 +377,6 @@ echo "Submodule: perl cpan" | tee -a ${BUILD_PATH}/${BUILD_LOG}
 # STEP 1
 echo "" >> ${BUILD_PATH}/${BUILD_LOG}
 echo "Info: Step 1 - Install Perl CPAN modules" | tee -a ${BUILD_PATH}/${BUILD_LOG}
-
-cp ${BUILDER_PREFIX}/etc/Config.pm ${iprefix}/perl/lib/${cpanver}/CPAN
 
 ${iprefix}/perl/bin/perl -MCPAN -e 'install BSD::Sysctl' >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
 if [ $? -ne 0 ]; then
