@@ -1896,7 +1896,7 @@ fi
 
 
 # set release notes
-cp RELEASENOTES.${OS_NAME} ${iprefix}/RELEASENOTES
+cp CHANGELOG.${OS_NAME} ${iprefix}/CHANGELOG
 if [ $? -ne 0 ]; then
     echo "Error: cannot install release.notes !" |\
       tee -a ${BUILD_PATH}/${BUILD_LOG}
