@@ -993,10 +993,9 @@ case "$module" in
             build_rec_deviceusb
       elif [ "$PT_NAME" = "armv7l" ]; then
             build_rec_deviceusb
-            build_rec_i2c
+            #build_rec_i2c
         fi
 
-        #build_rec_cares
         build_rec_curl
         build_rec_ncurl
         build_rec_x509
