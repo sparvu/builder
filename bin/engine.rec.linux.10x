@@ -381,10 +381,9 @@ fi
 echo "" >> ${BUILD_PATH}/${BUILD_LOG}
 echo "Info: Step 4 - Make install $dir..." |\
  tee -a ${BUILD_PATH}/${BUILD_LOG}
-make test >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
 make install >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
 if [ $? -ne 0 ]; then
-    echo "Error: make install Proc::Daemon failed !" |\
+    echo "Error: make install Net-SSLeay failed !" |\
      tee -a ${BUILD_PATH}/${BUILD_LOG}
     rm /var/tmp/build.${module}
     exit 3
