@@ -22,7 +22,15 @@
 OS_NAME=`uname -s | tr '[A-Z]' '[a-z]'`
 MH_NAME=`uname -m | tr '[A-Z]' '[a-z]'`
 PL_NAME=`uname -p | tr '[A-Z]' '[a-z]'`
-HW_NAME=`uname -i | tr '[A-Z]' '[a-z]'`
+
+# test uname -i
+uname -i > /dev/null 2>&1
+if [ $? -eq 0 ]; then
+    HW_NAME=`uname -i | tr '[A-Z]' '[a-z]'`
+else
+    HW_NAME=${MH_NAME}
+fi
+
 HOSTNAME=`uname -n`
 
 if [ "$PL_NAME" = "unknown" ]; then
@@ -83,6 +91,13 @@ case "$OS_NAME" in
         USER_ID=`/usr/bin/id -u`
         DIST_ID="freebsd"
         RELOS=`echo $KERNEL | sed 's/\-.*//'`
+    ;;
+
+    darwin)
+        KERNEL=`uname -r`
+        USER_ID=`/usr/bin/id -u`
+        DIST_ID="macos"
+        RELOS=${KERNEL}
     ;;
 
     *)
