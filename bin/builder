@@ -28,9 +28,13 @@ cat << END
 Usage: $0 [-ht] [-p prefix_path]
           [-b build_number] [-m module_name] 
           [-P platform] pkg version
-pkg:
-   recording, auth, admin, avmet, vcam, stats, agg, mesg, mon
-version:
+
+Supported packages
+   KDR: recording
+   KA: auth, admin, stats, aggregates, mesh, mon
+   KBUS: avmet, vcam
+
+Version:
    2.0.1
 
 OPTIONS
@@ -657,6 +661,35 @@ case "$OS_NAME" in
 
     ;;
 
+
+    darwin)
+
+        case "$module" in
+         recording)
+
+             iprefix=${iprefix:-/opt/kronometrix}
+             iuser=krmx
+
+             WORKSPACE="${WORKSPACE_PREFIX}/kronometrix"
+
+             case "$version" in
+                 1.[0-8]*)
+                  . ${PWD}/engine.rec.darwin.10x
+                  ;;
+
+                 *)
+                   usage
+                 ;;
+             esac
+         ;;
+
+         *)
+            usage
+         ;;
+
+        esac
+
+    ;;
 
     freebsd)
 
