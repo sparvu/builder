@@ -241,7 +241,8 @@ mesg_fbsd_pkg_done=0
 mon_perl_done=0
 mon_perlcpan_done=0
 mon_ossl_done=0
-mon_perlssl_done=0
+mon_perlssleay_done=0
+mon_perliossl_done=0
 mon_procdaemon_done=0
 mon_pkg_done=0
 mon_tar_pkg_done=0
@@ -1369,7 +1370,8 @@ case "$module" in
     else 
         build_mon_perl
         build_mon_ossl
-        build_mon_perlssl
+        build_mon_perlnetssleay
+        build_mon_perliossl
         build_mon_perlcpan
         build_mon_scripts
         build_mon_pkg
@@ -2168,11 +2170,19 @@ case "$module" in
         fi
     fi
 
-    if [ $mon_perlssl_done -eq 1 ]; then
+    if [ $mon_perlssleay_done -eq 1 ]; then
         echo "# Net-SSLeay: ok"
     else
-        if [ $mon_perlssl_done -eq 90 ]; then
+        if [ $mon_perlssleay_done -eq 90 ]; then
             echo "# Net-SSLeay: failed"
+        fi
+    fi
+
+    if [ $mon_perliossl_done -eq 1 ]; then
+        echo "# IO-Socket-SSL: ok"
+    else
+        if [ $mon_perlnetssleay_done -eq 90 ]; then
+            echo "# IO-Socket-SSL: failed"
         fi
     fi
 
