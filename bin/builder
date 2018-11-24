@@ -2,7 +2,7 @@
 #
 #  Kronometrix Development tools, builder the master script engine 
 #
-#  Copyright (c) 2017 Stefan Parvu (www.kronometrix.org).
+#  Copyright (c) 2018 Stefan Parvu (www.kronometrix.org).
 #
 #  This program is free software; you can redistribute it and/or
 #  modify it under the terms of the GNU General Public License
@@ -20,32 +20,32 @@
 #
 #  (http://www.gnu.org/copyleft/gpl.html)
 
-# VERSION: 4.1
+# VERSION: 4.2
 
 usage() {
 
 cat << END
 Usage: $0 [-ht] [-p prefix_path]
           [-b build_number] [-m module_name] 
-          [-a appliance] pkg version
+          [-P platform] pkg version
 pkg:
    recording, auth, admin, avmet, vcam, stats, agg, mesg, mon
 version:
-   1.0.0
+   2.0.1
 
 OPTIONS
-  -a appliance: x64, arm
+  -P platform: x64, arm
   -b build_number: 01, 10, 102
   -m module_name: perl, openssl, idn, curl,  sysstat, scripts
   -p prefix_path: /opt/kronometrix
   -t test_mode
   -h help
 
-  eg, builder recording 1.0.0       # build recording 0.73
+  eg, builder recording 1.3.20      # build recording 1.3.20
       builder auth 1.0.0            # build analytics auth 1.0.0
-      builder -a arm auth 1.0.0     # build arm analytics auth 1.0.0
+      builder -P arm auth 1.0.0     # build arm analytics auth 1.0.0
       builder stats  1.0.0          # build analytics kernel stats 1.0.0
-      builder mon 1.0.17            # build appliance mon 1.0.17
+      builder mon 1.0.17            # build platform mon 1.0.17
 
 Notes:
    Make sure you have defined WORKSPACE_PREFIX variable before running
@@ -104,7 +104,7 @@ rpm_pkg_done=0
 fbsd_pkg_done=0
 ##
 
-##appliance
+##platform
 x64_sem=0
 arm_sem=0
 ##
@@ -255,14 +255,14 @@ mon_done=0
 PWD=`dirname $0`
 . ${PWD}/setenv
 
-while getopts ":a:b:m:p:ht" arg
+while getopts ":P:b:m:p:ht" arg
 do
     case "${arg}" in
 
-    a)
-        appliance=$OPTARG
+    P)
+        platform=$OPTARG
 
-        case "$appliance" in
+        case "$platform" in
             x64)
                 x64_sem=1
             ;;
@@ -272,7 +272,7 @@ do
             ;;
 
             *)
-                echo "Not supported appliance type!"
+                echo "Not supported platform type!"
                 usage
             ;;
         esac
@@ -444,13 +444,13 @@ case "$OS_NAME" in
 
          auth)
 
-             # default appliance
-             if [ -z "$appliance" ]; then
+             # default platform
+             if [ -z "$platform" ]; then
                  if [ "$PT_NAME" = "armv6l" ]; then
-                     appliance="arm"
+                     platform="arm"
                      arm_sem=1
                  else
-                     appliance="x64"
+                     platform="x64"
                      x64_sem=1
                  fi
              fi
@@ -474,13 +474,13 @@ case "$OS_NAME" in
 
          admin)
 
-             # default appliance
-             if [ -z "$appliance" ]; then
+             # default platform
+             if [ -z "$platform" ]; then
                  if [ "$PT_NAME" = "armv6l" ]; then
-                     appliance="arm"
+                     platform="arm"
                      arm_sem=1
                  else
-                     appliance="x64"
+                     platform="x64"
                      x64_sem=1
                  fi
              fi
@@ -504,13 +504,13 @@ case "$OS_NAME" in
 
          avmet)
    
-             # default appliance
-             if [ -z "$appliance" ]; then
+             # default platform
+             if [ -z "$platform" ]; then
                  if [ "$PT_NAME" = "armv6l" ]; then
-                     appliance="arm"
+                     platform="arm"
                      arm_sem=1
                  else
-                     appliance="x64"
+                     platform="x64"
                      x64_sem=1
                  fi
              fi
@@ -534,13 +534,13 @@ case "$OS_NAME" in
 
          vcam)
 
-             # default appliance
-             if [ -z "$appliance" ]; then
+             # default platform
+             if [ -z "$platform" ]; then
                  if [ "$PT_NAME" = "armv6l" ]; then
-                     appliance="arm"
+                     platform="arm"
                      arm_sem=1
                  else
-                     appliance="x64"
+                     platform="x64"
                      x64_sem=1
                  fi
              fi
@@ -564,13 +564,13 @@ case "$OS_NAME" in
 
          mesg)
 
-             # default appliance
-             if [ -z "$appliance" ]; then
+             # default platform
+             if [ -z "$platform" ]; then
                  if [ "$PT_NAME" = "armv6l" ]; then
-                     appliance="arm"
+                     platform="arm"
                      arm_sem=1
                  else
-                     appliance="x64"
+                     platform="x64"
                      x64_sem=1
                  fi
              fi
@@ -593,13 +593,13 @@ case "$OS_NAME" in
 
          stats)
 
-             # default appliance
-             if [ -z "$appliance" ]; then
+             # default platform
+             if [ -z "$platform" ]; then
                  if [ "$PT_NAME" = "armv6l" ]; then
-                     appliance="arm"
+                     platform="arm"
                      arm_sem=1
                  else
-                     appliance="x64"
+                     platform="x64"
                      x64_sem=1
                  fi
              fi
@@ -623,13 +623,13 @@ case "$OS_NAME" in
 
          aggregates)
 
-             # default appliance
-             if [ -z "$appliance" ]; then
+             # default platform
+             if [ -z "$platform" ]; then
                  if [ "$PT_NAME" = "armv6l" ]; then
-                     appliance="arm"
+                     platform="arm"
                      arm_sem=1
                  else
-                     appliance="x64"
+                     platform="x64"
                      x64_sem=1
                  fi
              fi
@@ -681,13 +681,13 @@ case "$OS_NAME" in
 
          auth)
 
-             # default appliance
-             if [ -z "$appliance" ]; then
+             # default platform
+             if [ -z "$platform" ]; then
                  if [ "$PT_NAME" = "armv6" ]; then
-                     appliance="armv6"
+                     platform="armv6"
                      arm_sem=1
                  else
-                     appliance="x64"
+                     platform="x64"
                      x64_sem=1
                  fi
              fi
@@ -710,13 +710,13 @@ case "$OS_NAME" in
 
          admin)
 
-             # default appliance
-             if [ -z "$appliance" ]; then
+             # default platform
+             if [ -z "$platform" ]; then
                  if [ "$PT_NAME" = "armv6" ]; then
-                     appliance="armv6"
+                     platform="armv6"
                      arm_sem=1
                  else
-                     appliance="x64"
+                     platform="x64"
                      x64_sem=1
                  fi
              fi
@@ -739,13 +739,13 @@ case "$OS_NAME" in
 
          avmet)
             
-             # default appliance
-             if [ -z "$appliance" ]; then
+             # default platform
+             if [ -z "$platform" ]; then
                  if [ "$PT_NAME" = "armv6" ]; then
-                     appliance="armv6"
+                     platform="armv6"
                      arm_sem=1
                  else
-                     appliance="x64"
+                     platform="x64"
                      x64_sem=1
                  fi
              fi
@@ -769,13 +769,13 @@ case "$OS_NAME" in
 
          vcam)
 
-             # default appliance
-             if [ -z "$appliance" ]; then
+             # default platform
+             if [ -z "$platform" ]; then
                  if [ "$PT_NAME" = "armv6" ]; then
-                     appliance="armv6"
+                     platform="armv6"
                      arm_sem=1
                  else
-                     appliance="x64"
+                     platform="x64"
                      x64_sem=1
                  fi
              fi
@@ -798,13 +798,13 @@ case "$OS_NAME" in
 
          mesg)
 
-             # default appliance
-             if [ -z "$appliance" ]; then
+             # default platform
+             if [ -z "$platform" ]; then
                  if [ "$PT_NAME" = "armv6" ]; then
-                     appliance="armv6"
+                     platform="armv6"
                      arm_sem=1
                  else
-                     appliance="x64"
+                     platform="x64"
                      x64_sem=1
                  fi
              fi
@@ -827,13 +827,13 @@ case "$OS_NAME" in
 
          stats)
 
-             # default appliance
-             if [ -z "$appliance" ]; then
+             # default platform
+             if [ -z "$platform" ]; then
                  if [ "$PT_NAME" = "armv6" ]; then
-                     appliance="armv6"
+                     platform="armv6"
                      arm_sem=1
                  else
-                     appliance="x64"
+                     platform="x64"
                      x64_sem=1
                  fi
              fi
@@ -856,13 +856,13 @@ case "$OS_NAME" in
 
          aggregates)
 
-             # default appliance
-             if [ -z "$appliance" ]; then
+             # default platform
+             if [ -z "$platform" ]; then
                  if [ "$PT_NAME" = "armv6" ]; then
-                     appliance="armv6"
+                     platform="armv6"
                      arm_sem=1
                  else
-                     appliance="x64"
+                     platform="x64"
                      x64_sem=1
                  fi
              fi
@@ -942,8 +942,8 @@ echo "#################################################################"
 echo "# Build Engine                                                  #"
 echo "#################################################################"
 echo "# Start: `date`"
-if [ ! -z "$appliance" ]; then
-    echo "# Appliance: $appliance"
+if [ ! -z "$platform" ]; then
+    echo "# Appliance: $platform"
 fi
 echo "# Target: ${OS_NAME} ${PT_NAME}"
 echo "# Module: $module"
@@ -1390,8 +1390,8 @@ esac
 echo "#################################################################"
 echo "# SUMMARY"
 echo "# Target:  ${OS_NAME} ${PT_NAME}"
-if [ ! -z "$appliance" ]; then
-    echo "# Appliance: $appliance"
+if [ ! -z "$platform" ]; then
+    echo "# Appliance: $platform"
 fi
 if [ ! -z "$COMPILER" ]; then
     echo "# Compiler: ${COMPILER}"
