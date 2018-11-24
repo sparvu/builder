@@ -37,7 +37,7 @@ if [ "$PL_NAME" = "unknown" ]; then
     PT_NAME=${MH_NAME}
 elif [ "$MH_NAME" = "arm" ]; then
     PT_NAME=${PL_NAME}
-elif [ "$OS_NAME" = darwin" ]; then
+elif [ "$OS_NAME" = "darwin" ]; then
     PT_NAME=${HW_NAME}
 else
     PT_NAME=${PL_NAME}
