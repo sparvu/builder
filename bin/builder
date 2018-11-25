@@ -1018,7 +1018,7 @@ case "$module" in
         build_rec_perlnetssleay
         build_rec_perliossl
 
-        if [ "$OS_NAME" = "freebsd" ]; then
+        if [ "$OS_NAME" = "darwin" ]; then
             build_rec_statgrab
         fi
 
