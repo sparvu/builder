@@ -99,6 +99,7 @@ perliossl_done=0
 perli2c_done=0
 perlaws_done=0
 perlcpan_done=0
+statgrab_done=0
 deviceusb_done=0
 deviceserial_done=0
 sysstat_done=0
@@ -1016,6 +1017,11 @@ case "$module" in
         build_rec_ossl
         build_rec_perlnetssleay
         build_rec_perliossl
+
+        if [ "$OS_NAME" = "freebsd" ]; then
+            build_rec_statgrab
+        fi
+
         build_rec_perlcpan
         build_rec_perlaws
 
@@ -1476,6 +1482,14 @@ case "$module" in
     else
         if [ $perlnetssleay_done -eq 90 ]; then
             echo "# IO-Socket-SSL: failed"
+        fi
+    fi
+
+    if [ $statgrab_done -eq 1 ]; then
+        echo "# libstatgrab: ok"
+    else
+        if [ $statgrab_done -eq 90 ]; then
+            echo "# libstatgrab: failed"
         fi
     fi
 

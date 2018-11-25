@@ -20,7 +20,7 @@
 #
 #  (http://www.gnu.org/copyleft/gpl.html)
 
-# VERSION: 1.0
+# VERSION: 1.1
 
 # ############################################################### #
 # Engine: Darwin                                                  # 
@@ -436,24 +436,15 @@ echo "Submodule: perl cpan" | tee -a ${BUILD_PATH}/${BUILD_LOG}
 echo "" >> ${BUILD_PATH}/${BUILD_LOG}
 echo "Info: Step 1 - Install Perl CPAN modules" | tee -a ${BUILD_PATH}/${BUILD_LOG}
 
-${iprefix}/perl/bin/perl -MCPAN -e 'install BSD::Sysctl' >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
-if [ $? -ne 0 ]; then
-    echo "Error: BSD::Sysctl installation failed !" |\
-     ee -a ${BUILD_PATH}/${BUILD_LOG}
-    rm /var/tmp/build.${module}
-    exit 3
-else
-    step1=`expr $step1 + 1`
-fi
-
 for lib in Digest::SHA Proc::Daemon Proc::ProcessTable Proc::PID::File \
            File::Tail Regexp::Common Filesys::Df Sys::Filesystem JSON::XS \
            JSON HTTP::Response UUID::Tiny Carp::Assert Net::Domain::TLD \
-           Test::Kwalitee::Extra DateTime::Format::ISO8601 Sys::HostIP ExtUtils::PkgConfig \
-           Inline::MakeMaker Capture::Tiny Email::Valid DBI \
-           Inline::C Date::Calc Text::Template HTML::TableExtract \
+           Test::Kwalitee::Extra DateTime::Format::ISO8601 Sys::HostIP \
+           ExtUtils::PkgConfig Inline::MakeMaker Capture::Tiny Email::Valid \
+           DBI Inline::C Date::Calc Text::Template HTML::TableExtract \
            Tie::IxHash IO::Interface File::stat File::Stat::Bits Net::NTP \
-           Filesys::DiskUsage Net::Ping inc::Module::Install AnyEvent Redis
+           Filesys::DiskUsage Net::Ping inc::Module::Install AnyEvent Redis \
+           Mac::OSVersion BSD::getloadavg Unix::Statgrab
 do
     echo " CPAN module: $lib" | tee -a ${BUILD_PATH}/${BUILD_LOG}
     if  [ "$lib" = "Inline::MakeMaker" -o  "$lib" = "JSON::XS" -o "$lib" = "AnyEvent" ]; then
@@ -469,7 +460,7 @@ do
             continue
         fi
     else
-        ${iprefix}/perl/bin/perl -MCPAN -e 'install "'$lib'"' >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+        env PKG_CONFIG_PATH=${iprefix}/lib/pkgconfig ${iprefix}/perl/bin/perl -MCPAN -e 'install "'$lib'"' >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
         if [ $? -ne 0 ]; then
             echo "Error: $lib installation failed !" |\
                 tee -a ${BUILD_LOG}/${module}.${version}.log
@@ -483,8 +474,8 @@ do
 done
 
 
-# there are 35 perl modules install calls
-step1=`expr $step1 / 35`
+# there are 39 perl modules install calls
+step1=`expr $step1 / 39`
 
 ## final check; 1 step
 perlcpan_done=$step1
@@ -519,25 +510,6 @@ echo "Info: Step 2 - Configure $dir ..." |\
 ./config -L${iprefix} -Wl,-rpath -Wl,${iprefix}/lib \
 --prefix=${iprefix} --openssldir=${iprefix}/ssl  >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
 
-#if [ "$PT_NAME" = "amd64" ]; then
-#    /usr/bin/env PATH=${iprefix}/bin:${iprefix}/perl/bin:$PATH CC=cc \
-#         ./Configure BSD-x86_64 threads shared --prefix=${iprefix} \
-#          --openssldir=${iprefix}/openssl >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
-#elif [ "$PT_NAME" = "arm" ]; then
-#    /usr/bin/env PATH=${iprefix}/bin:${iprefix}/perl/bin:$PATH CC=cc \
-#        ./Configure BSD-generic32 threads shared --prefix=${iprefix} \
-#        --openssldir=${iprefix}/openssl >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
-#elif [ "$PT_NAME" = "aarch64" ]; then
-#    /usr/bin/env PATH=${iprefix}/bin:${iprefix}/perl/bin:$PATH CC=cc \
-#        ./Configure BSD-generic64 threads shared  --prefix=${iprefix} \
-#        --openssldir=${iprefix}/openssl >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
-#else
-#    env PATH=${iprefix}/bin:${iprefix}/perl/bin:$PATH CC=cc \
-#     ./Configure BSD-x86-elf threads shared --prefix=${iprefix} \
-#     --openssldir=${iprefix}/openssl >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
-#fi
-
-
 if [ $? -ne 0 ]; then
     echo "Error: configure $dir failed !" |\
      tee -a ${BUILD_PATH}/${BUILD_LOG}
@@ -551,25 +523,6 @@ fi
 echo "" >> ${BUILD_PATH}/${BUILD_LOG}
 echo "Info: Step 3 - Make $dir..." |\
  tee -a ${BUILD_PATH}/${BUILD_LOG}
-
-
-#echo "Fixing SHARED_LDFLAGS flag..." >> ${BUILD_PATH}/${BUILD_LOG}
-#if [ "$PT_NAME" = "amd64" -o "$PT_NAME" = "aarch64" ]; then
-#    sed "s:^LDFLAGS=.*:LDFLAGS=-m64 -L${iprefix}/lib -Wl,-rpath -Wl,${iprefix}/lib:" Makefile > Makefile.tmp
-#    sed "s:^LIB_LDFLAGS=.*:LIB_LDFLAGS=-m64 -L${iprefix}/lib -Wl,-rpath -Wl,${iprefix}/lib:" Makefile.tmp > Makefile.tmp2
-#    mv Makefile.tmp2 Makefile
-#else
-#    sed "s:^LDFLAGS=.*:LDFLAGS=-m32 -L${iprefix}/lib -Wl,-rpath -Wl,${iprefix}/lib:" Makefile > Makefile.tmp
-#    sed "s:^LIB_LDFLAGS=.*:LIB_LDFLAGS=-m32 -L${iprefix}/lib -Wl,-rpath -Wl,${iprefix}/lib:" Makefile.tmp > Makefile.tmp2
-#    mv Makefile.tmp2 Makefile
-#fi
-#
-#if [ $? -ne 0 ]; then
-#    echo "Error: fixing SHARED_LDFLAGS Makefile failed !" |\
-#     tee -a ${BUILD_PATH}/${BUILD_LOG}
-#    rm /var/tmp/build.${module}
-#    exit 3
-#fi
 
 make >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
 if [ $? -ne 0 ]; then
@@ -603,6 +556,83 @@ if [ "$ossl_done" -eq 4 ]; then
    ossl_done=1
 else
    ossl_done=90
+fi
+
+clean_module
+
+# back to root
+cd ..
+
+}
+
+
+### libstatgrab
+build_rec_statgrab() {
+dir="libstatgrab"
+step1=0
+step2=0
+step3=0
+step4=0
+
+cd lib
+init_module "$dir"
+
+if [ $? -eq 0 ]; then
+    step1=1
+fi
+
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 2 - Configure $dir ..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+./configure --prefix=${iprefix} >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+
+if [ $? -ne 0 ]; then
+    echo "Error: configure $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step2=1
+fi
+
+# STEP 3
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 3 - Make $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+make >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if [ $? -ne 0 ]; then
+    echo "Error: make $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step3=1
+fi
+
+# STEP 4
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 4 - Make install $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+make install >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if [ $? -ne 0 ]; then
+    echo "Error: make install libstatgrab failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step4=1
+fi
+
+
+# final check; all 4 steps
+statgrab_done=`expr $step1 + $step2 + $step3 + $step4`
+if [ "$statgrab_done" -eq 4 ]; then
+   statgrab_done=1
+else
+   statgrab_done=90
 fi
 
 clean_module
