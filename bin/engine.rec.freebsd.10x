@@ -934,13 +934,12 @@ echo "" >> ${BUILD_PATH}/${BUILD_LOG}
 echo "Info: Step 2 - Configure $dir ..." |\
  tee -a ${BUILD_PATH}/${BUILD_LOG}
  
-#env PKG_CONFIG_PATH=${iprefix}/lib/pkgconfig:/usr/lib64/pkgconfig \
-env CFLAGS="-O3" \
+env PKG_CONFIG_PATH=${iprefix}/lib/pkgconfig CFLAGS="-O3" \
     CPPFLAGS="-I${iprefix}/include"   \
     LDFLAGS="-L${iprefix}/lib -Wl,-rpath -Wl,${iprefix}/lib" \
     ./configure --with-ssl=${iprefix} \
      --prefix=${iprefix} --enable-cookies --enable-nonblocking \
-     --enable-threaded-resolver --disable-ldap --disable-ldaps >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+     --enable-threaded-resolver --disable-ldap --disable-ldaps --without-nghttp2 >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
 if [ $? -ne 0 ]; then
     echo "Error: configure $dir failed !" |\
      tee -a ${BUILD_PATH}/${BUILD_LOG}
@@ -1060,6 +1059,16 @@ if [ $? -ne 0 ]; then
     exit 3
 else
     step2=1
+fi
+
+if [ "$PT_NAME" = "aarch64" ]; then
+    sed "s:^LDDLFLAGS =.*:LDDLFLAGS=-shared -fstack-protector-strong -L${iprefix}/lib -Wl,-rpath -Wl,${iprefix}/lib:" Makefile.tmp > Makefile.tmp2
+    sed "s:^LDFLAGS =.*:LDFLAGS=-Wl,-E  -fstack-protector-strong -L${iprefix}/lib -Wl,-rpath -Wl,${iprefix}/lib:" Makefile > Makefile.tmp
+    mv Makefile.tmp2 Makefile
+else
+    sed "s:^LDDLFLAGS =.*:LDDLFLAGS=-shared -L${iprefix}/lib -Wl,-rpath -Wl,${iprefix}/lib:" Makefile.tmp > Makefile.tmp2
+    sed "s:^LDFLAGS =.*:LDFLAGS=-Wl,-E -L${iprefix}/lib -Wl,-rpath -Wl,${iprefix}/lib:" Makefile > Makefile.tmp
+    mv Makefile.tmp2 Makefile
 fi
 
 
