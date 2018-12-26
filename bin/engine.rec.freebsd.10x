@@ -1417,9 +1417,9 @@ step2=0
 
 
 cd $dir
-echo "\n############################################################"
+echo "############################################################"
 echo "" >> ${BUILD_PATH}/${BUILD_LOG}
-echo "Testing SDR" | tee -a ${BUILD_PATH}/${BUILD_LOG}
+echo "Testing KDR" | tee -a ${BUILD_PATH}/${BUILD_LOG}
 
 # STEP 1
 # Check all recorders if they are sane and execute properly
