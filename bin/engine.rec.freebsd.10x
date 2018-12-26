@@ -1443,7 +1443,7 @@ do
     fi
 done
 
-step1=`expr $step1 / 6`
+step1=`expr $step1 / 5`
 
 # STEP 2
 # Check all shared libs if they are build correctly
@@ -1468,7 +1468,7 @@ if [ "$noErrors" -eq 0 ]; then
 fi
 
 
-# final check; all 4 steps
+# final check; all 2 steps
 tests_done=`expr $step1 + $step2` 
 if [ "$tests_done" -eq 2 ]; then
    tests_done=1
