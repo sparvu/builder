@@ -1,2 +1,2 @@
-# Kronometrix Appliance Development Tools #
+# Kronometrix Development Tools
 
