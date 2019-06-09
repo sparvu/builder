@@ -32,10 +32,10 @@ Usage: $0 [-ht] [-p prefix_path]
 Supported packages
    KDR: recording
    KA: auth, admin, stats, aggregates, mesh, mon
-   KBUS: avmet, vcam
+   KBUS: mqtt, avmet, vcam
 
 Version:
-   2.0.1
+   2.0.2
 
 OPTIONS
   -P platform: x64, arm
@@ -149,6 +149,22 @@ admin_rpm_pkg_done=0
 admin_fbsd_pkg_done=0
 ##
 
+##mqtt
+mqtt_openresty_done=0
+mqtt_redis_done=0
+mqtt_luatz_done=0
+mqtt_luamqtt_done=0
+mqtt_luasec_done=0
+mqtt_lua_resty_template_done=0
+mqtt_lua_inspect_done=0
+mqtt_lua_router_done=0
+mqtt_lua_resty_http_simple_done=0
+mqtt_fin_done=0
+mqtt_config_done=0
+mqtt_tar_pkg_done=0
+mqtt_deb_pkg_done=0
+mqtt_rpm_pkg_done=0
+mqtt_fbsd_pkg_done=0
 
 ##avmet
 avmet_openresty_done=0
@@ -537,6 +553,35 @@ case "$OS_NAME" in
          ;;
 
 
+         mqtt)
+
+             # default platform
+             if [ -z "$platform" ]; then
+                 if [ "$PT_NAME" = "armv6l" ]; then
+                     platform="arm"
+                     arm_sem=1
+                 else
+                     platform="x64"
+                     x64_sem=1
+                 fi
+             fi
+
+             iprefix=${iprefix:-/opt/kronometrix/mqtt}
+             iuser=krmx
+
+             WORKSPACE="${WORKSPACE_PREFIX}/kronometrix"
+
+             case "$version" in
+                 1.[0-8]*)
+                  . ${PWD}/engine.mqtt.linux.10x
+                  ;;
+
+                 *)
+                   usage
+                 ;;
+             esac
+         ;;
+
          vcam)
 
              # default platform
@@ -717,8 +762,8 @@ case "$OS_NAME" in
 
              # default platform
              if [ -z "$platform" ]; then
-                 if [ "$PT_NAME" = "armv6" ]; then
-                     platform="armv6"
+                 if [ "$PT_NAME" = "aarch64" ]; then
+                     platform="aarch64"
                      arm_sem=1
                  else
                      platform="x64"
@@ -746,8 +791,8 @@ case "$OS_NAME" in
 
              # default platform
              if [ -z "$platform" ]; then
-                 if [ "$PT_NAME" = "armv6" ]; then
-                     platform="armv6"
+                 if [ "$PT_NAME" = "aarch64" ]; then
+                     platform="aarch64"
                      arm_sem=1
                  else
                      platform="x64"
@@ -775,8 +820,8 @@ case "$OS_NAME" in
             
              # default platform
              if [ -z "$platform" ]; then
-                 if [ "$PT_NAME" = "armv6" ]; then
-                     platform="armv6"
+                 if [ "$PT_NAME" = "aarch64" ]; then
+                     platform="aarch64"
                      arm_sem=1
                  else
                      platform="x64"
@@ -801,12 +846,41 @@ case "$OS_NAME" in
          ;;
 
 
+         mqtt)
+
+             # default platform
+             if [ -z "$platform" ]; then
+                 if [ "$PT_NAME" = "aarch64" ]; then
+                     platform="aarch64"
+                     arm_sem=1
+                 else
+                     platform="x64"
+                     x64_sem=1
+                 fi
+             fi
+
+             iprefix=${iprefix:-/opt/kronometrix/mqtt}
+             iuser=krmx
+
+             WORKSPACE="${WORKSPACE_PREFIX}/kronometrix"
+
+             case "$version" in
+                 1.*)
+                  . ${PWD}/engine.mqtt.freebsd.12x
+                  ;;
+
+                 *)
+                   usage
+                 ;;
+             esac
+         ;;
+
          vcam)
 
              # default platform
              if [ -z "$platform" ]; then
-                 if [ "$PT_NAME" = "armv6" ]; then
-                     platform="armv6"
+                 if [ "$PT_NAME" = "aarch64" ]; then
+                     platform="aarch64"
                      arm_sem=1
                  else
                      platform="x64"
@@ -834,8 +908,8 @@ case "$OS_NAME" in
 
              # default platform
              if [ -z "$platform" ]; then
-                 if [ "$PT_NAME" = "armv6" ]; then
-                     platform="armv6"
+                 if [ "$PT_NAME" = "aarch64" ]; then
+                     platform="aarch64"
                      arm_sem=1
                  else
                      platform="x64"
@@ -863,8 +937,8 @@ case "$OS_NAME" in
 
              # default platform
              if [ -z "$platform" ]; then
-                 if [ "$PT_NAME" = "armv6" ]; then
-                     platform="armv6"
+                 if [ "$PT_NAME" = "aarch64" ]; then
+                     platform="aarch64"
                      arm_sem=1
                  else
                      platform="x64"
@@ -892,8 +966,8 @@ case "$OS_NAME" in
 
              # default platform
              if [ -z "$platform" ]; then
-                 if [ "$PT_NAME" = "armv6" ]; then
-                     platform="armv6"
+                 if [ "$PT_NAME" = "aarch64" ]; then
+                     platform="aarch64"
                      arm_sem=1
                  else
                      platform="x64"
@@ -1196,6 +1270,56 @@ case "$module" in
         if [ "$OS_NAME" = "linux" -o \
              "$OS_NAME" = "freebsd"  ]; then
             build_avmet_pkg
+        fi
+
+    fi
+    ;;
+
+
+ mqtt)
+    echo "" > ${BUILD_PATH}/${BUILD_LOG}
+                     
+    if [ $rpm_sem -eq 1 ]; then
+        if [ "x${DIST_ID}" = "xrhel" -o "x${DIST_ID}" = "xcentos" ]; then
+            build_mqtt_pkg
+        else
+            echo "Error: not a RPM installation, cannot build rpm pkg"
+            rm /var/tmp/${STATFILE}
+            exit 3
+        fi
+    elif [ $deb_sem -eq 1 ]; then
+        if [ "x${DIST_ID}" = "xdebian" -o \
+             "x${DIST_ID}" = "xubuntu" -o \
+             "x${DIST_ID}" = "xraspbian" ]; then
+            build_auth_pkg
+        else
+            echo "Error: not a DEB installation, cannot build deb pkg"
+            rm /var/tmp/${STATFILE}
+            exit 3
+        fi
+    elif [ $fbsd_pkg_sem -eq 1 ]; then
+        build_mqtt_pkg
+    else
+        build_mqtt_openresty
+        build_mqtt_template
+        build_mqtt_httpsimple
+        build_mqtt_router
+        build_mqtt_luatz
+        build_mqtt_luasec
+        build_mqtt_luamqtt
+        build_mqtt_redis
+
+        if [ ! -z "$build_num" ]; then
+            build_mqtt_inspect
+        fi
+
+        build_mqtt_config
+        build_mqtt_fin
+
+        # currently we support Linux(deb,rpm), FreeBSD(pkg)
+        if [ "$OS_NAME" = "linux" -o \
+             "$OS_NAME" = "freebsd"  ]; then
+            build_mqtt_pkg
         fi
 
     fi
@@ -2042,6 +2166,182 @@ case "$module" in
             echo  "# FINALIZE: done"
         else
             if [ $avmet_fin_done -eq 90 ]; then
+                echo  "# FINALIZE: not done"
+            fi
+        fi
+    fi
+
+ ;;
+
+ mqtt)
+
+    if [ $mqtt_openresty_done -ne 0 ]; then
+        if [ $mqtt_openresty_done -eq 1 ]; then
+            echo "# openresty: built and integrated"
+        else
+            if [ $mqtt_openresty_done -eq 90 ]; then
+                echo "# openresty: not integrated"
+            fi
+        fi
+    fi
+            
+    if [ $mqtt_lua_resty_template_done -ne 0 ]; then
+        if [ $mqtt_lua_resty_template_done -eq 1 ]; then
+            echo  "# lib lua-resty-template: built and integrated"
+        else
+            if [ $mqtt_lua_resty_template_done -eq 90 ]; then
+                echo  "# lib lua-resty-template: not integrated"
+            fi
+        fi
+    fi
+            
+    if [ $mqtt_lua_router_done -ne 0 ]; then
+        if [ $mqtt_lua_router_done -eq 1 ]; then
+            echo  "# lib router.lua: built and integrated"
+        else
+            if [ $mqtt_lua_router_done -eq 90 ]; then
+                echo  "# lib router.lua: not integrated"
+            fi
+        fi
+    fi
+
+    if [ $mqtt_lua_resty_http_simple_done -ne 0 ]; then
+        if [ $mqtt_lua_resty_http_simple_done -eq 1 ]; then
+            echo  "# lib http simple.lua: built and integrated"
+        else
+            if [ $mqtt_lua_resty_http_simple_done -eq 90 ]; then
+                echo  "# lib http simple.lua: not integrated"
+            fi
+        fi
+    fi
+
+    if [ $mqtt_lua_router_done -ne 0 ]; then
+        if [ $mqtt_lua_router_done -eq 1 ]; then
+            echo  "# lib router.lua: built and integrated"
+        else
+            if [ $mqtt_lua_router_done -eq 90 ]; then
+                echo  "# lib router.lua: not integrated"
+            fi
+        fi
+    fi
+
+    if [ $mqtt_lua_resty_http_simple_done -ne 0 ]; then
+        if [ $mqtt_lua_resty_http_simple_done -eq 1 ]; then
+            echo  "# lib http simple.lua: built and integrated"
+        else
+            if [ $mqtt_lua_resty_http_simple_done -eq 90 ]; then
+                echo  "# lib http simple.lua: not integrated"
+            fi
+        fi
+    fi
+
+    if [ $mqtt_luatz_done -ne 0 ]; then
+        if [ $mqtt_luatz_done -eq 1 ]; then
+            echo  "# lib luatz: built and integrated"
+        else
+            if [ $mqtt_luatz_done -eq 90 ]; then
+                echo  "# lib luatz: not integrated"
+            fi
+        fi
+    fi
+
+    if [ $mqtt_luamqtt_done -ne 0 ]; then
+        if [ $mqtt_luamqtt_done -eq 1 ]; then
+            echo  "# lib luamqtt: built and integrated"
+        else
+            if [ $mqtt_luamqtt_done -eq 90 ]; then
+                echo  "# lib luamqtt: not integrated"
+            fi
+        fi
+    fi
+
+    if [ $mqtt_luasec_done -ne 0 ]; then
+        if [ $mqtt_luasec_done -eq 1 ]; then
+            echo  "# lib luasec: built and integrated"
+        else
+            if [ $mqtt_luasec_done -eq 90 ]; then
+                echo  "# lib luasec: not integrated"
+            fi
+        fi
+    fi
+
+    if [ $mqtt_redis_done -ne 0 ]; then
+        if [ $mqtt_redis_done -eq 1 ]; then
+            echo  "# redis: built and integrated"
+        else
+            if [ $mqtt_redis_done -eq 90 ]; then
+                echo  "# redis: not integrated"
+            fi
+        fi
+    fi
+
+    if [ ! -z "$build_num" ]; then
+        if [ $mqtt_lua_inspect_done -ne 0 ]; then
+            if [ $mqtt_lua_inspect_done -eq 1 ]; then
+                echo  "# lib inspect.lua: built and integrated"
+            else
+                if [ $mqtt_lua_inspect_done -eq 90 ]; then
+                    echo  "# lib inspect.lua: not integrated"
+                fi
+            fi
+        fi
+    fi
+
+    if [ $mqtt_config_done -ne 0 ]; then
+        if [ $mqtt_config_done -eq 1 ]; then
+            echo  "# analytics-mqtt nginx.conf: done"
+        else
+            if [ $mqtt_config_done -eq 90 ]; then
+                echo  "# analytics-mqtt nginx.conf: not done"
+            fi
+        fi
+    fi
+
+    if [ $mqtt_tar_pkg_done -eq 1 ]; then
+        echo "# tar pkg: ok"
+    else
+        if [ $mqtt_tar_pkg_done -eq 90 ]; then
+            echo "# tar pkg: failed"
+        fi
+    fi
+
+    if [ $mqtt_rpm_pkg_done -eq 1 ]; then
+        echo "# rpm pkg: ok"
+    else
+        if [ $mqtt_rpm_pkg_done -eq 90 ]; then
+            echo "# rpm pkg: failed"
+        fi
+    fi
+
+    if [ $mqtt_deb_pkg_done -eq 1 ]; then
+        echo "# deb pkg: ok"
+    else
+        if [ $mqtt_deb_pkg_done -eq 90 ]; then
+            echo "# deb pkg: failed"
+        fi
+    fi
+
+    if [ $mqtt_fbsd_pkg_done -eq 1 ]; then
+        echo "# freebsd pkg: ok"
+    else
+        if [ $mqtt_fbsd_pkg_done -eq 90 ]; then
+            echo "# freebsd pkg: failed"
+        fi
+    fi
+
+    if [ $mqtt_fbsd_pkg_done -eq 1 ]; then
+        echo "# freebsd pkg: ok"
+    else
+        if [ $mqtt_fbsd_pkg_done -eq 90 ]; then
+            echo "# freebsd pkg: failed"
+        fi
+    fi
+        
+    if [ $mqtt_fin_done -ne 0 ]; then
+        if [ $mqtt_fin_done -eq 1 ]; then
+            echo  "# FINALIZE: done"
+        else
+            if [ $mqtt_fin_done -eq 90 ]; then
                 echo  "# FINALIZE: not done"
             fi
         fi

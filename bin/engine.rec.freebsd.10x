@@ -459,8 +459,8 @@ fi
 for lib in Digest::SHA Proc::Daemon Proc::ProcessTable Proc::PID::File \
            File::Tail Regexp::Common Filesys::Df Sys::Filesystem JSON::XS \
            JSON HTTP::Response UUID::Tiny Carp::Assert Net::Domain::TLD \
-           Test::Kwalitee::Extra DateTime::Format::ISO8601 Sys::HostIP ExtUtils::PkgConfig \
-           Inline::MakeMaker Capture::Tiny Email::Valid DBI \
+           Test::Kwalitee::Extra DateTime::Format::ISO8601 ExtUtils::PkgConfig \
+           Inline::MakeMaker Capture::Tiny Email::Valid DBI Sys::HostIP \
            Inline::C Date::Calc Text::Template HTML::TableExtract \
            Tie::IxHash IO::Interface File::stat File::Stat::Bits Net::NTP \
            Filesys::DiskUsage Net::Ping inc::Module::Install AnyEvent Redis

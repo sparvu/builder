@@ -141,7 +141,7 @@ package() {
     #    git clone -b qa https://github.com/sdrdynamics/analytics .
     #else 
     echo "Cloning Prod Master branch..."
-    git clone https://github.com/sdrdynamics/analytics .
+    git clone https://gitlab.com/kronometrix/qa .
     #fi
 
     if [ "${docmd}" = "all" ]; then
