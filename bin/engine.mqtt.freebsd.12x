@@ -1,0 +1,1033 @@
+#/bin/sh -x
+#
+#  Kronometrix Development tools
+#  FreeBSD Analytics Authentication Engine
+#
+#  Copyright (c) 2019 Stefan Parvu (www.kronometrix.org).
+#
+#  This program is free software; you can redistribute it and/or
+#  modify it under the terms of the GNU General Public License
+#  as published by the Free Software Foundation; either version 2
+#  of the License, or (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this program; if not, write to the Free Software Foundation,
+#  Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+#
+#  (http://www.gnu.org/copyleft/gpl.html)
+
+# VERSION: 3.4
+
+# ############################################################### #
+# Analytics Authentication FreeBSD                                #
+# ############################################################### #
+
+
+### extract_archive
+extract_archive() {
+# $1 module name
+# $2 dir build
+
+modfile=$1
+bfile=$2
+
+# Debug
+# echo "module name: $modfile"
+# echo "archive dir: $bfile"
+
+if [ -d "$bfile" ]; then
+    echo "Info: Step 1 - Extracting $bfile ..." |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    echo "Warning: ${bfile} directory found, cleaning..." |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+    rm -rf ${bfile}
+    if [ $? -ne 0 ]; then
+        echo "Error: cannot clean. Check ${modfile} , ${bfile}" |\
+         tee -a ${BUILD_PATH}/${BUILD_LOG}
+        exit 3
+    fi 
+    gzip -dc ${bfile}.tar.gz | tar xvf - >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+else
+    echo "Info: Step 1 - Extracting $bfile ..." |\
+    tee -a ${BUILD_PATH}/${BUILD_LOG}
+    gzip -dc ${bfile}.tar.gz | tar xvf - >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+fi
+
+}
+
+
+### init_module
+init_module() {
+
+# $1 directory name
+directory=$1
+
+cd $directory
+echo "############################################################"
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Submodule: $directory" | tee -a ${BUILD_PATH}/${BUILD_LOG}
+archive_file=`ls *.tar.gz`
+# Debug
+#echo "Directory: $directory"
+#echo "Archive: $archive_file"
+
+# dirarchive=${archive_file%%.tar*}
+dirarchive=`echo $archive_file | sed 's/\.tar.*//'`
+
+# Debug
+#echo "DirArchive: $dirarchive"
+
+extract_archive "$directory" "$dirarchive"
+
+cd $dirarchive
+
+}
+
+
+### clean_module
+clean_module() {
+cd ..
+rm -rf $dirarchive >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if [ $? -ne 0 ]; then
+    echo "Error: cleaning up $dirarchive !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 5
+fi
+cd ..
+
+}
+
+
+### openresty
+build_mqtt_openresty() {
+dir=openresty
+step1=0
+step2=0
+step3=0
+step4=0
+
+
+# STEP 1
+init_module "$dir"
+if [ $? -eq 0 ]; then
+    step1=1
+fi
+
+
+# STEP 2
+
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 2 - Configure $dir ..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+ env PKG_CONFIG_PATH=/usr/local/libdata/pkgconfig \
+     CC=cc ./configure --prefix=${iprefix} --with-luajit \
+     --with-cc=/usr/bin/cc >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+
+# env PKG_CONFIG_PATH=/usr/local/libdata/pkgconfig \
+#     CC=cc ./configure --prefix=${iprefix} --with-luajit \
+#     --with-cc=/usr/bin/cc --with-stream --add-module=bundle/stream-lua-nginx-module >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+
+if [ $? -ne 0 ]; then
+    echo "Error: configure $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step2=1
+fi
+
+# STEP 3
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 3 - Make $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+gmake >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if [ $? -ne 0 ]; then
+    echo "Error: make $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step3=1
+fi
+
+# STEP 4
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 4 - Make install $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+
+gmake install >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if [ $? -ne 0 ]; then
+    echo "Error: make install gd failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step4=1
+fi
+
+# final check; all 4 steps
+mqtt_openresty_done=`expr $step1 + $step2 + $step3 + $step4`
+if [ $mqtt_openresty_done -eq 4 ]; then
+   mqtt_openresty_done=1
+else
+   mqtt_openresty_done=90
+fi
+
+clean_module
+
+}
+
+
+### lua-resty-template
+build_mqtt_template() {
+dir="lua-resty-template"
+step1=0
+step2=0
+step3=0
+
+
+cd lib
+
+# STEP 1
+init_module "$dir"
+if [ $? -eq 0 ]; then
+    step1=1
+fi
+
+
+# STEP 2
+
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 2 - Install template.lua ..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+cp -R lib/resty/template* ${iprefix}/lualib/resty
+if [ $? -ne 0 ]; then
+    echo "Error: cannot install template.lua script !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+     rm /var/tmp/build.${module}
+     exit 3
+else
+    step2=1
+fi
+
+# final check; all 2 steps
+mqtt_lua_resty_template_done=`expr $step1 + $step2`
+if [ $mqtt_lua_resty_template_done -eq 2 ]; then
+   mqtt_lua_resty_template_done=1
+else
+   mqtt_lua_resty_template_done=90
+fi
+
+clean_module
+
+# back to root
+cd ..
+
+}
+
+
+### router.lua
+build_mqtt_router() {
+dir="router.lua"
+step1=0
+step2=0
+
+cd lib
+
+# STEP 1
+init_module "$dir"
+if [ $? -eq 0 ]; then
+    step1=1
+fi
+
+
+# STEP 2
+
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 2 - Install router.lua ..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+cp router.lua ${iprefix}/lualib/resty
+if [ $? -ne 0 ]; then
+    echo "Error: cannot install router.lua script !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+     rm /var/tmp/build.${module}
+     exit 3
+else
+    step2=1
+fi
+
+# final check; all 2 steps
+mqtt_lua_router_done=`expr $step1 + $step2`
+if [ $mqtt_lua_router_done -eq 2 ]; then
+   mqtt_lua_router_done=1
+else
+   mqtt_lua_router_done=90
+fi
+
+clean_module
+
+# back to root
+cd ..
+
+}
+
+
+### lua-resty-smtp
+build_mqtt_smtp() {
+dir="lua-resty-smtp"
+step1=0
+step2=0
+
+
+cd lib
+
+init_module "$dir"
+if [ $? -eq 0 ]; then
+    step1=1
+fi
+
+# STEP 2
+
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 2 - Install router.lua ..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+cp -R lib/resty/smtp* ${iprefix}/lualib/resty
+if [ $? -ne 0 ]; then
+    echo "Error: cannot install smtp.lua script !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+     rm /var/tmp/build.${module}
+     exit 3
+else
+    step2=1
+fi
+
+# final check; all 2 steps
+mqtt_lua_resty_smtp_done=`expr $step1 + $step2`
+if [ $mqtt_lua_resty_smtp_done -eq 2 ]; then
+   mqtt_lua_resty_smtp_done=1
+else
+   mqtt_lua_resty_smtp_done=90
+fi
+
+clean_module
+
+# back to root
+cd ..
+}
+
+
+### lua-resty-http-simple
+build_mqtt_httpsimple() {
+dir="lua-resty-http-simple"
+step1=0
+step2=0
+
+cd lib
+
+init_module "$dir"
+if [ $? -eq 0 ]; then
+    step1=1
+fi
+
+# STEP 2
+
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 2 - Install router.lua ..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+cp -R lib/resty/http ${iprefix}/lualib/resty
+if [ $? -ne 0 ]; then
+    echo "Error: cannot install simple.lua script !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+     rm /var/tmp/build.${module}
+     exit 3
+else
+    step2=1
+fi
+
+# final check; all 2 steps
+mqtt_lua_resty_http_simple_done=`expr $step1 + $step2`
+if [ $mqtt_lua_resty_http_simple_done -eq 2 ]; then
+   mqtt_lua_resty_http_simple_done=1
+else
+   mqtt_lua_resty_http_simple_done=90
+fi
+
+clean_module
+
+# back to root
+cd ..
+}
+
+
+### luatz
+build_mqtt_luatz() {
+dir="luatz"
+step1=0
+step2=0
+step3=0
+
+cd lib
+
+# STEP 1
+init_module "$dir"
+if [ $? -eq 0 ]; then
+    step1=1
+fi
+
+# STEP 2
+
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 2 - Configure $dir ..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+cp -R luatz ${iprefix}/lualib
+if [ $? -ne 0 ]; then
+    echo "Error: make $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step2=1
+fi
+
+# final check; all 2 steps
+mqtt_luatz_done=`expr $step1 + $step2`
+if [ $mqtt_luatz_done -eq 2 ]; then
+   mqtt_luatz_done=1
+else
+   mqtt_luatz_done=90
+fi
+
+clean_module
+
+# back to root
+cd ..
+
+}
+
+
+### luamqtt
+build_mqtt_luamqtt() {
+dir="luamqtt"
+step1=0
+step2=0
+step3=0
+
+cd lib
+
+# STEP 1
+init_module "$dir"
+if [ $? -eq 0 ]; then
+    step1=1
+fi
+
+# STEP 2
+
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 2 - Configure $dir ..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+cp -R mqtt ${iprefix}/lualib
+if [ $? -ne 0 ]; then
+    echo "Error: make $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step2=1
+fi      
+
+# final check; all 2 steps
+mqtt_luamqtt_done=`expr $step1 + $step2`
+if [ $mqtt_luamqtt_done -eq 2 ]; then
+   mqtt_luamqtt_done=1
+else
+   mqtt_luamqtt_done=90
+fi
+
+clean_module
+   
+# back to root
+cd ..
+
+}
+
+
+### luasec
+build_mqtt_luasec() {
+dir="luasec"
+step1=0
+step2=0
+step3=0
+
+cd lib
+
+# STEP 1
+init_module "$dir"
+if [ $? -eq 0 ]; then
+    step1=1
+fi
+
+# STEP 2
+
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 2 - Configure $dir ..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+make bsd
+make install
+if [ $? -ne 0 ]; then
+    echo "Error: make $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step2=1
+fi
+
+# final check; all 2 steps
+mqtt_luasec_done=`expr $step1 + $step2`
+if [ $mqtt_luasec_done -eq 2 ]; then
+   mqtt_luasec_done=1
+else
+   mqtt_luasec_done=90
+fi
+
+clean_module
+
+# back to root
+cd ..
+
+}
+
+### redis
+build_mqtt_redis() {
+dir=redis
+step1=0
+step2=0
+step3=0
+step4=0
+
+# STEP 1
+init_module "$dir"
+if [ $? -eq 0 ]; then
+    step1=1
+fi
+
+# STEP 2
+
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 2 - Make $dir ..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+gmake PREFIX=${iprefix} >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if [ $? -ne 0 ]; then
+    echo "Error: make $dir failed !" | tee -a ${BUILD_PATH}/${BUILD_LOG}
+    exit 3
+else
+    step2=1
+fi  
+
+
+# STEP 3
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 3 - Make install $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+gmake PREFIX=${iprefix} install >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if [ $? -ne 0 ]; then
+    echo "Error: make install perl failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    exit 3
+else
+    step3=1
+fi
+
+# final check; all 3 steps
+mqtt_redis_done=`expr $step1 + $step2 + $step3`
+if [ $mqtt_redis_done -eq 3 ]; then
+   mqtt_redis_done=1
+else
+   mqtt_redis_done=90
+fi
+
+clean_module
+
+}
+
+
+
+### inspect.lua
+build_mqtt_inspect() {
+dir="inspect.lua"
+step1=0
+step2=0
+step3=0
+
+
+cd lib
+
+# STEP 1
+init_module "$dir"
+if [ $? -eq 0 ]; then
+    step1=1
+fi
+
+
+# STEP 2
+
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 2 - Install inspect.lua ..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+cp inspect.lua ${iprefix}/lualib
+if [ $? -ne 0 ]; then
+    echo "Error: cannot install inspect.lua script !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+     rm /var/tmp/build.${module}
+     exit 3
+else
+    step2=1
+fi
+
+# final check; all 2 steps
+mqtt_lua_inspect_done=`expr $step1 + $step2`
+if [ $mqtt_lua_inspect_done -eq 2 ]; then
+   mqtt_lua_inspect_done=1
+else
+   mqtt_lua_inspect_done=90
+fi
+
+clean_module
+
+# back to root
+cd ..
+
+}
+
+
+### configuration settings
+build_mqtt_config() {
+
+dir=config
+step1=0
+
+## change OS name directory
+cd $dir/${OS_NAME}
+
+echo "############################################################"
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Submodule: $dir ${OS_NAME}" | tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+# STEP 1
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 1 - Installing nginx wrappers ..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+if [ $x64_sem -eq 1 ]; then
+    cp nginx.conf.x64 ${iprefix}/nginx/conf/nginx.conf
+elif [ $arm_sem -eq 1 ]; then
+    cp nginx.conf.arm ${iprefix}/nginx/conf/nginx.conf
+fi
+
+if [ $? -ne 0 ]; then
+    echo "Error: cannot install nginx.conf script !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+     rm /var/tmp/build.${module}
+     exit 3
+else
+    step1=1
+fi
+
+
+# final check
+mqtt_config_done=$step1
+if [ $mqtt_config_done -eq 1 ]; then
+   mqtt_config_done=1
+else
+   mqtt_config_done=90
+fi
+
+cd ../..
+
+}
+
+
+### finalize
+build_mqtt_fin() {
+
+dir=etc
+step1=0
+step2=0
+step3=0
+step4=0
+
+krmxver=$version
+
+# export iprefix
+export iprefix=${iprefix}
+
+if [ ! -z "$build_num" ]; then
+   buildno="$build_num"
+else
+   buildno=0
+fi
+
+cd $dir
+echo "############################################################"
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Submodule: $dir" | tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+
+# STEP 1
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 1 - Setting up directory structure ..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+if [ ! -d ${iprefix}/etc ]; then
+    mkdir ${iprefix}/etc
+    if [ $? -ne 0 ]; then
+        echo "Error: cannot setup etc directory !" |\
+         tee -a ${BUILD_PATH}/${BUILD_LOG}
+        rm /var/tmp/build.${module}
+        exit 3
+    else
+        step1=`expr $step1 + 1`
+    fi
+fi
+
+
+if [ ! -d ${iprefix}/static ]; then
+    mkdir ${iprefix}/static
+    if [ $? -ne 0 ]; then
+        echo "Error: cannot setup static directory !" |\
+         tee -a ${BUILD_PATH}/${BUILD_LOG}
+        rm /var/tmp/build.${module}
+        exit 3
+    else
+        step1=`expr $step1 + 1`
+    fi
+fi
+
+
+if [ ! -d ${iprefix}/app ]; then
+    mkdir ${iprefix}/app
+    if [ $? -ne 0 ]; then
+        echo "Error: cannot setup app directory !" |\
+         tee -a ${BUILD_PATH}/${BUILD_LOG}
+        rm /var/tmp/build.${module}
+        exit 3
+    else
+        step1=`expr $step1 + 1`
+    fi
+fi
+
+
+if [ ! -d ${iprefix}/logs ]; then
+    mkdir ${iprefix}/logs
+    if [ $? -ne 0 ]; then
+        echo "Error: cannot setup logs directory !" |\
+         tee -a ${BUILD_PATH}/${BUILD_LOG}
+        rm /var/tmp/build.${module}
+        exit 3
+    else
+        step1=`expr $step1 + 1`
+    fi
+
+    step1=`expr $step1 + 1`
+fi
+
+if [ ! -d ${iprefix}/data/db ]; then
+    mkdir -p ${iprefix}/data/db
+    if [ $? -ne 0 ]; then
+        echo "Error: cannot setup data directory !" |\
+         tee -a ${BUILD_PATH}/${BUILD_LOG}
+        rm /var/tmp/build.${module}
+        exit 3
+    else
+        step1=`expr $step1 + 1`
+    fi
+
+    step1=`expr $step1 + 1`
+fi
+
+
+# there are 4 settings
+step1=`expr $step1 / 4`
+
+
+# STEP 2
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 2 - Installing mqtt startup services ..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+cp kmqtt db http ${iprefix}/etc/
+
+mkdir ${iprefix}/etc/rc
+cp ${OS_NAME}/k* ${iprefix}/etc/rc
+if [ $x64_sem -eq 1 ]; then
+    cp redis.conf.x64 ${iprefix}/etc/redis.conf
+elif [ $arm_sem -eq 1 ]; then
+    cp redis.conf.arm ${iprefix}/etc/redis.conf
+fi
+
+if [ $? -ne 0 ]; then
+    echo "Error: cannot install mqtt startup services !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step2=1
+fi
+
+
+# STEP 3
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 3 - Installing RELEASENOTES and README ..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+cd ..
+cp README* RELEASENOTES ${iprefix}/
+if [ $? -ne 0 ]; then
+    echo "Error: cannot install RELEASENOTES and README !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step3=1
+fi
+
+
+# final check; all 3 steps
+mqtt_fin_done=`expr $step1 + $step2 + $step3`
+if [ "$mqtt_fin_done" -eq 3 ]; then
+   mqtt_fin_done=1
+else
+   mqtt_fin_done=90
+fi
+
+}
+
+
+### freebsd package
+build_mqtt_freebsd_pkg() {
+
+dir='pkg/freebsd'
+step1=0
+step2=0
+step3=0
+
+krmxver=$version
+
+# export iprefix
+export iprefix=${iprefix}
+
+if [ ! -z "$build_num" ]; then
+   buildno="$build_num"
+else
+   buildno=0
+fi
+
+cd $dir
+
+echo "############################################################"
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Submodule: FreeBSD package ${OS_NAME}" | tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+
+# STEP 1
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 1 - Create stage directory" |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+if [ "$PT_NAME" = "x86_64" ]; then
+    pkgname="kmqtt-${krmxver}-amd64"
+else
+    pkgname="kmqtt-${krmxver}-${PT_NAME}"
+fi
+
+if [ ! -d $pkgname ]; then
+    mkdir -p "$pkgname"
+    if [ $? -ne 0 ]; then
+        echo "Error: cannot set working package directory !" |\
+            tee -a ${BUILD_PATH}/${BUILD_LOG}
+        rm /var/tmp/build.${module}
+        exit 3
+    else
+        step1=1
+    fi
+fi
+
+
+# STEP 2
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 2 - Prepare stage directory" |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+# copy config files
+cp pkg-install pkg-deinstall $pkgname/
+if [ "$PT_NAME" = "amd64" ]; then
+    cp MANIFEST.amd64 $pkgname/MANIFEST
+elif [ "$PT_NAME" = "i386" ]; then
+    cp MANIFEST.i386 $pkgname/MANIFEST
+elif [ "$PT_NAME" = "arm" ]; then
+    cp MANIFEST.arm $pkgname/MANIFEST
+fi
+
+cd ${pkgname}
+
+if [ "$buildno" -ne 0 ]; then
+    # get control file fixed correct build and version
+    sed "s/^version.*/version: \"${krmxver}b${buildno}\"/" MANIFEST > MANIFEST.tmp
+    mv MANIFEST.tmp MANIFEST
+else
+    # get control file fixed correct build and version
+    sed "s/^version.*/version: \"${krmxver}\"/" MANIFEST > MANIFEST.tmp
+    mv MANIFEST.tmp MANIFEST
+fi
+
+if [ -d /opt/kronometrix/mqtt ]; then
+
+    for f in `find /opt/kronometrix/mqtt -type d -empty`
+    do
+        echo "$f: \"-\"," >> dirs.txt
+    done
+    echo "directories: {" >> MANIFEST
+    cat dirs.txt >> MANIFEST
+    echo "}" >> MANIFEST
+
+    for f in `find /opt/kronometrix/mqtt -type f`
+    do
+        echo "$f: \"`sha256 -q $f`\"," >> files.txt
+    done
+    echo "files: {" >> MANIFEST
+    cat files.txt >> MANIFEST
+    echo "}" >> MANIFEST
+fi
+
+if [ $? -ne 0 ]; then
+    echo "Error: cannot set FreeBSD pkg, MANIFEST create error !" |\
+        tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step2=1
+fi
+
+
+# STEP 3
+echo "Info: Step 3 - Set MANIFEST" |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+if [ -f files.txt ]; then
+    rm files.txt
+fi
+
+if [ -f dirs.txt ]; then
+    rm dirs.txt
+fi
+mv MANIFEST \+MANIFEST
+(cd /opt/kronometrix ; tar cf - mqtt)|(mkdir -p opt/kronometrix; cd opt/kronometrix; tar xpf -)
+
+pkg create -m . -r . -o /var/tmp >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if [ $? -ne 0 ]; then
+    echo "Error: cannot build FreeBSD pkg, pkg create error !" |\
+        tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step3=1
+fi
+
+
+# STEP 4
+# set release
+echo "Info: Step 4 - Set release" |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+REL=`echo $KERNEL | sed 's/\-.*//'`
+
+# copy config files
+if [ "$buildno" -ne 0 ]; then
+    mv /var/tmp/kmqtt-${krmxver}b${buildno}.txz /var/tmp/kmqtt-${krmxver}b${buildno}-${OS_NAME}${REL}-${PT_NAME}.txz
+else
+    cp /var/tmp/kmqtt-${krmxver}.txz /var/tmp/kmqtt-${krmxver}-${OS_NAME}${REL}-${PT_NAME}.txz
+fi
+
+if [ $? -ne 0 ]; then
+    echo "Error: cannot build FreeBSD pkg, pkg create error !" |\
+        tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step4=1
+fi
+
+cd ..
+
+# STEP 5
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 5 - Cleanup stage directory" |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+if [ -d $pkgname ]; then
+    rm -rf $pkgname
+    if [ $? -ne 0 ]; then
+        echo "Error: cannot clean stage directory !" |\
+          tee -a ${BUILD_PATH}/${BUILD_LOG}
+        rm /var/tmp/build.${module}
+        exit 3
+    else
+        step5=1
+    fi
+fi
+
+# final check; 5 steps
+mqtt_fbsd_pkg_done=`expr $step1 + $step2 + $step3 + $step4 + $step5`
+if [ "$mqtt_fbsd_pkg_done" -eq 5 ]; then
+   mqtt_fbsd_pkg_done=1
+else
+   mqtt_fbsd_pkg_done=90
+fi
+
+cd ../..
+
+}
+
+
+
+build_mqtt_pkg() {
+
+dir=pkg
+step1=0
+step2=0
+
+
+echo "############################################################"
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Submodule: tar package ${OS_NAME}" | tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+# STEP 1
+# tar package must be created
+
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 1 - Kronometrix tar package" |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+build_mqtt_freebsd_pkg
+
+}
+
