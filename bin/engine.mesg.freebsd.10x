@@ -291,9 +291,9 @@ cd ..
 }
 
 
-### lua-resty-smtp
-build_mesg_smtp() {
-dir="lua-resty-smtp"
+### lua-resty-mail
+build_mesg_mail() {
+dir="lua-resty-mail"
 step1=0
 step2=0
 
@@ -308,12 +308,12 @@ fi
 # STEP 2
 
 echo "" >> ${BUILD_PATH}/${BUILD_LOG}
-echo "Info: Step 2 - Install router.lua ..." |\
+echo "Info: Step 2 - Install lua-resty-mail ..." |\
  tee -a ${BUILD_PATH}/${BUILD_LOG}
 
-cp -R lib/resty/smtp* ${iprefix}/lualib/resty
+cp -R lib/resty/mail* ${iprefix}/lualib/resty
 if [ $? -ne 0 ]; then
-    echo "Error: cannot install smtp.lua script !" |\
+    echo "Error: cannot install mail.lua script !" |\
      tee -a ${BUILD_PATH}/${BUILD_LOG}
      rm /var/tmp/build.${module}
      exit 3
@@ -322,11 +322,11 @@ else
 fi
 
 # final check; all 2 steps
-mesg_lua_resty_smtp_done=`expr $step1 + $step2`
-if [ $mesg_lua_resty_smtp_done -eq 2 ]; then
-   mesg_lua_resty_smtp_done=1
+mesg_lua_resty_mail_done=`expr $step1 + $step2`
+if [ $mesg_lua_resty_mail_done -eq 2 ]; then
+   mesg_lua_resty_mail_done=1
 else
-   mesg_lua_resty_smtp_done=90
+   mesg_lua_resty_mail_done=90
 fi
 
 clean_module
