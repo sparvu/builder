@@ -329,6 +329,83 @@ cd ../..
 }
 
 
+### perl Linux::Info
+build_rec_perlinuxinfo() {
+
+dir=Linux-Info
+step1=0
+step2=0
+step3=0
+step4=0
+step5=0
+
+cd lib
+init_module "$dir"
+if [ $? -eq 0 ]; then
+    step1=1
+fi
+
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 2 - Configure $dir ..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+PERL_MM_USE_DEFAULT=1 \
+${iprefix}/perl/bin/perl Makefile.PL >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if [ $? -ne 0 ]; then
+    echo "Error: configure $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step2=1
+fi 
+
+
+# STEP 3
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 3 - Make $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+make >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if [ $? -ne 0 ]; then
+    echo "Error: make $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step3=1
+fi
+
+
+# STEP 4
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 4 - Make install $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+make install >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if [ $? -ne 0 ]; then
+    echo "Error: make install Linux::Info failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step4=1
+fi
+
+## final check; all 4 steps
+perlinuxinfo_done=`expr $step1 + $step2 + $step3 + $step4`
+if [ "$perlinuxinfo_done" -eq 4 ]; then
+   perlinuxinfo_done=1
+else
+   perlinuxinfo_done=90
+fi
+
+clean_module
+
+# back to root
+cd ..
+
+}
+
+
 ### perl Net::SSLeay
 build_rec_perlnetssleay() {
 
@@ -439,13 +516,6 @@ else
     step2=1
 fi 
 
-#if [ "$PT_NAME" = "aarch64" ]; then
-#    sed "s:^LDFLAGS =.*:LDFLAGS=-Wl,-E  -fstack-protector-strong -L${iprefix}/lib -Wl,-rpath -Wl,${iprefix}/lib:" Makefile > Makefile.tmp
-#    sed "s:^LDDLFLAGS =.*:LDDLFLAGS=-shared -fstack-protector-strong -L${iprefix}/lib -Wl,-rpath -Wl,${iprefix}/lib:" Makefile.tmp > Makefile.tmp2
-#    mv Makefile.tmp2 Makefile
-#fi
-
-
 # STEP 3
 echo "" >> ${BUILD_PATH}/${BUILD_LOG}
 echo "Info: Step 3 - Make $dir..." |\
@@ -467,7 +537,7 @@ echo "Info: Step 4 - Make install $dir..." |\
  tee -a ${BUILD_PATH}/${BUILD_LOG}
 make install >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
 if [ $? -ne 0 ]; then
-    echo "Error: make install Proc::Daemon failed !" |\
+    echo "Error: make install IO::Socket::SSL failed !" |\
      tee -a ${BUILD_PATH}/${BUILD_LOG}
     rm /var/tmp/build.${module}
     exit 3
@@ -498,6 +568,8 @@ build_rec_perlcpan() {
 step1=0
 
 # STEP 1
+echo "############################################################"
+echo "Submodule: Perl CPAN" | tee -a ${BUILD_PATH}/${BUILD_LOG}
 echo "" >> ${BUILD_PATH}/${BUILD_LOG}
 echo "Info: Step 1 - Install Perl CPAN modules" |\
  tee -a ${BUILD_PATH}/${BUILD_LOG}
@@ -506,9 +578,9 @@ for lib in Digest::SHA Proc::Daemon Proc::ProcessTable Proc::PID::File JSON::XS 
            File::Tail Regexp::Common Filesys::Df Sys::Filesystem HTML::TableExtract \
            JSON HTTP::Response UUID::Tiny Carp::Assert Net::Domain::TLD \
            DateTime::Format::ISO8601 ExtUtils::PkgConfig Email::Valid \
-           Inline::MakeMaker Capture::Tiny Text::Template Linux::Info AnyEvent \
+           Inline::MakeMaker Capture::Tiny Text::Template AnyEvent \
            Inline::C Date::Calc Linux::Distribution inc::Module::Install DBI \
-           Tie::IxHash IO::Interface Redis \
+           Tie::IxHash IO::Interface Redis Net::DHCP::Watch \
            File::stat File::Stat::Bits Net::NTP Filesys::DiskUsage Net::Ping
 do
     echo " CPAN module: $lib" | tee -a ${BUILD_PATH}/${BUILD_LOG}
@@ -521,7 +593,7 @@ do
             rm /var/tmp/build.${module}
             exit 3
         else
-            step6=`expr $step6 + 1`
+            step1=`expr $step1 + 1`
             continue
         fi
     else
@@ -532,7 +604,7 @@ do
             rm /var/tmp/build.${module}
             exit 3
         else
-            step6=`expr $step6 + 1`
+            step1=`expr $step1 + 1`
             continue
         fi
     fi
@@ -542,7 +614,7 @@ done
 step1=`expr $step1 / 36`
 
 ## final check; 1 step
-perlaws_done=$step1
+perlcpan_done=$step1
 if [ "$perlcpan_done" -eq 1 ]; then
    perlcpan_done=1
 else
@@ -558,6 +630,8 @@ build_rec_perlaws() {
 step1=0
 
 # STEP 1
+echo "############################################################"
+echo "Submodule: AWS EC2" | tee -a ${BUILD_PATH}/${BUILD_LOG}
 echo "" >> ${BUILD_PATH}/${BUILD_LOG}
 echo "Info: Step 1 - Install VM::EC2..." |\
  tee -a ${BUILD_PATH}/${BUILD_LOG}
@@ -1756,69 +1830,27 @@ echo "" >> ${BUILD_PATH}/${BUILD_LOG}
 echo "Info: Step 2 - Installing recorders ..." |\
  tee -a ${BUILD_PATH}/${BUILD_LOG}
 
-    if [ "$PT_NAME" != "armv6l" ]; then
-        cp *rec ${iprefix}/bin
-        cp ../wsrec ${iprefix}/bin
-        cp ../webinvrec ${iprefix}/bin
-        cp ../rs485rec ${iprefix}/bin
-        cp ../ntprec ${iprefix}/bin
-        cp ../direc ${iprefix}/bin
-        cp ../certrec ${iprefix}/bin
-        cp ../raw2day ${iprefix}/bin
-        cp ../u2htime ${iprefix}/bin
-        cp ../actmsg ${iprefix}/bin
-        cp ../httprec ${iprefix}/bin
-        if [ $? -ne 0 ]; then
-            echo "Error: cannot install rec scripts !" |\
-             tee -a ${BUILD_PATH}/${BUILD_LOG}
-            rm /var/tmp/build.${module}
-            exit 3
-        else
-            step2=1
-        fi
-    elif [ "$PT_NAME" != "armv7l" ]; then
-        cp *rec ${iprefix}/bin
-        cp ../wsrec ${iprefix}/bin
-        cp ../webinvrec ${iprefix}/bin
-        cp ../rs485rec ${iprefix}/bin
-        cp ../ntprec ${iprefix}/bin
-        cp ../direc ${iprefix}/bin
-        cp ../certrec ${iprefix}/bin
-        cp ../raw2day ${iprefix}/bin
-        cp ../u2htime ${iprefix}/bin
-        cp ../actmsg ${iprefix}/bin
-        cp ../httprec ${iprefix}/bin
-        if [ $? -ne 0 ]; then
-            echo "Error: cannot install rec scripts !" |\
-             tee -a ${BUILD_PATH}/${BUILD_LOG}
-            rm /var/tmp/build.${module}
-            exit 3
-        else
-            step2=1
-        fi
-    else
-        cp sysrec cpurec diskrec nicrec hdwrec ${iprefix}/bin
-        cp ../wsrec ${iprefix}/bin
-        cp ../webinvrec ${iprefix}/bin
-        cp ../rs485rec ${iprefix}/bin
-        cp ../ntprec ${iprefix}/bin
-        cp ../direc ${iprefix}/bin
-        cp ../certrec ${iprefix}/bin
-        cp ../raw2day ${iprefix}/bin
-        cp ../u2htime ${iprefix}/bin
-        cp ../actmsg ${iprefix}/bin
-        cp ../httprec ${iprefix}/bin
-        if [ $? -ne 0 ]; then
-            echo "Error: cannot install rec scripts !" |\
-             tee -a ${BUILD_PATH}/${BUILD_LOG}
-            rm /var/tmp/build.${module}
-            exit 3
-        else
-            step2=1
-        fi
-
-    fi
-#fi
+cp *rec ${iprefix}/bin
+cp ../webinvrec ${iprefix}/bin
+cp ../ntprec ${iprefix}/bin
+cp ../direc ${iprefix}/bin
+cp ../certrec ${iprefix}/bin
+cp ../raw2day ${iprefix}/bin
+cp ../u2htime ${iprefix}/bin
+cp ../actmsg ${iprefix}/bin
+cp ../httprec ${iprefix}/bin
+if [ "$PT_NAME" = "armv7l" ]; then
+    cp ../wsrec ${iprefix}/bin
+    cp ../rs485rec ${iprefix}/bin
+fi
+if [ $? -ne 0 ]; then
+    echo "Error: cannot install rec scripts !" |\
+      tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step2=1
+fi
 
 # set the other bins
 cp sender ${iprefix}/bin
@@ -1833,8 +1865,17 @@ fi
 # set etc settings
 cd ../..
 cp etc/*.start ${iprefix}/etc
-cp etc/kronometrix.json ${iprefix}/etc
-cp etc/rs485rec.json ${iprefix}/etc
+if [ "$PT_NAME" != "armv7l" ]; then
+    rm ${iprefix}/etc/wsrec.start
+fi
+
+if [ "$PT_NAME" = "armv7l" ]; then
+    cp etc/kronometrix.k1.json ${iprefix}/etc/kronometrix.json
+    cp etc/rs485rec.json ${iprefix}/etc
+else
+    cp etc/kronometrix.json ${iprefix}/etc
+fi
+
 cp etc/httprec.json ${iprefix}/etc
 cp etc/webrec.json ${iprefix}/etc
 cp etc/ntprec.json ${iprefix}/etc
@@ -1855,6 +1896,8 @@ if [ $? -ne 0 ]; then
     exit 3
 fi
 
+# cleanup for non arm platforms
+
 # final check; all 2 steps
 recs_done=`expr $step1 + $step2`
 if [ "$recs_done" -eq 2 ]; then
@@ -1874,6 +1917,9 @@ if [ $? -ne 0 ]; then
       tee -a ${BUILD_PATH}/${BUILD_LOG}
     rm /var/tmp/build.${module}
     exit 3
+fi
+if [ "$PT_NAME" != "armv7l" ]; then
+    rm ${iprefix}/man/man1/rs485rec.1
 fi
 
 # set LICENSE

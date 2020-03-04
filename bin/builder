@@ -94,6 +94,7 @@ tests_done=0
 netcurl_done=0
 x509_done=0
 procdaemon_done=0
+perlinuxinfo_done=0
 perlnetssleay_done=0
 perliossl_done=0
 perli2c_done=0
@@ -1051,7 +1052,7 @@ echo "# Build Engine                                                  #"
 echo "#################################################################"
 echo "# Start: `date`"
 if [ ! -z "$platform" ]; then
-    echo "# Appliance: $platform"
+    echo "# Platform: $platform"
 fi
 echo "# Target: ${OS_NAME} ${PT_NAME}"
 echo "# Module: $module"
@@ -1099,21 +1100,22 @@ case "$module" in
         build_rec_perlcpan
         build_rec_perlaws
 
-        #serial and usb connectors
-        build_rec_deviceserial
-
         # build by default on all FreeBSDs
-        if [ "$OS_NAME" = "freebsd" ]; then
+        if [ "$PT_NAME" = "aarch64" ]; then
+            #serial and usb connectors
+            build_rec_deviceserial
             build_rec_deviceusb
       elif [ "$PT_NAME" = "armv7l" ]; then
+            #serial and usb connectors
+            build_rec_deviceserial
             build_rec_deviceusb
-            #build_rec_i2c
         fi
 
         build_rec_curl
         build_rec_ncurl
         build_rec_x509
         if [ "$OS_NAME" = "linux" ]; then
+            build_rec_perlinuxinfo
             build_rec_sysstat
         fi
         build_rec_klib
@@ -1554,7 +1556,7 @@ echo "#################################################################"
 echo "# SUMMARY"
 echo "# Target:  ${OS_NAME} ${PT_NAME}"
 if [ ! -z "$platform" ]; then
-    echo "# Appliance: $platform"
+    echo "# Platform: $platform"
 fi
 if [ ! -z "$COMPILER" ]; then
     echo "# Compiler: ${COMPILER}"
@@ -1606,6 +1608,14 @@ case "$module" in
     else
         if [ $perlnetssleay_done -eq 90 ]; then
             echo "# IO-Socket-SSL: failed"
+        fi
+    fi
+
+    if [ $perlinuxinfo_done -eq 1 ]; then
+        echo "# Linux::Info: ok"
+    else
+        if [ $perlinuxinfo_done -eq 90 ]; then
+            echo "# Linux::Info: failed"
         fi
     fi
 

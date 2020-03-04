@@ -2,7 +2,7 @@
 #
 #  Kronometrix Development tools, FreeBSD recording engine 
 #
-#  Copyright (c) 2016 Stefan Parvu (www.kronometrix.org).
+#  Copyright (c) 2020 Stefan Parvu (www.kronometrix.org).
 #
 #  This program is free software; you can redistribute it and/or
 #  modify it under the terms of the GNU General Public License
@@ -1237,17 +1237,20 @@ echo "Info: Step 2 - Installing recorders ..." |\
  tee -a ${BUILD_PATH}/${BUILD_LOG}
 
 cp sysrec cpurec diskrec nicrec hdwrec ${iprefix}/bin
-cp ../wsrec ${iprefix}/bin
-cp ../svcrec* ${iprefix}/bin
 cp ../webinvrec ${iprefix}/bin
 cp ../ntprec ${iprefix}/bin
 cp ../direc ${iprefix}/bin
-cp ../rs485rec ${iprefix}/bin
 cp ../certrec ${iprefix}/bin
+cp ../raw2day ${iprefix}/bin
 cp ../u2htime ${iprefix}/bin
 cp ../actmsg ${iprefix}/bin
 cp ../httprec ${iprefix}/bin
-cp ../raw2day ${iprefix}/bin
+
+if [ "$PT_NAME" = "aarch64" ]; then
+    cp ../wsrec ${iprefix}/bin
+    cp ../rs485rec ${iprefix}/bin
+fi
+
 if [ $? -ne 0 ]; then
     echo "Error: cannot install rec scripts !" |\
      tee -a ${BUILD_PATH}/${BUILD_LOG}
@@ -1280,7 +1283,18 @@ fi
 
 cd ../..
 cp etc/*.start ${iprefix}/etc
-cp etc/kronometrix.json ${iprefix}/etc
+
+if [ "$PT_NAME" != "aarch64" ]; then
+    rm ${iprefix}/etc/wsrec.start
+fi
+
+if [ "$PT_NAME" = "aarch64" ]; then
+    cp etc/kronometrix.k1.json ${iprefix}/etc/kronometrix.json
+    cp etc/rs485rec.json ${iprefix}/etc
+else
+    cp etc/kronometrix.json ${iprefix}/etc
+fi
+
 cp etc/webrec.json ${iprefix}/etc
 cp etc/ntprec.json ${iprefix}/etc
 cp etc/direc.json ${iprefix}/etc
