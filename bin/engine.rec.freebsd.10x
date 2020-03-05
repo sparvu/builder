@@ -1247,6 +1247,7 @@ cp ../actmsg ${iprefix}/bin
 cp ../httprec ${iprefix}/bin
 
 if [ "$PT_NAME" = "aarch64" ]; then
+    cp ../axisrec ${iprefix}/bin
     cp ../wsrec ${iprefix}/bin
     cp ../rs485rec ${iprefix}/bin
 fi
@@ -1285,6 +1286,8 @@ cd ../..
 cp etc/*.start ${iprefix}/etc
 
 if [ "$PT_NAME" != "aarch64" ]; then
+    rm ${iprefix}/etc/axisrec.start
+    rm ${iprefix}/etc/rs485rec.start
     rm ${iprefix}/etc/wsrec.start
 fi
 

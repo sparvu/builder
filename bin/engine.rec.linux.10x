@@ -1840,6 +1840,7 @@ cp ../u2htime ${iprefix}/bin
 cp ../actmsg ${iprefix}/bin
 cp ../httprec ${iprefix}/bin
 if [ "$PT_NAME" = "armv7l" ]; then
+    cp ../axisrec ${iprefix}/bin
     cp ../wsrec ${iprefix}/bin
     cp ../rs485rec ${iprefix}/bin
 fi
