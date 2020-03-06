@@ -1866,11 +1866,11 @@ fi
 # set etc settings
 cd ../..
 cp etc/*.start ${iprefix}/etc
+rm ${iprefix}/etc/zonerec.start
 if [ "$PT_NAME" != "armv7l" ]; then
     rm ${iprefix}/etc/wsrec.start
     rm ${iprefix}/etc/rs485rec.start
     rm ${iprefix}/etc/axisrec.start
-    
 fi
 
 if [ "$PT_NAME" = "armv7l" ]; then
