@@ -427,7 +427,7 @@ case "$OS_NAME" in
 
              WORKSPACE="${WORKSPACE_PREFIX}/kronometrix"
              case "$version" in
-                 1.[0-4]*)
+                 1.[0-9]*)
                   . ${PWD}/engine.rec.solaris.10x
                   ;;
                
@@ -454,7 +454,7 @@ case "$OS_NAME" in
              WORKSPACE="${WORKSPACE_PREFIX}/kronometrix"
 
              case "$version" in
-                 1.[0-4]*)
+                 1.[0-9]*)
                   . ${PWD}/engine.rec.linux.10x
                   ;;
 
@@ -483,7 +483,7 @@ case "$OS_NAME" in
              WORKSPACE="${WORKSPACE_PREFIX}/kronometrix"
 
              case "$version" in
-                 1.[0-4]*)
+                 1.[0-9]*)
                   . ${PWD}/engine.auth.linux.10x
                   ;;
 
@@ -513,7 +513,7 @@ case "$OS_NAME" in
              WORKSPACE="${WORKSPACE_PREFIX}/kronometrix"
 
              case "$version" in
-                 1.[0-4]*)
+                 1.[0-9]*)
                   . ${PWD}/engine.admin.linux.10x
                   ;;
 
@@ -543,7 +543,7 @@ case "$OS_NAME" in
              WORKSPACE="${WORKSPACE_PREFIX}/kronometrix"
             
              case "$version" in
-                 1.[0-4]*)
+                 1.[0-9]*)
                   . ${PWD}/engine.avmet.linux.10x
                   ;;
              
@@ -573,7 +573,7 @@ case "$OS_NAME" in
              WORKSPACE="${WORKSPACE_PREFIX}/kronometrix"
 
              case "$version" in
-                 1.[0-8]*)
+                 1.[0-9]*)
                   . ${PWD}/engine.mqtt.linux.10x
                   ;;
 
@@ -602,7 +602,7 @@ case "$OS_NAME" in
              WORKSPACE="${WORKSPACE_PREFIX}/kronometrix"
 
              case "$version" in
-                 1.[0-4]*)
+                 1.[0-9]*)
                   . ${PWD}/engine.vcam.linux.10x
                   ;;
 
@@ -632,7 +632,7 @@ case "$OS_NAME" in
              WORKSPACE="${WORKSPACE_PREFIX}/kronometrix"
 
              case "$version" in
-                 1.[0-4]*)
+                 1.[0-9]*)
                   . ${PWD}/engine.mesg.linux.10x
                   ;;
 
@@ -661,7 +661,7 @@ case "$OS_NAME" in
              WORKSPACE="${WORKSPACE_PREFIX}/kronometrix"
 
              case "$version" in
-                 1.[0-4]*)
+                 1.[0-9]*)
                   . ${PWD}/engine.kstats.linux.10x
                   ;;
 
@@ -691,7 +691,7 @@ case "$OS_NAME" in
              WORKSPACE="${WORKSPACE_PREFIX}/kronometrix"
 
              case "$version" in
-                 1.[0-4]*)
+                 1.[0-9]*)
                   . ${PWD}/engine.kagg.linux.10x
                   ;;
       
@@ -720,7 +720,7 @@ case "$OS_NAME" in
              WORKSPACE="${WORKSPACE_PREFIX}/kronometrix"
 
              case "$version" in
-                 1.[0-8]*)
+                 1.[0-9]*)
                   . ${PWD}/engine.rec.darwin.10x
                   ;;
 
@@ -749,7 +749,7 @@ case "$OS_NAME" in
              WORKSPACE="${WORKSPACE_PREFIX}/kronometrix"
 
              case "$version" in
-                 1.[0-8]*)
+                 1.[0-9]*)
                   . ${PWD}/engine.rec.freebsd.10x
                   ;;
 
@@ -778,7 +778,7 @@ case "$OS_NAME" in
              WORKSPACE="${WORKSPACE_PREFIX}/kronometrix"
 
              case "$version" in
-                 1.[0-8]*)
+                 1.[0-9]*)
                   . ${PWD}/engine.auth.freebsd.10x
                   ;;
 
@@ -807,7 +807,7 @@ case "$OS_NAME" in
              WORKSPACE="${WORKSPACE_PREFIX}/kronometrix"
 
              case "$version" in
-                 1.[0-8]*)
+                 1.[0-9]*)
                   . ${PWD}/engine.admin.freebsd.10x
                   ;;
 
@@ -836,7 +836,7 @@ case "$OS_NAME" in
              WORKSPACE="${WORKSPACE_PREFIX}/kronometrix"
 
              case "$version" in
-                 1.[0-8]*)
+                 1.[0-9]*)
                   . ${PWD}/engine.avmet.freebsd.10x
                   ;;
 
@@ -895,7 +895,7 @@ case "$OS_NAME" in
              WORKSPACE="${WORKSPACE_PREFIX}/kronometrix"
 
              case "$version" in
-                 1.[0-8]*)
+                 1.[0-9]*)
                   . ${PWD}/engine.vcam.freebsd.10x
                   ;;
 
@@ -924,7 +924,7 @@ case "$OS_NAME" in
              WORKSPACE="${WORKSPACE_PREFIX}/kronometrix"
 
              case "$version" in
-                 1.[0-8]*)
+                 1.[0-9]*)
                   . ${PWD}/engine.mesg.freebsd.10x
                   ;;
 
@@ -953,7 +953,7 @@ case "$OS_NAME" in
              WORKSPACE="${WORKSPACE_PREFIX}/kronometrix"
 
              case "$version" in
-                 1.[0-8]*)
+                 1.[0-9]*)
                   . ${PWD}/engine.kstats.freebsd.10x
                   ;;
 
@@ -982,7 +982,7 @@ case "$OS_NAME" in
              WORKSPACE="${WORKSPACE_PREFIX}/kronometrix"
 
              case "$version" in
-                 1.[0-8]*)
+                 1.[0-9]*)
                   . ${PWD}/engine.kagg.freebsd.10x
                   ;;
 
@@ -1000,7 +1000,7 @@ case "$OS_NAME" in
              WORKSPACE="${WORKSPACE_PREFIX}/kronometrix"
 
              case "$version" in
-                 1.[0-8]*)
+                 1.[0-9]*)
                   . ${PWD}/engine.mon.freebsd.10x
                   ;;
 
