@@ -1,7 +1,7 @@
 #!/bin/sh
 #
 #  Kronometrix Development tools, Linux recording engine 
-#  Copyright (c) 2016 Stefan Parvu (www.kronometrix.org).
+#  Copyright (c) 2016-2021 Stefan Parvu
 #
 #  This program is free software; you can redistribute it and/or
 #  modify it under the terms of the GNU General Public License
@@ -124,14 +124,14 @@ echo "Info: Step 2 - Configure perl ..." |\
 
 if [ "$PT_NAME" = "x86_64" ]; then
     sh Configure -Doptimize='-O3' -Duselargefiles -Duse64bitall \
-        -Dcf_by="support@kronometrix.org"       \
-        -Dcf_email="support@kronometrix.org"    \
+        -Dcf_by="support@kronometrix.com"       \
+        -Dcf_email="support@kronometrix.com"    \
         -Dman1dir="none" -Dman3dir="none"        \
         -Dprefix=${iprefix}/perl -des >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
 else
     sh Configure -Doptimize='-O3' -Duselargefiles -Duse64bitint \
-        -Dcf_by="support@kronometrix.org"       \
-        -Dcf_email="support@kronometrix.org"    \
+        -Dcf_by="support@kronometrix.com"       \
+        -Dcf_email="support@kronometrix.com"    \
         -Dman1dir="none" -Dman3dir="none"        \
         -Dprefix=${iprefix}/perl -des >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
 fi
