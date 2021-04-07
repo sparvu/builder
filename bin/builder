@@ -82,7 +82,7 @@ fbsd_pkg_sem=0
 
 idn_done=0
 libusb_done=0
-libexpat_done=0
+expat_done=0
 perl_done=0
 ossl_done=0
 curl_done=0
@@ -98,7 +98,7 @@ perlinuxinfo_done=0
 perlnetssleay_done=0
 perliossl_done=0
 perli2c_done=0
-perlaws_done=0
+perlxml_done=0
 perlcpan_done=0
 statgrab_done=0
 deviceusb_done=0
@@ -1087,18 +1087,33 @@ case "$module" in
         fi
     elif [ $fbsd_pkg_sem -eq 1 ]; then
         build_rec_pkg
-    else 
+    else
+ 
+        # build perl
         build_rec_perl
+
+        # build libs
         build_rec_ossl
-        build_rec_perlnetssleay
-        build_rec_perliossl
+        build_rec_expat
+        build_rec_curl
 
         if [ "$OS_NAME" = "darwin" ]; then
             build_rec_statgrab
         fi
 
+        # build perl modules
+        build_rec_perlnetssleay
+        build_rec_perliossl
+        build_rec_perlxml
         build_rec_perlcpan
-        build_rec_perlaws
+        build_rec_ncurl
+        build_rec_x509
+
+        # linux sysperfstat / sar
+        if [ "$OS_NAME" = "linux" ]; then
+            build_rec_perlinuxinfo
+            build_rec_sysstat
+        fi
 
         # build by default on all FreeBSDs
         if [ "$PT_NAME" = "aarch64" ]; then
@@ -1109,14 +1124,6 @@ case "$module" in
             #serial and usb connectors
             build_rec_deviceserial
             build_rec_deviceusb
-        fi
-
-        build_rec_curl
-        build_rec_ncurl
-        build_rec_x509
-        if [ "$OS_NAME" = "linux" ]; then
-            build_rec_perlinuxinfo
-            build_rec_sysstat
         fi
         build_rec_klib
   
@@ -1627,11 +1634,11 @@ case "$module" in
         fi
     fi
 
-    if [ $libexpat_done -eq 1 ]; then
-        echo "# libexpat: ok"
+    if [ $expat_done -eq 1 ]; then
+        echo "# expat: ok"
     else
-        if [ $libexpat_done -eq 90 ]; then
-            echo "# libexpat: failed"
+        if [ $expat_done -eq 90 ]; then
+            echo "# expat: failed"
         fi
     fi
 
@@ -1643,11 +1650,11 @@ case "$module" in
         fi
     fi
 
-    if [ $perlaws_done -eq 1 ]; then
-        echo "# Perl AWS: ok"
+    if [ $perlxml_done -eq 1 ]; then
+        echo "# Perl XML::Parser: ok"
     else
-        if [ $perlaws_done -eq 90 ]; then
-            echo "# Perl AWS: failed"
+        if [ $perlxml_done -eq 90 ]; then
+            echo "# Perl XML::Parser: failed"
         fi
     fi
 
