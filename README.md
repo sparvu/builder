@@ -13,7 +13,7 @@ Usage: ./builder [-acht] [-p prefix_path]
 
 Supported packages:
    recording
-   auth, admin, stats, aggregates, mesh, mon
+   auth, admin, stats, aggregates, mesg, mon
    mqtt, avmet, vcam
 
 OPTIONS
