@@ -2,7 +2,7 @@
 
 # Kronometrix Builder
 
-Responsible to build all Kronometrix software, from data recording, transport and analytics modules. Built, as an independent, autonomous software system, the builder is designed to maintain entire Kronometrix software stack: detect and keep up to date each software library used, compile and test the software and build the final software packages.
+Responsible to build all Kronometrix software, from data recording, transport to the data analytics modules. Built, as an independent, autonomous software system, builder is designed to look over and maintain the entire Kronometrix software stack: keep up to date library dependencies by detecting old and unmaintained software libraries and update them as needed, compile and test each software module used by Kronometrix and build the final software packages.
 
 ## Usage
 
@@ -248,7 +248,6 @@ Info: Step 3 - Cleanup stage directory
 #################################################################
 ```
 
-## Maintenance
 
 
 
