@@ -7,19 +7,21 @@ Responsible to build all Kronometrix software, from data recording, transport an
 ## Usage
 
 ```
-Usage: /opt/builder/bin/builder [-ht] [-p prefix_path]
+Usage: ./builder [-acht] [-p prefix_path]
           [-b build_number] [-m module_name] 
           [-P platform] pkg version
 
-Supported packages
-   KDR: recording
-   KA: auth, admin, stats, aggregates, mesg, mon
-   KBUS: mqtt, avmet, vcam
+Supported packages:
+   recording
+   auth, admin, stats, aggregates, mesh, mon
+   mqtt, avmet, vcam
 
 OPTIONS
+  -a autonomous mode
+  -c catalog check
   -P platform: x64, arm
   -b build_number: 01, 10, 102
-  -m module_name: perl, openssl, idn, curl,  sysstat, scripts
+  -m module_name: perl, openssl, curl, sysstat, scripts
   -p prefix_path: /opt/kronometrix
   -t test_mode
   -h help
@@ -29,6 +31,7 @@ OPTIONS
       builder -P arm auth 1.0.0     # build arm analytics auth 1.0.0
       builder stats  1.0.0          # build analytics kernel stats 1.0.0
       builder mon 1.0.17            # build platform mon 1.0.17
+      builder -a recording 1.8.20   # auto mode on
 
 Notes:
    Make sure you have defined WORKSPACE_PREFIX variable before running
