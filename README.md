@@ -1,4 +1,4 @@
-<img src="/docs/img/builder.jpg" align="right" />
+<img src="/docs/img/builder.jpg" align="right" height="35" width="275" />
 <br/><br/>
 <br/>
 
