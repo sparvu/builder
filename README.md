@@ -2,7 +2,7 @@
 
 # Kronometrix Builder
 
-Responsible to build all Kronometrix software, from data recording, transport and analytics modules. This is an autonomous software designed to build and integrate all Kronometrix software modules. Can work on various platform, from Linux and FreeBSD to MacOS.
+Responsible to build all Kronometrix software, from data recording, transport and analytics modules. Built, as an independent, autonomous software system, the builder is designed to maintain entire Kronometrix software stack: detect and keep up to date each software library used, compile and test the software and build the final software packages.
 
 ## Usage
 
