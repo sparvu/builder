@@ -11,11 +11,6 @@ Usage: ./builder [-acht] [-p prefix_path]
           [-b build_number] [-m module_name] 
           [-P platform] pkg version
 
-Supported packages:
-   recording
-   auth, admin, stats, aggregates, mesg, mon
-   mqtt, avmet, vcam
-
 OPTIONS
   -a autonomous mode
   -c catalog check
@@ -34,6 +29,12 @@ OPTIONS
       builder -a recording 1.8.20   # auto mode on
 
 Notes:
+
+   Supported packages:
+       recording
+       auth, admin, stats, aggregates, mesg, mon
+       mqtt, avmet, vcam
+
    Make sure you have defined WORKSPACE_PREFIX variable before running
    builder
 ```
