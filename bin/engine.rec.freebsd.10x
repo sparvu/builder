@@ -256,7 +256,7 @@ fi
 echo "" >> ${BUILD_PATH}/${BUILD_LOG}
 echo "Info: Step 3 - Make $dir..." |\
  tee -a ${BUILD_PATH}/${BUILD_LOG}
-make >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+gmake >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
 if [ $? -ne 0 ]; then
     echo "Error: make $dir failed !" |\
      tee -a ${BUILD_PATH}/${BUILD_LOG}
@@ -271,7 +271,7 @@ echo "" >> ${BUILD_PATH}/${BUILD_LOG}
 echo "Info: Step 4 - Make install $dir..." |\
  tee -a ${BUILD_PATH}/${BUILD_LOG}
 
-make install >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+gmake install >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
 if [ $? -ne 0 ]; then
     echo "Error: make install $dir failed !" |\
      tee -a ${BUILD_PATH}/${BUILD_LOG}
@@ -340,6 +340,7 @@ if [ $? -ne 0 ]; then
     exit 3
 else
     step3=1
+fi
 
 # STEP 4
 echo "" >> ${BUILD_PATH}/${BUILD_LOG}
@@ -451,9 +452,6 @@ cd ..
 
 
 
-
-
-
 ### perl Net::SSLeay
 build_rec_perlnetssleay() {
 
@@ -486,11 +484,11 @@ else
     step2=1
 fi  
 
-if [ "$PT_NAME" = "aarch64" ]; then
+#if [ "$PT_NAME" = "aarch64" ]; then
     sed "s:^LDFLAGS =.*:LDFLAGS=-Wl,-E  -fstack-protector-strong -L${iprefix}/lib -Wl,-rpath -Wl,${iprefix}/lib:" Makefile > Makefile.tmp
     sed "s:^LDDLFLAGS =.*:LDDLFLAGS=-shared -fstack-protector-strong -L${iprefix}/lib -Wl,-rpath -Wl,${iprefix}/lib:" Makefile.tmp > Makefile.tmp2
     mv Makefile.tmp2 Makefile
-fi
+#fi
 
 # STEP 3
 echo "" >> ${BUILD_PATH}/${BUILD_LOG}
@@ -571,11 +569,11 @@ else
     step2=1
 fi 
 
-if [ "$PT_NAME" = "aarch64" ]; then
+#if [ "$PT_NAME" = "aarch64" ]; then
     sed "s:^LDFLAGS =.*:LDFLAGS=-Wl,-E  -fstack-protector-strong -L${iprefix}/lib -Wl,-rpath -Wl,${iprefix}/lib:" Makefile > Makefile.tmp
     sed "s:^LDDLFLAGS =.*:LDDLFLAGS=-shared -fstack-protector-strong -L${iprefix}/lib -Wl,-rpath -Wl,${iprefix}/lib:" Makefile.tmp > Makefile.tmp2
     mv Makefile.tmp2 Makefile
-fi
+#fi
 
 # STEP 3
 echo "" >> ${BUILD_PATH}/${BUILD_LOG}
@@ -664,6 +662,8 @@ else
 fi
 
 }
+
+
 
 ### perl-cpan-libs
 build_rec_perlcpan() {
@@ -1496,9 +1496,9 @@ cp ../raw2day ${iprefix}/bin
 cp ../u2htime ${iprefix}/bin
 cp ../actmsg ${iprefix}/bin
 cp ../httprec ${iprefix}/bin
+cp ../axisrec ${iprefix}/bin
 
 if [ "$PT_NAME" = "aarch64" ]; then
-    cp ../axisrec ${iprefix}/bin
     cp ../wsrec ${iprefix}/bin
     cp ../rs485rec ${iprefix}/bin
 fi
@@ -1512,15 +1512,17 @@ else
     step2=1
 fi
 
-# set the other bins
+#set speedtest.net
+ln -s ${iprefix}/perl/bin/speedtest ${iprefix}/bin/speedtest      
+
+# set transporter 
 cp sender ${iprefix}/bin
 if [ $? -ne 0 ]; then
-    echo "Error: cannot install additional bins !" |\
+    echo "Error: cannot install transporter bins !" |\
       tee -a ${BUILD_PATH}/${BUILD_LOG}
     rm /var/tmp/build.${module}
     exit 3
 fi
-
 
 # set etc settings
 if [ ! -d ${iprefix}/etc ]; then
