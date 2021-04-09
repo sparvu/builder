@@ -1,6 +1,4 @@
 <img src="/docs/img/builder.jpg" align="right" height="300" width="300" />
-<br/><br/>
-<br/>
 
 # Kronometrix Builder
 
