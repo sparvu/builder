@@ -1562,6 +1562,7 @@ else
     cp etc/kronometrix.json ${iprefix}/etc
 fi
 
+cp etc/random-rw.fio ${iprefix}/etc
 cp etc/webrec.json ${iprefix}/etc
 cp etc/ntprec.json ${iprefix}/etc
 cp etc/direc.json ${iprefix}/etc

@@ -2013,8 +2013,9 @@ cp ../raw2day ${iprefix}/bin
 cp ../u2htime ${iprefix}/bin
 cp ../actmsg ${iprefix}/bin
 cp ../httprec ${iprefix}/bin
+cp ../axisrec ${iprefix}/bin
+
 if [ "$PT_NAME" = "armv7l" ]; then
-    cp ../axisrec ${iprefix}/bin
     cp ../wsrec ${iprefix}/bin
     cp ../rs485rec ${iprefix}/bin
 fi
@@ -2027,7 +2028,10 @@ else
     step2=1
 fi
 
-# set the other bins
+#set speedtest.net
+ln -s ${iprefix}/perl/bin/speedtest ${iprefix}/bin/speedtest
+
+# set transporter
 cp sender ${iprefix}/bin
 if [ $? -ne 0 ]; then
     echo "Error: cannot install additional bins !" |\
@@ -2062,6 +2066,7 @@ else
     cp etc/kronometrix.json ${iprefix}/etc
 fi
 
+cp etc/random-rw.fio ${iprefix}/etc
 cp etc/httprec.json ${iprefix}/etc
 cp etc/webrec.json ${iprefix}/etc
 cp etc/ntprec.json ${iprefix}/etc
