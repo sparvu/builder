@@ -2,7 +2,7 @@
 #
 #  Kronometrix Development tools, Darwinrecording engine 
 #
-#  Copyright (c) 2018 Stefan Parvu (www.kronometrix.org).
+#  Copyright (c) 2021 Stefan Parvu (www.kronometrix.org).
 #
 #  This program is free software; you can redistribute it and/or
 #  modify it under the terms of the GNU General Public License
@@ -20,7 +20,7 @@
 #
 #  (http://www.gnu.org/copyleft/gpl.html)
 
-# VERSION: 1.1
+# VERSION: 1.2
 
 # ############################################################### #
 # Engine: Darwin                                                  # 
@@ -124,8 +124,8 @@ echo "Info: Step 2 - Configure perl ..." |\
  tee -a ${BUILD_PATH}/${BUILD_LOG}
 
 sh Configure -Doptimize='-O3' -Duselargefiles -Duse64bitall \
-        -Dcf_by="support@kronometrix.org"        \
-        -Dcf_email="support@kronometrix.org"     \
+        -Dcf_by="support@kronometrix.com"        \
+        -Dcf_email="support@kronometrix.com"     \
         -Dman1dir="none" -Dman3dir="none"        \
         -Dprefix=${iprefix}/perl -des >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
 
