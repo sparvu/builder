@@ -123,7 +123,7 @@ echo "" >> ${BUILD_PATH}/${BUILD_LOG}
 echo "Info: Step 2 - Configure perl ..." |\
  tee -a ${BUILD_PATH}/${BUILD_LOG}
 
-sh Configure -Doptimize='-O3' -Duselargefiles -Duse64bitall \
+sh Configure -Doptimize='-O3' \
         -Dcf_by="support@kronometrix.com"        \
         -Dcf_email="support@kronometrix.com"     \
         -Dman1dir="none" -Dman3dir="none"        \
