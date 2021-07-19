@@ -39,6 +39,8 @@
 # Analytics Authentication FreeBSD                                #
 # ############################################################### #
 
+#./configure --prefix=/opt/kronometrix --with-luajit --with-cc-opt="-I/opt/kronometrix/include/ -I/opt/kronometrix/include/openssl/" --with-ld-opt="-L/opt/kronometrix/lib/ -Wl,-rpath -Wl,/opt/kronometrix/lib -lpcre"
+#
 
 ### extract_archive
 extract_archive() {

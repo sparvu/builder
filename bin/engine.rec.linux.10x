@@ -19,7 +19,7 @@
 #
 #  (http://www.gnu.org/copyleft/gpl.html)
 
-# VERSION: 4.0
+# VERSION: 4.1
 
 # ############################################################### #
 # Engine: Linux                                                   # 
@@ -265,6 +265,7 @@ if [ $? -eq 0 ]; then
     step1=1
 fi
 
+echo "############################################################"
 echo "" >> ${BUILD_PATH}/${BUILD_LOG}
 echo "Info: Step 2 - Configure $dir ..." |\
  tee -a ${BUILD_PATH}/${BUILD_LOG}
@@ -640,10 +641,6 @@ cd ..
 }
 
 
-
-
-
-
 ### perl cpan
 build_rec_perlcpan() {
 
@@ -663,11 +660,12 @@ for lib in Proc::Daemon Proc::PID::File JSON::XS Data::Peek CPAN::DistnameInfo \
            Capture::Tiny Text::Template AnyEvent IO::Async Inline::C \
            Date::Calc Linux::Distribution inc::Module::Install DBI IO::Interface \
            Redis Net::DHCP::Watch Net::SNMP Mail::IMAPClient File::Stat::Bits \
-           Net::NTP Filesys::DiskUsage Net::Ping Geo::TAF JSON::MaybeXS \
-           Net::HTTP LWP LWP::Authen::OAuth LWP::Authen::OAuth2 Net::OAuth2 \
-           LWP::Protocol::https HTML::TreeBuilder App::SpeedTest
+           Net::NTP Filesys::DiskUsage Geo::TAF JSON::MaybeXS \
+           Net::HTTP LWP LWP::Protocol::https HTML::TreeBuilder App::SpeedTest
 do
 
+           #Net::HTTP LWP LWP::Authen::OAuth LWP::Authen::OAuth2 Net::OAuth2 \
+           #LWP::Protocol::https HTML::TreeBuilder App::SpeedTest
     echo " CPAN module: $lib" | tee -a ${BUILD_PATH}/${BUILD_LOG}
 
     if  [ "$lib" = "Inline::MakeMaker" -o "$lib" = "JSON::XS" -o "$lib" = "AnyEvent" -o "$lib" = "Data::Peek" ]; then
@@ -712,8 +710,8 @@ do
     fi
 done
 
-# there are 48 perl modules install calls
-step1=`expr $step1 / 48`
+# there are 43 perl modules install calls
+step1=`expr $step1 / 43`
 
 ## final check; 1 step
 perlcpan_done=$step1
@@ -1962,6 +1960,123 @@ cd ..
 
 }
 
+### lua
+build_rec_lua() {
+dir=lua
+step1=0
+step2=0
+step3=0
+
+cd lib
+init_module "$dir"
+if [ $? -eq 0 ]; then
+    step1=1
+fi
+
+
+# STEP 2
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 2 - Make $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+make >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if [ $? -ne 0 ]; then
+    echo "Error: make $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step2=1
+fi
+
+
+# STEP 3
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 3 - Make install $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+make install >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if [ $? -ne 0 ]; then
+    echo "Error: make install $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step3=1
+fi
+
+# final check; all 4 steps
+lua_done=`expr $step1 + $step2 + $step3`
+if [ "$lua_done" -eq 3 ]; then
+   lua_done=1
+else
+   lua_done=90
+fi
+
+clean_module
+
+# back to root
+cd ..
+
+}
+
+
+### luajit
+build_rec_luajit() {
+dir=luajit
+step1=0
+step2=0
+step3=0
+
+cd lib
+init_module "$dir"
+if [ $? -eq 0 ]; then
+    step1=1
+fi
+
+# STEP 2
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 2 - Make $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+make >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if [ $? -ne 0 ]; then
+    echo "Error: make $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step2=1
+fi
+
+# STEP 3
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 3 - Make install $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+make install >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if [ $? -ne 0 ]; then
+    echo "Error: make install $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step3=1
+fi
+
+# final check; all 3 steps
+luajit_done=`expr $step1 + $step2 + $step3`
+if [ "$luajit_done" -eq 3 ]; then
+   luajit_done=1
+else
+   luajit_done=90
+fi
+
+clean_module
+
+# back to root
+cd ..
+
+}
+
 
 ### configuration settings
 build_rec_scripts() {
@@ -2030,6 +2145,10 @@ fi
 
 #set speedtest.net
 ln -s ${iprefix}/perl/bin/speedtest ${iprefix}/bin/speedtest
+
+# set lua to luajit
+ln -s ${iprefix}/bin/luajit ${iprefix}/bin/lua
+
 
 # set transporter
 cp sender ${iprefix}/bin

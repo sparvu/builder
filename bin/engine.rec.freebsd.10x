@@ -393,8 +393,7 @@ echo "" >> ${BUILD_PATH}/${BUILD_LOG}
 echo "Info: Step 2 - Configure $dir ..." |\
  tee -a ${BUILD_PATH}/${BUILD_LOG}
 
-PERL_MM_USE_DEFAULT=1 \
-NO_NETWORK_TESTING=1 \
+export LD_LIBRARY_PATH=/opt/kronometrix/lib
 ${iprefix}/perl/bin/perl Makefile.PL EXPATLIBPATH=${iprefix}/lib EXPATINCPATH=${iprefix}/include >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
 if [ $? -ne 0 ]; then
     echo "Error: configure $dir failed !" |\

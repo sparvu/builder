@@ -1,7 +1,8 @@
 #!/bin/sh
 #
 #  Kronometrix Development tools, Darwinrecording engine 
-#  Copyright (c) 2021 Stefan Parvu
+#
+#  Copyright (c) 2018 Stefan Parvu (www.kronometrix.org).
 #
 #  This program is free software; you can redistribute it and/or
 #  modify it under the terms of the GNU General Public License
@@ -19,7 +20,7 @@
 #
 #  (http://www.gnu.org/copyleft/gpl.html)
 
-# VERSION: 1.2
+# VERSION: 1.1
 
 # ############################################################### #
 # Engine: Darwin                                                  # 
@@ -122,8 +123,9 @@ echo "" >> ${BUILD_PATH}/${BUILD_LOG}
 echo "Info: Step 2 - Configure perl ..." |\
  tee -a ${BUILD_PATH}/${BUILD_LOG}
 
-sh Configure -Dcf_by="support@kronometrix.com"   \
-        -Dcf_email="support@kronometrix.com"     \
+sh Configure -Doptimize='-O3' -Duselargefiles -Duse64bitall \
+        -Dcf_by="support@kronometrix.org"        \
+        -Dcf_email="support@kronometrix.org"     \
         -Dman1dir="none" -Dman3dir="none"        \
         -Dprefix=${iprefix}/perl -des >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
 
@@ -436,13 +438,13 @@ echo "Info: Step 1 - Install Perl CPAN modules" | tee -a ${BUILD_PATH}/${BUILD_L
 
 for lib in Digest::SHA Proc::Daemon Proc::ProcessTable Proc::PID::File \
            File::Tail Regexp::Common Filesys::Df Sys::Filesystem JSON::XS \
-           JSON HTTP::Response UUID::Tiny Carp::Assert Net::Domain::TLD Geo::IP \
-           Test::Kwalitee::Extra DateTime::Format::ISO8601 Sys::HostIP Spreadsheet::XLSX \
+           JSON HTTP::Response UUID::Tiny Carp::Assert Net::Domain::TLD \
+           Test::Kwalitee::Extra DateTime::Format::ISO8601 Sys::HostIP \
            ExtUtils::PkgConfig Inline::MakeMaker Capture::Tiny Email::Valid \
            DBI Inline::C Date::Calc Text::Template HTML::TableExtract \
            Tie::IxHash IO::Interface File::stat File::Stat::Bits Net::NTP \
            Filesys::DiskUsage Net::Ping inc::Module::Install AnyEvent Redis \
-           Mac::OSVersion BSD::getloadavg
+           Mac::OSVersion BSD::getloadavg Unix::Statgrab
 do
     echo " CPAN module: $lib" | tee -a ${BUILD_PATH}/${BUILD_LOG}
     if  [ "$lib" = "Inline::MakeMaker" -o  "$lib" = "JSON::XS" -o "$lib" = "AnyEvent" ]; then
@@ -472,8 +474,8 @@ do
 done
 
 
-# there are 40 perl modules install calls
-step1=`expr $step1 / 40`
+# there are 39 perl modules install calls
+step1=`expr $step1 / 39`
 
 ## final check; 1 step
 perlcpan_done=$step1
