@@ -70,6 +70,7 @@ lidn_sem=0
 lcrl_sem=0
 lwcl_sem=0
 expat_sem=0
+plnetcurl_sem=0
 wrec_sem=0
 recs_sem=0
 test_sem=0
@@ -342,6 +343,11 @@ do
             expat)
                 export LD_LIBRARY_PATH=/opt/kronometrix/lib
                 expat_sem=1
+            ;;
+
+
+            plnetcurl)
+                plnetcurl_sem=1
             ;;
  
             nrec)
@@ -1088,6 +1094,10 @@ case "$module" in
         rm -rf /opt/kronometrix/perl/lib/site_perl/5.32.1/amd64-freebsd/auto/XML/Parser
         build_rec_expat
         build_rec_perlxml 
+
+    elif [ $plnetcurl_sem -eq 1 ]; then
+     
+        build_rec_ncurl
 
     elif [ $rpm_sem -eq 1 ]; then
 
