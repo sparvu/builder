@@ -1309,7 +1309,9 @@ echo "Info: Step 2 - Configure $dir ..." |\
 
 
 # STEP 2
-env PATH=${iprefix}/bin:$PATH ${iprefix}/perl/bin/perl Makefile.PL >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+export PATH=${iprefix}/bin:$PATH
+echo $PATH
+${iprefix}/perl/bin/perl Makefile.PL >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
 if [ $? -ne 0 ]; then
     echo "Error: configure $dir failed !" |\
      tee -a ${BUILD_PATH}/${BUILD_LOG}
