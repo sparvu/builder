@@ -1127,10 +1127,6 @@ case "$module" in
         build_rec_curl
         build_rec_fio
 
-        if [ "$OS_NAME" = "darwin" ]; then
-            build_rec_statgrab
-        fi
-
         # build perl modules
         build_rec_perlnetssleay
         build_rec_perliossl
