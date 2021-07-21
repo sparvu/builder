@@ -720,9 +720,6 @@ cd ..
 
 
 
-
-
-
 ### libstatgrab
 build_rec_statgrab() {
 dir="libstatgrab"
@@ -798,6 +795,64 @@ clean_module
 cd ..
 
 }
+
+### luajit
+build_rec_luajit() {
+dir=luajit
+step1=0
+step2=0
+step3=0
+
+cd lib
+init_module "$dir"
+if [ $? -eq 0 ]; then
+    step1=1
+fi
+
+# STEP 2
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 2 - Make $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+make >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if [ $? -ne 0 ]; then
+    echo "Error: make $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step2=1
+fi
+
+# STEP 3
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 3 - Make install $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+make install >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if [ $? -ne 0 ]; then
+    echo "Error: make install $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step3=1
+fi
+
+# final check; all 3 steps
+luajit_done=`expr $step1 + $step2 + $step3`
+if [ "$luajit_done" -eq 3 ]; then
+   luajit_done=1
+else
+   luajit_done=90
+fi
+
+clean_module
+
+# back to root
+cd ..
+
+}
+
 
 
 ### perl Device-SerialPort
