@@ -1540,28 +1540,39 @@ echo "" >> ${BUILD_PATH}/${BUILD_LOG}
 echo "Info: Step 2 - Installing recorders ..." |\
  tee -a ${BUILD_PATH}/${BUILD_LOG}
 
-cp sysrec cpurec diskrec nicrec hdwrec ${iprefix}/bin
-cp ../wsrec ${iprefix}/bin
-cp ../svcrec* ${iprefix}/bin
+
+cp *rec ${iprefix}/bin
 cp ../webinvrec ${iprefix}/bin
 cp ../ntprec ${iprefix}/bin
 cp ../direc ${iprefix}/bin
-cp ../rs485rec ${iprefix}/bin
 cp ../certrec ${iprefix}/bin
+cp ../raw2day ${iprefix}/bin
 cp ../u2htime ${iprefix}/bin
 cp ../actmsg ${iprefix}/bin
 cp ../httprec ${iprefix}/bin
-cp ../raw2day ${iprefix}/bin
+cp ../axisrec ${iprefix}/bin
+
+#if [ "$PT_NAME" = "armv7l" ]; then
+#    cp ../wsrec ${iprefix}/bin
+#    cp ../rs485rec ${iprefix}/bin
+#fi
 if [ $? -ne 0 ]; then
     echo "Error: cannot install rec scripts !" |\
-     tee -a ${BUILD_PATH}/${BUILD_LOG}
+      tee -a ${BUILD_PATH}/${BUILD_LOG}
     rm /var/tmp/build.${module}
     exit 3
 else
     step2=1
 fi
 
-# set the other bins
+#set speedtest.net
+ln -s ${iprefix}/perl/bin/speedtest ${iprefix}/bin/speedtest
+
+# set lua to luajit
+ln -s ${iprefix}/bin/luajit ${iprefix}/bin/lua
+
+
+# set transporter
 cp sender ${iprefix}/bin
 if [ $? -ne 0 ]; then
     echo "Error: cannot install additional bins !" |\
@@ -1572,30 +1583,44 @@ fi
 
 
 # set etc settings
-if [ ! -d ${iprefix}/etc ]; then
-    mkdir ${iprefix}/etc 
-    if [ $? -ne 0 ]; then
-        echo "Error: cannot set etc director !" |\
-          tee -a ${BUILD_PATH}/${BUILD_LOG}
-        rm /var/tmp/build.${module}
-        exit 3
+cd ../..
+cp etc/*.start ${iprefix}/etc
+rm ${iprefix}/etc/zonerec.start
+if [ "$PT_NAME" != "armv7l" ]; then
+    if [ -f ${iprefix}/etc/wsrec.start ]; then
+        rm ${iprefix}/etc/wsrec.start
+    fi
+
+    if [ -f ${iprefix}/etc/rs485rec.start ]; then
+        rm ${iprefix}/etc/rs485rec.start
+    fi
+
+    if [ -f ${iprefix}/etc/axisrec.start ]; then
+        rm ${iprefix}/etc/axisrec.start
     fi
 fi
 
-cd ../..
-cp etc/*.start ${iprefix}/etc
-cp etc/kronometrix.json ${iprefix}/etc
+if [ "$PT_NAME" = "armv7l" ]; then
+    cp etc/kronometrix.k1.json ${iprefix}/etc/kronometrix.json
+    cp etc/rs485rec.json ${iprefix}/etc
+else
+    cp etc/kronometrix.json ${iprefix}/etc
+fi
+
+
+cp etc/random-rw.fio ${iprefix}/etc
+cp etc/httprec.json ${iprefix}/etc
 cp etc/webrec.json ${iprefix}/etc
 cp etc/ntprec.json ${iprefix}/etc
 cp etc/direc.json ${iprefix}/etc
-cp etc/httprec.json ${iprefix}/etc
-cp etc/rs485rec.json ${iprefix}/etc
 cp etc/certrec.json ${iprefix}/etc
 cp etc/svcrec.json ${iprefix}/etc
 cp etc/rec ${iprefix}/etc
 cp etc/transport ${iprefix}/etc
-cp etc/${OS_NAME}/kronometrix.newsyslog ${iprefix}/etc
-mkdir ${iprefix}/etc/rc
+cp etc/${OS_NAME}/logrotate.krmx ${iprefix}/etc
+if [ ! -d ${iprefix}/etc/rc ]; then
+    mkdir ${iprefix}/etc/rc
+fi
 cp etc/${OS_NAME}/kdr* ${iprefix}/etc/rc
 if [ $? -ne 0 ]; then
     echo "Error: cannot install etc settings !" |\
@@ -1604,9 +1629,7 @@ if [ $? -ne 0 ]; then
     exit 3
 fi
 
-if [ ! -f ${iprefix}/lib/libcurl.so.4 ]; then
-    ln -s ${iprefix}/lib/libcurl.so.4.4.0 ${iprefix}/lib/libcurl.so.4
-fi
+# cleanup for non arm platforms
 
 # final check; all 2 steps
 recs_done=`expr $step1 + $step2`
@@ -1628,6 +1651,9 @@ if [ $? -ne 0 ]; then
     rm /var/tmp/build.${module}
     exit 3
 fi
+if [ "$PT_NAME" != "armv7l" ]; then
+    rm ${iprefix}/man/man1/rs485rec.1
+fi
 
 # set LICENSE
 cp LICENSE ${iprefix}/
@@ -1637,7 +1663,6 @@ if [ $? -ne 0 ]; then
     rm /var/tmp/build.${module}
     exit 3
 fi
-
 
 # set VERSION
 cp VERSION ${iprefix}/
@@ -1652,7 +1677,7 @@ fi
 # set release notes
 cp CHANGELOG.${OS_NAME} ${iprefix}/CHANGELOG
 if [ $? -ne 0 ]; then
-    echo "Error: cannot install changelog !" |\
+    echo "Error: cannot install release.notes !" |\
       tee -a ${BUILD_PATH}/${BUILD_LOG}
     rm /var/tmp/build.${module}
     exit 3
@@ -1661,11 +1686,12 @@ fi
 # set README 
 cp README.${OS_NAME} ${iprefix}/README
 if [ $? -ne 0 ]; then
-    echo "Error: cannot install README.${OS_NAME} !" |\
+    echo "Error: cannot install README.${OS_NMAE} !" |\
       tee -a ${BUILD_PATH}/${BUILD_LOG}
     rm /var/tmp/build.${module}
     exit 3
 fi
+
 
 # set log directory
 if [ ! -d ${iprefix}/log ]; then
@@ -1707,10 +1733,31 @@ else
             exit 3
         fi
     fi
+
+    # share openssl man page cleanup
+    if [ -d ${iprefix}/share ]; then
+        rm -rf ${iprefix}/share
+        if [ $? -ne 0 ]; then
+            echo "Error: cannot clean share director !" |\
+             tee -a ${BUILD_PATH}/${BUILD_LOG}
+            rm /var/tmp/build.${module}
+            exit 3
+        fi
+    fi
+
+    if [ -d ${iprefix}/openssl/man ]; then
+        rm -rf ${iprefix}/openssl/man
+        if [ $? -ne 0 ]; then
+            echo "Error: cannot clean openssl man director !" |\
+             tee -a ${BUILD_PATH}/${BUILD_LOG}
+            rm /var/tmp/build.${module}
+            exit 3
+        fi
+    fi
 fi
 
-}
 
+}
 
 ### testing
 test_rec_scripts() {
