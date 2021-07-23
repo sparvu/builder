@@ -1584,8 +1584,16 @@ fi
 
 # set etc settings
 cd ../..
+if [ ! -d ${iprefix}/etc ]; then
+    mkdir ${iprefix}/etc
+fi
 cp etc/*.start ${iprefix}/etc
-rm ${iprefix}/etc/zonerec.start
+
+
+if [ -f ${iprefix}/etc/zonerec.start ]; then
+    rm ${iprefix}/etc/zonerec.start
+fi
+
 if [ "$PT_NAME" != "armv7l" ]; then
     if [ -f ${iprefix}/etc/wsrec.start ]; then
         rm ${iprefix}/etc/wsrec.start
@@ -1617,7 +1625,6 @@ cp etc/certrec.json ${iprefix}/etc
 cp etc/svcrec.json ${iprefix}/etc
 cp etc/rec ${iprefix}/etc
 cp etc/transport ${iprefix}/etc
-cp etc/${OS_NAME}/logrotate.krmx ${iprefix}/etc
 if [ ! -d ${iprefix}/etc/rc ]; then
     mkdir ${iprefix}/etc/rc
 fi
