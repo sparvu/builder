@@ -1812,9 +1812,9 @@ echo "Info: Step 2 - Check libs" |\
  tee -a ${BUILD_PATH}/${BUILD_LOG}
 
 noErrors=0
-for lib in `ls ${iprefix}/lib/*.so`
+for lib in `ls ${iprefix}/lib/*.dylib`
 do
-    noErrors=`ldd $lib | grep 'not found' | wc -l`
+    noErrors=`otool -L $lib | grep 'not found' | wc -l`
     if [ "$noErrors" -ne 0 ]; then
         echo "LIB ERROR: $lib" |\
          tee -a ${BUILD_PATH}/${BUILD_LOG}
