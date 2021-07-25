@@ -443,8 +443,8 @@ for lib in Digest::SHA Proc::Daemon Proc::ProcessTable Proc::PID::File \
            ExtUtils::PkgConfig Inline::MakeMaker Capture::Tiny Email::Valid \
            DBI Inline::C Date::Calc Text::Template HTML::TableExtract \
            Tie::IxHash IO::Interface File::stat File::Stat::Bits Net::NTP \
-           Filesys::DiskUsage Net::Ping inc::Module::Install AnyEvent Redis \
-           Mac::OSVersion BSD::getloadavg LWP::Protocol::https App::SpeedTest
+           Filesys::DiskUsage Net::Ping inc::Module::Install Redis \
+           Mac::OSVersion BSD::getloadavg Sys::Info::Driver::OSX LWP::Protocol::https App::SpeedTest
 do
     echo " CPAN module: $lib" | tee -a ${BUILD_PATH}/${BUILD_LOG}
     if  [ "$lib" = "Inline::MakeMaker" -o  "$lib" = "JSON::XS" -o "$lib" = "AnyEvent" ]; then
