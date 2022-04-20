@@ -2,7 +2,7 @@
 #
 #  Kronometrix Development tools, Darwinrecording engine 
 #
-#  Copyright (c) 2018 Stefan Parvu (www.kronometrix.org).
+#  Copyright (c) 2021 Stefan Parvu (www.kronometrix.org).
 #
 #  This program is free software; you can redistribute it and/or
 #  modify it under the terms of the GNU General Public License
@@ -20,7 +20,7 @@
 #
 #  (http://www.gnu.org/copyleft/gpl.html)
 
-# VERSION: 1.1
+# VERSION: 1.2
 
 # ############################################################### #
 # Engine: Darwin                                                  # 
@@ -123,9 +123,9 @@ echo "" >> ${BUILD_PATH}/${BUILD_LOG}
 echo "Info: Step 2 - Configure perl ..." |\
  tee -a ${BUILD_PATH}/${BUILD_LOG}
 
-sh Configure -Doptimize='-O3' -Duselargefiles -Duse64bitall \
-        -Dcf_by="support@kronometrix.org"        \
-        -Dcf_email="support@kronometrix.org"     \
+sh Configure -Doptimize='-O3' \
+        -Dcf_by="support@kronometrix.com"        \
+        -Dcf_email="support@kronometrix.com"     \
         -Dman1dir="none" -Dman3dir="none"        \
         -Dprefix=${iprefix}/perl -des >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
 
@@ -443,8 +443,8 @@ for lib in Digest::SHA Proc::Daemon Proc::ProcessTable Proc::PID::File \
            ExtUtils::PkgConfig Inline::MakeMaker Capture::Tiny Email::Valid \
            DBI Inline::C Date::Calc Text::Template HTML::TableExtract \
            Tie::IxHash IO::Interface File::stat File::Stat::Bits Net::NTP \
-           Filesys::DiskUsage Net::Ping inc::Module::Install AnyEvent Redis \
-           Mac::OSVersion BSD::getloadavg Unix::Statgrab
+           Filesys::DiskUsage Net::Ping inc::Module::Install Redis \
+           Mac::OSVersion BSD::getloadavg Sys::Info::Driver::OSX LWP::Protocol::https App::SpeedTest
 do
     echo " CPAN module: $lib" | tee -a ${BUILD_PATH}/${BUILD_LOG}
     if  [ "$lib" = "Inline::MakeMaker" -o  "$lib" = "JSON::XS" -o "$lib" = "AnyEvent" ]; then
@@ -474,8 +474,8 @@ do
 done
 
 
-# there are 39 perl modules install calls
-step1=`expr $step1 / 39`
+# there are 38 perl modules install calls
+step1=`expr $step1 / 38`
 
 ## final check; 1 step
 perlcpan_done=$step1
@@ -566,6 +566,160 @@ cd ..
 }
 
 
+### fio
+build_rec_fio() {
+dir=fio
+step1=0
+step2=0
+step3=0
+step4=0
+
+cd lib
+init_module "$dir"
+if [ $? -eq 0 ]; then
+    step1=1
+fi
+
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 2 - Configure $dir ..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+env CFLAGS="-I${iprefix}/include" \
+    LDFLAGS="-L${iprefix}/lib -Wl,-rpath -Wl,${iprefix}/lib" \
+    ./configure --prefix=${iprefix} >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if [ $? -ne 0 ]; then
+    echo "Error: configure $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step2=1
+fi
+
+
+# STEP 3
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 3 - Make $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+make >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if [ $? -ne 0 ]; then
+    echo "Error: make $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step3=1
+fi
+
+# STEP 4
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 4 - Make install $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+make install >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if [ $? -ne 0 ]; then
+    echo "Error: make install $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step4=1
+fi
+
+# final check; all 4 steps
+fio_done=`expr $step1 + $step2 + $step3 + $step4`
+if [ "$fio_done" -eq 4 ]; then
+   fio_done=1
+else
+   fio_done=90
+fi
+
+clean_module
+
+# back to root
+cd ..
+
+}
+
+
+### libexpat
+build_rec_expat() {
+dir=expat
+step1=0
+step2=0
+step3=0
+step4=0
+
+cd lib
+init_module "$dir"
+if [ $? -eq 0 ]; then
+    step1=1
+fi
+
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 2 - Configure $dir ..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+env CFLAGS="-O3 -I${iprefix}/include" \
+    LDFLAGS="-L${iprefix}/lib -Wl,-rpath -Wl,${iprefix}/lib" \
+    ./configure --prefix=${iprefix} --without-examples --without-tests --without-docbook >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if [ $? -ne 0 ]; then
+    echo "Error: configure $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step2=1
+fi
+
+
+# STEP 3
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 3 - Make $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+make >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if [ $? -ne 0 ]; then
+    echo "Error: make $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step3=1
+fi
+
+
+# STEP 4
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 4 - Make install $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+make install >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if [ $? -ne 0 ]; then
+    echo "Error: make install libusb failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step4=1
+fi
+
+# final check; all 4 steps
+expat_done=`expr $step1 + $step2 + $step3 + $step4`
+if [ "$expat_done" -eq 4 ]; then
+   expat_done=1
+else
+   expat_done=90
+fi
+
+clean_module
+
+# back to root
+cd ..
+
+}
+
+
+
 ### libstatgrab
 build_rec_statgrab() {
 dir="libstatgrab"
@@ -641,6 +795,64 @@ clean_module
 cd ..
 
 }
+
+### luajit
+build_rec_luajit() {
+dir=luajit
+step1=0
+step2=0
+step3=0
+
+cd lib
+init_module "$dir"
+if [ $? -eq 0 ]; then
+    step1=1
+fi
+
+# STEP 2
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 2 - Make $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+MACOSX_DEPLOYMENT_TARGET=11.0 make >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if [ $? -ne 0 ]; then
+    echo "Error: make $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step2=1
+fi
+
+# STEP 3
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 3 - Make install $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+make install >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if [ $? -ne 0 ]; then
+    echo "Error: make install $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step3=1
+fi
+
+# final check; all 3 steps
+luajit_done=`expr $step1 + $step2 + $step3`
+if [ "$luajit_done" -eq 3 ]; then
+   luajit_done=1
+else
+   luajit_done=90
+fi
+
+clean_module
+
+# back to root
+cd ..
+
+}
+
 
 
 ### perl Device-SerialPort
@@ -1049,6 +1261,86 @@ cd ..
 }
 
 
+### perl XML::Parser
+build_rec_perlxml() {
+
+dir=XML-Parser
+step1=0
+step2=0
+step3=0
+step4=0
+step5=0
+
+cd lib
+init_module "$dir"
+if [ $? -eq 0 ]; then
+    step1=1
+fi
+
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 2 - Configure $dir ..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+PERL_MM_USE_DEFAULT=1 \
+NO_NETWORK_TESTING=1 \
+${iprefix}/perl/bin/perl Makefile.PL EXPATLIBPATH=${iprefix}/lib EXPATINCPATH=${iprefix}/include >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if [ $? -ne 0 ]; then
+    echo "Error: configure $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step2=1
+fi
+
+# STEP 3
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 3 - Make $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+make >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if [ $? -ne 0 ]; then
+    echo "Error: make $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step3=1
+fi
+
+# STEP 4
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 4 - Make install $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+make install >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if [ $? -ne 0 ]; then
+    echo "Error: make install IO::Socket::SSL failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step4=1
+fi
+
+
+## final check; all 4 steps
+perlxml_done=`expr $step1 + $step2 + $step3 + $step4`
+if [ "$perlxml_done" -eq 4 ]; then
+   perlxml_done=1
+else
+   perlxml_done=90
+fi
+
+clean_module
+
+# back to root
+cd ..
+
+}
+
+
+
+
+
 # perl Net::Curl
 build_rec_ncurl() {
 
@@ -1072,7 +1364,8 @@ echo "Info: Step 2 - Configure $dir ..." |\
 
 
 # STEP 2
-env PATH=${iprefix}/bin:$PATH ${iprefix}/perl/bin/perl Makefile.PL >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+export PATH=${iprefix}/bin:$PATH
+${iprefix}/perl/bin/perl Makefile.PL >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
 if [ $? -ne 0 ]; then
     echo "Error: configure $dir failed !" |\
      tee -a ${BUILD_PATH}/${BUILD_LOG}
@@ -1247,28 +1540,39 @@ echo "" >> ${BUILD_PATH}/${BUILD_LOG}
 echo "Info: Step 2 - Installing recorders ..." |\
  tee -a ${BUILD_PATH}/${BUILD_LOG}
 
-cp sysrec cpurec diskrec nicrec hdwrec ${iprefix}/bin
-cp ../wsrec ${iprefix}/bin
-cp ../svcrec* ${iprefix}/bin
+
+cp *rec ${iprefix}/bin
 cp ../webinvrec ${iprefix}/bin
 cp ../ntprec ${iprefix}/bin
 cp ../direc ${iprefix}/bin
-cp ../rs485rec ${iprefix}/bin
 cp ../certrec ${iprefix}/bin
+cp ../raw2day ${iprefix}/bin
 cp ../u2htime ${iprefix}/bin
 cp ../actmsg ${iprefix}/bin
 cp ../httprec ${iprefix}/bin
-cp ../raw2day ${iprefix}/bin
+cp ../axisrec ${iprefix}/bin
+
+#if [ "$PT_NAME" = "armv7l" ]; then
+#    cp ../wsrec ${iprefix}/bin
+#    cp ../rs485rec ${iprefix}/bin
+#fi
 if [ $? -ne 0 ]; then
     echo "Error: cannot install rec scripts !" |\
-     tee -a ${BUILD_PATH}/${BUILD_LOG}
+      tee -a ${BUILD_PATH}/${BUILD_LOG}
     rm /var/tmp/build.${module}
     exit 3
 else
     step2=1
 fi
 
-# set the other bins
+#set speedtest.net
+ln -s ${iprefix}/perl/bin/speedtest ${iprefix}/bin/speedtest
+
+# set lua to luajit
+ln -s ${iprefix}/bin/luajit ${iprefix}/bin/lua
+
+
+# set transporter
 cp sender ${iprefix}/bin
 if [ $? -ne 0 ]; then
     echo "Error: cannot install additional bins !" |\
@@ -1279,30 +1583,51 @@ fi
 
 
 # set etc settings
+cd ../..
 if [ ! -d ${iprefix}/etc ]; then
-    mkdir ${iprefix}/etc 
-    if [ $? -ne 0 ]; then
-        echo "Error: cannot set etc director !" |\
-          tee -a ${BUILD_PATH}/${BUILD_LOG}
-        rm /var/tmp/build.${module}
-        exit 3
+    mkdir ${iprefix}/etc
+fi
+cp etc/*.start ${iprefix}/etc
+
+
+if [ -f ${iprefix}/etc/zonerec.start ]; then
+    rm ${iprefix}/etc/zonerec.start
+fi
+
+if [ "$PT_NAME" != "armv7l" ]; then
+    if [ -f ${iprefix}/etc/wsrec.start ]; then
+        rm ${iprefix}/etc/wsrec.start
+    fi
+
+    if [ -f ${iprefix}/etc/rs485rec.start ]; then
+        rm ${iprefix}/etc/rs485rec.start
+    fi
+
+    if [ -f ${iprefix}/etc/axisrec.start ]; then
+        rm ${iprefix}/etc/axisrec.start
     fi
 fi
 
-cd ../..
-cp etc/*.start ${iprefix}/etc
-cp etc/kronometrix.json ${iprefix}/etc
+if [ "$PT_NAME" = "armv7l" ]; then
+    cp etc/kronometrix.k1.json ${iprefix}/etc/kronometrix.json
+    cp etc/rs485rec.json ${iprefix}/etc
+else
+    cp etc/kronometrix.json ${iprefix}/etc
+fi
+
+
+cp etc/random-rw.fio ${iprefix}/etc
+cp etc/httprec.json ${iprefix}/etc
 cp etc/webrec.json ${iprefix}/etc
 cp etc/ntprec.json ${iprefix}/etc
 cp etc/direc.json ${iprefix}/etc
-cp etc/httprec.json ${iprefix}/etc
-cp etc/rs485rec.json ${iprefix}/etc
 cp etc/certrec.json ${iprefix}/etc
 cp etc/svcrec.json ${iprefix}/etc
 cp etc/rec ${iprefix}/etc
 cp etc/transport ${iprefix}/etc
-cp etc/${OS_NAME}/kronometrix.newsyslog ${iprefix}/etc
-mkdir ${iprefix}/etc/rc
+if [ ! -d ${iprefix}/etc/rc ]; then
+    mkdir ${iprefix}/etc/rc
+fi
 cp etc/${OS_NAME}/kdr* ${iprefix}/etc/rc
 if [ $? -ne 0 ]; then
     echo "Error: cannot install etc settings !" |\
@@ -1311,9 +1636,7 @@ if [ $? -ne 0 ]; then
     exit 3
 fi
 
-if [ ! -f ${iprefix}/lib/libcurl.so.4 ]; then
-    ln -s ${iprefix}/lib/libcurl.so.4.4.0 ${iprefix}/lib/libcurl.so.4
-fi
+# cleanup for non arm platforms
 
 # final check; all 2 steps
 recs_done=`expr $step1 + $step2`
@@ -1336,6 +1659,10 @@ if [ $? -ne 0 ]; then
     exit 3
 fi
 
+#if [ "$PT_NAME" != "armv7l" ]; then
+#    rm ${iprefix}/man/man1/rs485rec.1
+#fi
+
 # set LICENSE
 cp LICENSE ${iprefix}/
 if [ $? -ne 0 ]; then
@@ -1344,7 +1671,6 @@ if [ $? -ne 0 ]; then
     rm /var/tmp/build.${module}
     exit 3
 fi
-
 
 # set VERSION
 cp VERSION ${iprefix}/
@@ -1359,7 +1685,7 @@ fi
 # set release notes
 cp CHANGELOG.${OS_NAME} ${iprefix}/CHANGELOG
 if [ $? -ne 0 ]; then
-    echo "Error: cannot install changelog !" |\
+    echo "Error: cannot install release.notes !" |\
       tee -a ${BUILD_PATH}/${BUILD_LOG}
     rm /var/tmp/build.${module}
     exit 3
@@ -1368,11 +1694,12 @@ fi
 # set README 
 cp README.${OS_NAME} ${iprefix}/README
 if [ $? -ne 0 ]; then
-    echo "Error: cannot install README.${OS_NAME} !" |\
+    echo "Error: cannot install README.${OS_NMAE} !" |\
       tee -a ${BUILD_PATH}/${BUILD_LOG}
     rm /var/tmp/build.${module}
     exit 3
 fi
+
 
 # set log directory
 if [ ! -d ${iprefix}/log ]; then
@@ -1414,10 +1741,31 @@ else
             exit 3
         fi
     fi
+
+    # share openssl man page cleanup
+    if [ -d ${iprefix}/share ]; then
+        rm -rf ${iprefix}/share
+        if [ $? -ne 0 ]; then
+            echo "Error: cannot clean share director !" |\
+             tee -a ${BUILD_PATH}/${BUILD_LOG}
+            rm /var/tmp/build.${module}
+            exit 3
+        fi
+    fi
+
+    if [ -d ${iprefix}/openssl/man ]; then
+        rm -rf ${iprefix}/openssl/man
+        if [ $? -ne 0 ]; then
+            echo "Error: cannot clean openssl man director !" |\
+             tee -a ${BUILD_PATH}/${BUILD_LOG}
+            rm /var/tmp/build.${module}
+            exit 3
+        fi
+    fi
 fi
 
-}
 
+}
 
 ### testing
 test_rec_scripts() {
@@ -1464,9 +1812,9 @@ echo "Info: Step 2 - Check libs" |\
  tee -a ${BUILD_PATH}/${BUILD_LOG}
 
 noErrors=0
-for lib in `ls ${iprefix}/lib/*.so`
+for lib in `ls ${iprefix}/lib/*.dylib`
 do
-    noErrors=`ldd $lib | grep 'not found' | wc -l`
+    noErrors=`otool -L $lib | grep 'not found' | wc -l`
     if [ "$noErrors" -ne 0 ]; then
         echo "LIB ERROR: $lib" |\
          tee -a ${BUILD_PATH}/${BUILD_LOG}
