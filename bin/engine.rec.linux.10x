@@ -2127,7 +2127,7 @@ cp ../actmsg ${iprefix}/bin
 cp ../httprec ${iprefix}/bin
 cp ../axisrec ${iprefix}/bin
 
-if [ "$PT_NAME" = "armv7l" ]; then
+if [ "$PT_NAME" = "aarch64" ]; then
     cp ../wsrec ${iprefix}/bin
     cp ../rs485rec ${iprefix}/bin
 fi
@@ -2161,7 +2161,7 @@ fi
 cd ../..
 cp etc/*.start ${iprefix}/etc
 rm ${iprefix}/etc/zonerec.start
-if [ "$PT_NAME" != "armv7l" ]; then
+if [ "$PT_NAME" != "aarch64" ]; then
     if [ -f ${iprefix}/etc/wsrec.start ]; then
         rm ${iprefix}/etc/wsrec.start
     fi
@@ -2175,7 +2175,7 @@ if [ "$PT_NAME" != "armv7l" ]; then
     fi
 fi
 
-if [ "$PT_NAME" = "armv7l" ]; then
+if [ "$PT_NAME" = "aarch64" ]; then
     cp etc/kronometrix.k1.json ${iprefix}/etc/kronometrix.json
     cp etc/rs485rec.json ${iprefix}/etc
 else
@@ -2731,6 +2731,8 @@ elif [ "$PT_NAME" = "armv6l" ]; then
     cp control.armv6l $pkgname/DEBIAN/control
 elif [ "$PT_NAME" = "armv7l" ]; then
     cp control.armv6l $pkgname/DEBIAN/control
+elif [ "$PT_NAME" = "aarch64" ]; then
+    cp control.aarch64 $pkgname/DEBIAN/control
 elif [ "$PT_NAME" = "i386" ]; then
     cp control.i386 $pkgname/DEBIAN/control
 elif [ "$PT_NAME" = "i686" ]; then
