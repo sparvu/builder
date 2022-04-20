@@ -1367,6 +1367,124 @@ cd ..
 }
 
 
+### lua
+build_rec_lua() {
+dir=lua
+step1=0
+step2=0
+step3=0
+
+cd lib
+init_module "$dir"
+if [ $? -eq 0 ]; then
+    step1=1
+fi
+
+
+# STEP 2
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 2 - Make $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+make >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if [ $? -ne 0 ]; then
+    echo "Error: make $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step2=1
+fi
+
+
+# STEP 3
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 3 - Make install $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+make install >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if [ $? -ne 0 ]; then
+    echo "Error: make install $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step3=1
+fi
+
+# final check; all 4 steps
+lua_done=`expr $step1 + $step2 + $step3`
+if [ "$lua_done" -eq 3 ]; then
+   lua_done=1
+else
+   lua_done=90
+fi
+
+clean_module
+
+# back to root
+cd ..
+
+}
+
+
+### luajit
+build_rec_luajit() {
+dir=luajit
+step1=0
+step2=0
+step3=0
+
+cd lib
+init_module "$dir"
+if [ $? -eq 0 ]; then
+    step1=1
+fi
+
+# STEP 2
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 2 - Make $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+gmake CC=cc >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if [ $? -ne 0 ]; then
+    echo "Error: make $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step2=1
+fi
+
+# STEP 3
+echo "" >> ${BUILD_PATH}/${BUILD_LOG}
+echo "Info: Step 3 - Make install $dir..." |\
+ tee -a ${BUILD_PATH}/${BUILD_LOG}
+
+gmake install >> ${BUILD_PATH}/${BUILD_LOG} 2>&1
+if [ $? -ne 0 ]; then
+    echo "Error: make install $dir failed !" |\
+     tee -a ${BUILD_PATH}/${BUILD_LOG}
+    rm /var/tmp/build.${module}
+    exit 3
+else
+    step3=1
+fi
+
+# final check; all 3 steps
+luajit_done=`expr $step1 + $step2 + $step3`
+if [ "$luajit_done" -eq 3 ]; then
+   luajit_done=1
+else
+   luajit_done=90
+fi
+
+clean_module
+
+# back to root
+cd ..
+
+}
+
+
 ### Kronometrix libs
 build_rec_klib() {
 
@@ -1424,9 +1542,6 @@ if [ $? -ne 0 ]; then
 else
     step4=1
 fi
-
-cp script/svcrec ${iprefix}/bin/svcrec
-cp script/webrec ${iprefix}/bin/webrec
 
 
 ## final check; all 4 steps
@@ -1486,7 +1601,7 @@ echo "" >> ${BUILD_PATH}/${BUILD_LOG}
 echo "Info: Step 2 - Installing recorders ..." |\
  tee -a ${BUILD_PATH}/${BUILD_LOG}
 
-cp sysrec cpurec diskrec nicrec hdwrec ${iprefix}/bin
+cp *rec ${iprefix}/bin
 cp ../webinvrec ${iprefix}/bin
 cp ../ntprec ${iprefix}/bin
 cp ../direc ${iprefix}/bin
@@ -1513,6 +1628,9 @@ fi
 
 #set speedtest.net
 ln -s ${iprefix}/perl/bin/speedtest ${iprefix}/bin/speedtest      
+
+# set lua to luajit
+ln -s ${iprefix}/bin/luajit ${iprefix}/bin/lua
 
 # set transporter 
 cp sender ${iprefix}/bin
@@ -1562,12 +1680,10 @@ else
 fi
 
 cp etc/random-rw.fio ${iprefix}/etc
-cp etc/webrec.json ${iprefix}/etc
 cp etc/ntprec.json ${iprefix}/etc
 cp etc/direc.json ${iprefix}/etc
 cp etc/httprec.json ${iprefix}/etc
 cp etc/certrec.json ${iprefix}/etc
-cp etc/svcrec.json ${iprefix}/etc
 cp etc/rec ${iprefix}/etc
 cp etc/transport ${iprefix}/etc
 cp etc/${OS_NAME}/kronometrix.newsyslog ${iprefix}/etc
@@ -1684,6 +1800,12 @@ else
         fi
     fi
 fi
+
+# fix permissions on scrips
+chmod 755 ${iprefix}/bin/webrec
+chmod 755 ${iprefix}/bin/svcrec
+chmod 755 ${iprefix}/bin/sockrec
+chmod 755 ${iprefix}/bin/snmprec
 
 }
 

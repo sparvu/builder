@@ -311,9 +311,6 @@ else
     step4=1
 fi
 
-cp script/svcrec ${iprefix}/bin/svcrec
-cp script/webrec ${iprefix}/bin/webrec
-
 ## final check; all 4 steps
 klib_done=`expr $step1 + $step2 + $step3 + $step4`
 if [ "$klib_done" -eq 4 ]; then
@@ -657,7 +654,7 @@ for lib in Proc::Daemon Proc::PID::File JSON::XS Data::Peek CPAN::DistnameInfo \
            File::Tail Regexp::Common Filesys::Df Sys::Filesystem HTML::TableExtract \
            JSON UUID::Tiny Carp::Assert Net::Domain::TLD Geography::Countries \
            DateTime::Format::ISO8601 Email::Valid Spreadsheet::XLSX Geo::IPfree Inline::MakeMaker \
-           Capture::Tiny Text::Template AnyEvent IO::Async Inline::C \
+           Capture::Tiny Text::Template AnyEvent IO::Async IO::Async::Listener Inline::C \
            Date::Calc Linux::Distribution inc::Module::Install DBI IO::Interface \
            Redis Net::DHCP::Watch Net::SNMP Mail::IMAPClient File::Stat::Bits \
            Net::NTP Filesys::DiskUsage Geo::TAF JSON::MaybeXS \
@@ -2187,11 +2184,9 @@ fi
 
 cp etc/random-rw.fio ${iprefix}/etc
 cp etc/httprec.json ${iprefix}/etc
-cp etc/webrec.json ${iprefix}/etc
 cp etc/ntprec.json ${iprefix}/etc
 cp etc/direc.json ${iprefix}/etc
 cp etc/certrec.json ${iprefix}/etc
-cp etc/svcrec.json ${iprefix}/etc
 cp etc/rec ${iprefix}/etc
 cp etc/transport ${iprefix}/etc
 cp etc/${OS_NAME}/logrotate.krmx ${iprefix}/etc
@@ -2331,6 +2326,13 @@ else
         fi
     fi
 fi
+
+# fix permissions on scrips
+chmod 755 ${iprefix}/bin/webrec
+chmod 755 ${iprefix}/bin/svcrec
+chmod 755 ${iprefix}/bin/sockrec
+chmod 755 ${iprefix}/bin/snmprec
+
 
 
 }
