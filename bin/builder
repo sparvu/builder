@@ -2,7 +2,7 @@
 #
 #  Kronometrix Development tools, builder the master script engine 
 #
-#  Copyright (c) 2021 Stefan Parvu
+#  Copyright (c) 2022 Stefan Parvu
 #
 #  This program is free software; you can redistribute it and/or
 #  modify it under the terms of the GNU General Public License
@@ -20,7 +20,7 @@
 #
 #  (http://www.gnu.org/copyleft/gpl.html)
 
-# VERSION: 4.3
+# VERSION: 4.4
 
 usage() {
 
@@ -78,6 +78,9 @@ nrec_sem=0
 ossl_sem=0
 syss_sem=0
 libusb_sem=0
+futureio_sem=0
+ioasync_sem=0
+perlnethttp_sem=0
 rec1_sem=0
 rpm_sem=0
 deb_sem=0
@@ -101,6 +104,9 @@ netcurl_done=0
 x509_done=0
 expat_done=0
 klib_done=0
+futureio_done=0
+ioasync_done=0
+perlnethttp_done=0
 procdaemon_done=0
 perlinuxinfo_done=0
 perlnetssleay_done=0
@@ -281,7 +287,7 @@ mon_done=0
 
 
 
-# Source Global SDR Settings
+# Source Global
 PWD=`dirname $0`
 . ${PWD}/setenv
 
@@ -345,9 +351,20 @@ do
                 expat_sem=1
             ;;
 
-
             plnetcurl)
                 plnetcurl_sem=1
+            ;;
+
+            futureio)
+                futureio_sem=1
+            ;;
+
+            ioasync)
+                ioasync_sem=1
+            ;;
+
+            perlnethttp)
+                perlnethttp_sem=1
             ;;
  
             nrec)
@@ -1089,6 +1106,18 @@ case "$module" in
 
         build_rec_ossl
 
+    elif [ $futureio_sem -eq 1 ]; then
+
+        build_rec_futureio
+
+    elif [ $ioasync_sem -eq 1 ]; then
+
+        build_rec_ioasync
+
+    elif [ $perlnethttp_sem -eq 1 ]; then
+
+        build_rec_perlnethttp
+
     elif [ $expat_sem -eq 1 ]; then
 
         rm -rf /opt/kronometrix/perl/lib/site_perl/5.32.1/amd64-freebsd/auto/XML/Parser
@@ -1142,6 +1171,13 @@ case "$module" in
         build_rec_perliossl
         build_rec_perlxml
         build_rec_perlcpan
+
+        if [ "$OS_NAME" = "darwin" ]; then
+            build_rec_futureio
+            build_rec_ioasync
+            build_rec_perlnethttp
+        fi
+
         build_rec_ncurl
         build_rec_x509
 
