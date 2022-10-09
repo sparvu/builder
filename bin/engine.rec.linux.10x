@@ -657,8 +657,8 @@ for lib in Proc::Daemon Proc::PID::File JSON::XS Data::Peek CPAN::DistnameInfo \
            Capture::Tiny Text::Template AnyEvent IO::Async IO::Async::Listener Inline::C \
            Date::Calc Linux::Distribution inc::Module::Install DBI IO::Interface \
            Redis Net::DHCP::Watch Net::SNMP Mail::IMAPClient File::Stat::Bits \
-           Net::NTP Filesys::DiskUsage Geo::TAF JSON::MaybeXS \
-           Net::HTTP LWP LWP::Protocol::https HTML::TreeBuilder App::SpeedTest
+           Net::NTP Filesys::DiskUsage Geo::TAF JSON::MaybeXS Convert::ASN1 \
+           Net::HTTP Net::HTTPS LWP LWP::Protocol::https HTML::TreeBuilder App::SpeedTest
 do
 
            #Net::HTTP LWP LWP::Authen::OAuth LWP::Authen::OAuth2 Net::OAuth2 \
