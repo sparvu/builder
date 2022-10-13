@@ -81,6 +81,7 @@ libusb_sem=0
 futureio_sem=0
 ioasync_sem=0
 perlnethttp_sem=0
+perlbsdsysctl_sem=0
 rec1_sem=0
 rpm_sem=0
 deb_sem=0
@@ -110,6 +111,7 @@ perlnethttp_done=0
 procdaemon_done=0
 perlinuxinfo_done=0
 perlnetssleay_done=0
+perlbsdsysctl_done=0
 perliossl_done=0
 perli2c_done=0
 perlxml_done=0
@@ -1170,6 +1172,10 @@ case "$module" in
         build_rec_perlnetssleay
         build_rec_perliossl
         build_rec_perlxml
+        if [ "$OS_NAME" = "freebsd" ]; then
+            build_rec_perlbsdsysctl
+        fi
+
         build_rec_perlcpan
 
         if [ "$OS_NAME" = "darwin" ]; then
